@@ -1,0 +1,15 @@
+- add diodes to button matrix
+
+- test sto and get and variable setting
+- test prgm and scripts
+- test brigtness
+- check through all apps
+- test integruls
+
+- make emulator
+
+- make tyouch screen do more
+
+- update all documentation
+
+- Make sure usbc can flash, storage, and charge, maybe switch to change beetween seriale and storage with switch?

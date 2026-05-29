@@ -1,0 +1,10 @@
+Command: cmake -G Ninja -B /Users/corypearl/Desktop/opencalc/firmware/build -DPYTHON_DEPS_CHECKED=1 -DPYTHON=/Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python -DESP_PLATFORM=1 -DIDF_TARGET=esp32s3 -DCCACHE_ENABLE=False /Users/corypearl/Desktop/opencalc/firmware
+Loading defaults file /Users/corypearl/Desktop/opencalc/firmware/sdkconfig.defaults...
+Configuration Report               
+ ───────────────────────────────── 
+   Parser Version: 1               
+   Verbosity: default              
+   Defaults policy: sdkconfig      
+   Status: Finished successfully   
+                                   
+ ───────────────────────────────── 

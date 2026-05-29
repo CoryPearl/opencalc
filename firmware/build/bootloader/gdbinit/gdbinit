@@ -1,0 +1,2 @@
+source /Users/corypearl/Desktop/opencalc/firmware/build/bootloader/gdbinit/symbols
+source /Users/corypearl/Desktop/opencalc/firmware/build/bootloader/gdbinit/connect

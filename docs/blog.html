@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenCalc Devlog</title>
+    <style>
+      body {
+        background: #111;
+        color: #ccc;
+        font-family: monospace;
+        font-size: 15px;
+        line-height: 1.7;
+        max-width: 640px;
+        margin: 60px auto;
+        padding: 0 20px;
+      }
+
+      h1 {
+        color: #fff;
+        margin-bottom: 4px;
+      }
+      .sub {
+        color: #555;
+        margin-bottom: 48px;
+      }
+
+      article {
+        margin-bottom: 48px;
+      }
+
+      .date {
+        color: #555;
+        font-size: 13px;
+        margin-bottom: 6px;
+      }
+      h2 {
+        color: #eee;
+        font-size: 16px;
+        margin: 0 0 10px;
+      }
+      p {
+        margin: 0 0 10px;
+      }
+
+      code {
+        background: #1e1e1e;
+        border: 1px solid #2a2a2a;
+        padding: 1px 6px;
+        border-radius: 3px;
+        color: #7ec8a0;
+      }
+
+      pre {
+        background: #1e1e1e;
+        border: 1px solid #2a2a2a;
+        padding: 14px;
+        border-radius: 4px;
+        overflow-x: auto;
+        margin: 12px 0;
+      }
+
+      pre code {
+        background: none;
+        border: none;
+        padding: 0;
+        color: #aaa;
+      }
+
+      hr {
+        border: none;
+        border-top: 1px solid #222;
+        margin: 48px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>OpenCalc</h1>
+    <p class="sub">devlog — open source $25 graphing calculator</p>
+
+    <!-- paste new posts at the top -->
+    <!-- can use <code></code> tags  -->
+    <article>
+      <div class="date">2026-05-28</div>
+      <h2>Day 10: Ready to order... maybe?</h2>
+      <p>
+        Actually finished and rounted a pcb and sent it of to a friend of a
+        friend who works in pcb design for his job. The software should be ready
+        to go and hoppfully when I drop $100 or more on this they actually flash
+        and boot up... but we'll see what happens. Many many hours worked on
+        this project, beetween the 12k+ lines of code and many hours elarning
+        how to design a pcb, but deffinitly worth it if this works out. I'm also
+        ordering a battery and a multimeter for the pcbs. Next steps would be to
+        refine the software and pcb design and also have the screen solderd on
+        and make a case for it but that's way in the future. This was an awesome
+        learning experiance so far and I hope it continues to be.
+      </p>
+    </article>
+
+    <article>
+      <div class="date">2026-05-27</div>
+      <h2>Day 9: Big progress!</h2>
+      <p>
+        Finished designing a really good looking V3 for the pcb and may order it
+        aafter checking losts of things. The software is basiccly done I think
+        so ready to flash when the board actually comes. Spent many hours on the
+        pcb and it looks really great. I decided ot go with software insetad of
+        hardware off because it seems much simpler.
+      </p>
+
+      <p>Also ordering a bettery and multimeter for future testing.</p>
+    </article>
+
+    <article>
+      <div class="date">2026-05-25</div>
+      <h2>Day 8: All my nervousness was very warented...</h2>
+      <p>
+        So I connected it to the scren and uh nothing happend... but that's just
+        because VCC needed 3v3 not 5v so that fixed pretty quick. But then
+        everything was a mess... the screen was backwards, pixels were missing
+        and I dont have the tools to make a button matrix. But after many hours
+        I fixed the screen, even made the touch work, and made a simulated
+        button matrix using the Serial in.
+      </p>
+
+      <p>So the best thing currently working is doom.... but it works great!</p>
+
+      <p>
+        Update, things are going swimingly. Apps are working, ui looks great,
+        making a ton of progress. I'll start desiging the final verison of the
+        first pcb most likley which is very exciting. Python scripts still dont
+        work but we'll get there lmao.
+      </p>
+
+      <p>We ran out of GPT5.5 tokens :(</p>
+      <p>Set up free claude code using an Nvidia model yay</p>
+
+      <p>
+        A ton of work done today, definitly a lot to go but very proud of the
+        progress, on pace to order trhe pcb somtime next week hoppfully.
+      </p>
+    </article>
+
+    <article>
+      <div class="date">2026-05-24</div>
+      <h2>Day 7: Nervousness</h2>
+      <p>
+        Im going back to school tommorow night and will be able to test the code
+        I've writin but I'm very nervous it wont work. It all builds and flashes
+        and works in concept but I'm sure some challenges will arise when I
+        actually wire up the components.
+      </p>
+      <p>
+        I also did some work on tiny-python to add better error handling that
+        tells you where the error is, line and charecter. I also amde a github
+        repo just for tiny python because it seems impressive enough even tho I
+        wrote it mostly with ai.
+      </p>
+
+      <p>
+        Started work on v3 pcb with a lot of changes, actual screen and battery,
+        exposed gpio pins and a more accurate. button matrix. Also switching to
+        easyeda instead of kikad. I also installed autodesk fusion for when I
+        need to design the case. I'm tryig to finish this in the next 3 ish
+        weeks before I go to summer camp for the rest of the summer.
+      </p>
+    </article>
+
+    <article>
+      <div class="date">2026-05-23</div>
+      <h2>Day 6: A lot of brainstorming</h2>
+      <p>
+        Since I only have accsess to the board I've been brainstorming and
+        preparing to connect it to the screen when I get back to school cuz I'm
+        currenlty in bsoton with my family. I'm also getting ready to finalize a
+        test pcb design to get made but I want to make sure the code all works
+        first.
+      </p>
+
+      <p>
+        Adding a lot of actual features and making the buttons do things too but
+        only in code until I can get back to school to actually test on the
+        hardware.
+      </p>
+    </article>
+
+    <article>
+      <div class="date">2026-05-22</div>
+      <h2>Day 5: Switching to raylib then switching back then doom</h2>
+      <p>
+        After realizing how much boiler plate I had to write, I gooled and found
+        out raylib, a C graphics library actually works in esp-idf so that was
+        great news. I got that working and I want to wire up the button matrix
+        to start testing the caclulator.
+      </p>
+
+      <p>
+        On another note I made the esp32 act like a storage device when plugged
+        into a computer so you can now upload files (python files is the main
+        reaosn) and I had GPT 5.5 write a mini python interpreter so we'll see
+        if that works when I upload it.
+      </p>
+
+      <p>
+        Big day today... Ignore the title of the post i actually disabled Raylib
+        because it was stopping the esp32 from booting so we raw dogging it for
+        now. Also it shows up as a flashdrive type thiong when you plug it in
+        now and you can upload files but mostl python scrips. The python
+        interpreter which I've called tiny-python is nearly done with practicly
+        everything able to be added so thats awesome.
+      </p>
+
+      <p>
+        Wow I did a lot today, basicly everything I can do without wiring up a
+        button matrix and lcd is done ( I need to implement all the features but
+        uhhhh). When I get back home I'll make a button matrix, wire the screen,
+        and start to actually develope the application for the calculator. I
+        also made a v2 design of the button layout.
+      </p>
+
+      <p>I put doom on it but don't tell anyone, alpha + 2nd will run it.</p>
+    </article>
+
+    <article>
+      <div class="date">2026-05-21</div>
+      <h2>Day 4: The code continues</h2>
+      <p>
+        I've now got 3 buttons wired up and the LCD and code that lets me draw a
+        colored square based off the button i press so that's pretty cool.
+        Embeded programing with esp-idf is way harder than I imagined but we're
+        getting though it. Going to keep playing around with it.
+      </p>
+    </article>
+
+    <article>
+      <div class="date">2026-05-20</div>
+      <h2>Day 3: Learning to code</h2>
+      <p>
+        All the parts came and work great so I started actually learning how to
+        code this thing, so far only turning on and off gpio pins but hey i got
+        the LCD screen to light up so that's a win in my books. Going to
+        continue to play aorund with it for the next few days. Also got some
+        buttons wierd up which is cool.
+      </p>
+    </article>
+
+    <article>
+      <div class="date">2026-05-12</div>
+      <h2>Day 2: PCB design</h2>
+      <p>
+        Since the parts have no been deliverd yet, I started working on a first
+        pcb design based off the figma design I made yesterday in a new folder
+        called hardware. This is my first time making a PCB so I can only
+        imagine some things are off. It was preety fun though. I'm excited to
+        get to working on the physical hardwarre but it still hasn't come so
+        trying to do what I can in the meantime.
+      </p>
+
+      <p>Parts still waiting to arrive... my dorm package prossessing sucks.</p>
+
+      <p>
+        Ok so the PCB I made sucks and I could't even finish wireing it but it
+        was a good first go.
+      </p>
+
+      <p>
+        Made a second version of the PCB and honestly it's not much better but
+        im bored so.
+      </p>
+    </article>
+
+    <article>
+      <div class="date">2026-05-11</div>
+      <h2>Day 1: The Start</h2>
+      <p>
+        ESP-IDF is now fully setup to build and flash blinky utilizing the
+        onboard led on the esp32 model I purchased. To build
+        <code>idf.py build</code> and to flash I belive it's
+        <code>idf.py flash</code>, but only time will tell. I also finsihed and
+        uploaded the first iteration of the button layout to docs/designs which
+        was made using Figma.
+      </p>
+
+      <p>
+        Parts will arrive tommrow so testing and the code base will start to
+        form.
+      </p>
+    </article>
+
+    <article>
+      <div class="date">2026-05-07</div>
+      <h2>Day 0: why?</h2>
+      <p>
+        A TI-84 costs $130 and runs a Z80 from 1976 (even the neweer mdoels are
+        slower than they should be for this price). OpenCalc is the same thing
+        for $25 — ESP32-S3, color LCD, USB-C, computer emulation, and
+        MicroPython scripting built in. It's quite frankly ridiculous to be
+        expected to spend $130 on a calculator with a processor that's older
+        than most people using it.
+      </p>
+      <p>Everything open source. This log tracks the build from scratch.</p>
+
+      <p>
+        Today I made a planning document, started this blog, orderd a board,
+        screen, some buttons and some wires, and setup the enviorment I'll be
+        using, ESP-IDF. Everything ready to start just waiting on physical
+        componets now.
+      </p>
+    </article>
+
+    <hr />
+    <p style="color: #444; font-size: 13px">
+      MIT ·
+      <a href="https://github.com/CoryPearl/opencalc" style="color: #555"
+        >github</a
+      >
+    </p>
+  </body>
+</html>
