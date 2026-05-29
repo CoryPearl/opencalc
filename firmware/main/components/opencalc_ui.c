@@ -33,6 +33,7 @@
 #define UI_HOME_GRID_Y 48
 #define UI_HOME_GRID_STEP_Y 50
 #define SCRIPT_MAX 12
+#define SCRIPT_EDITOR_MAX 2048
 #define SETTINGS_COUNT 3
 #define PROGRAM_MENU_COUNT 4
 #define CALC_HISTORY_MAX 8
@@ -89,6 +90,7 @@ typedef enum {
     PAGE_MODE_MENU,
     PAGE_PROGRAM_MENU,
     PAGE_SCRIPT_IO,
+    PAGE_SCRIPT_EDITOR,
 } page_id_t;
 
 typedef struct {
@@ -145,6 +147,12 @@ typedef enum {
     GRAPH_POI_LOCAL_MAX,
     GRAPH_POI_INTERSECTION,
 } graph_poi_type_t;
+
+typedef enum {
+    SCRIPT_ACTION_RUN = 0,
+    SCRIPT_ACTION_EDIT,
+    SCRIPT_ACTION_DELETE,
+} script_action_t;
 
 typedef struct {
     double x;
@@ -299,10 +307,16 @@ static int s_home_selection = APP_CALCULATOR;
 static int s_script_selection = 0;
 static int s_program_selection = 0;
 static int s_script_count = 0;
+static script_action_t s_script_action = SCRIPT_ACTION_RUN;
 static int s_app_selection = 0;
 static int s_math_tab = 0;
 static int s_math_selection = 0;
 static char s_scripts[SCRIPT_MAX][32];
+static EXT_RAM_BSS_ATTR char s_script_editor[SCRIPT_EDITOR_MAX];
+static char s_script_edit_name[32] = "";
+static size_t s_script_editor_len = 0;
+static size_t s_script_editor_cursor = 0;
+static int s_script_editor_scroll_line = 0;
 static py_t s_script_py;
 static char s_script_output[1024];
 static char s_script_title[48] = "Python";
@@ -395,6 +409,7 @@ static void reset_graph_view_defaults(void);
 static bool calc_format_fraction_value(double value, char *out, size_t out_size);
 static void calc_expand_ans(const char *input, char *out, size_t out_size);
 static int digit_for_key(int row, int col);
+static void run_selected_script(void);
 
 static const uint8_t FONT[37][7] = {
     {0x0e,0x11,0x13,0x15,0x19,0x11,0x0e}, {0x04,0x0c,0x04,0x04,0x04,0x04,0x0e},
@@ -2070,49 +2085,177 @@ static void scripts_scan(void)
     }
 }
 
-static void open_scripts_browser(void)
+static void script_path_for_name(const char *name, char *path, size_t path_size)
+{
+    snprintf(path, path_size, "/data/scripts/%s", name);
+}
+
+static void open_scripts_browser_for(script_action_t action)
 {
     usb_msc_mount_app();
     s_usb_storage_enabled = false;
+    s_script_action = action;
     scripts_scan();
     s_page = PAGE_SCRIPTS;
     s_current_app = APP_PYTHON;
 }
 
+static void open_scripts_browser(void)
+{
+    open_scripts_browser_for(SCRIPT_ACTION_RUN);
+}
+
 static void open_program_menu(void)
 {
     s_program_selection = 0;
+    s_script_action = SCRIPT_ACTION_RUN;
     s_page = PAGE_PROGRAM_MENU;
     s_current_app = APP_PYTHON;
     ui_draw_current();
 }
 
-static void create_new_program_file(void)
+static bool script_editor_insert_text(const char *text)
+{
+    if (text == NULL || text[0] == '\0') {
+        return false;
+    }
+
+    size_t add = strlen(text);
+    if (s_script_editor_len + add >= sizeof(s_script_editor)) {
+        snprintf(s_script_status, sizeof(s_script_status), "editor full");
+        return false;
+    }
+
+    memmove(s_script_editor + s_script_editor_cursor + add,
+            s_script_editor + s_script_editor_cursor,
+            s_script_editor_len - s_script_editor_cursor + 1);
+    memcpy(s_script_editor + s_script_editor_cursor, text, add);
+    s_script_editor_cursor += add;
+    s_script_editor_len += add;
+    return true;
+}
+
+static void script_editor_delete_before_cursor(void)
+{
+    if (s_script_editor_cursor == 0 || s_script_editor_len == 0) {
+        return;
+    }
+
+    memmove(s_script_editor + s_script_editor_cursor - 1,
+            s_script_editor + s_script_editor_cursor,
+            s_script_editor_len - s_script_editor_cursor + 1);
+    s_script_editor_cursor--;
+    s_script_editor_len--;
+}
+
+static void script_editor_clear(void)
+{
+    s_script_editor[0] = '\0';
+    s_script_editor_len = 0;
+    s_script_editor_cursor = 0;
+    s_script_editor_scroll_line = 0;
+}
+
+static void script_editor_cursor_line_col(int *line, int *col)
+{
+    int out_line = 0;
+    int out_col = 0;
+    for (size_t i = 0; i < s_script_editor_cursor && i < s_script_editor_len; i++) {
+        if (s_script_editor[i] == '\n') {
+            out_line++;
+            out_col = 0;
+        } else {
+            out_col++;
+        }
+    }
+    if (line != NULL) *line = out_line;
+    if (col != NULL) *col = out_col;
+}
+
+static size_t script_editor_line_col_to_index(int target_line, int target_col)
+{
+    int line = 0;
+    int col = 0;
+    size_t i = 0;
+    for (; i < s_script_editor_len; i++) {
+        if (line == target_line && col >= target_col) {
+            break;
+        }
+        if (s_script_editor[i] == '\n') {
+            if (line == target_line) {
+                break;
+            }
+            line++;
+            col = 0;
+        } else {
+            col++;
+        }
+    }
+    return i;
+}
+
+static void script_editor_move_vertical(int direction)
+{
+    int line = 0;
+    int col = 0;
+    script_editor_cursor_line_col(&line, &col);
+    int target_line = line + direction;
+    if (target_line < 0) {
+        target_line = 0;
+    }
+    s_script_editor_cursor = script_editor_line_col_to_index(target_line, col);
+}
+
+static bool script_editor_save(void)
+{
+    if (s_script_edit_name[0] == '\0') {
+        snprintf(s_script_status, sizeof(s_script_status), "no filename");
+        return false;
+    }
+
+    char path[80];
+    script_path_for_name(s_script_edit_name, path, sizeof(path));
+    FILE *file = fopen(path, "w");
+    if (file == NULL) {
+        snprintf(s_script_status, sizeof(s_script_status), "save failed");
+        return false;
+    }
+
+    size_t written = fwrite(s_script_editor, 1, s_script_editor_len, file);
+    fclose(file);
+    if (written != s_script_editor_len) {
+        snprintf(s_script_status, sizeof(s_script_status), "save incomplete");
+        return false;
+    }
+
+    snprintf(s_script_status, sizeof(s_script_status), "saved %.31s", s_script_edit_name);
+    scripts_scan();
+    return true;
+}
+
+static void script_editor_open_new(void)
 {
     usb_msc_mount_app();
     s_usb_storage_enabled = false;
 
     for (int i = 1; i <= 99; i++) {
         char path[64];
-        snprintf(path, sizeof(path), "/data/scripts/program%02d.py", i);
+        char name[32];
+        snprintf(name, sizeof(name), "program%02d.py", i);
+        script_path_for_name(name, path, sizeof(path));
         FILE *existing = fopen(path, "r");
         if (existing != NULL) {
             fclose(existing);
             continue;
         }
 
-        FILE *file = fopen(path, "w");
-        if (file == NULL) {
-            status_message("new failed");
-            return;
-        }
-        fprintf(file, "print(\"program%02d\")\n", i);
-        fclose(file);
-
-        scripts_scan();
-        snprintf(s_calc_output, sizeof(s_calc_output), "created program%02d.py", i);
-        status_message(s_calc_output);
-        s_page = PAGE_SCRIPTS;
+        snprintf(s_script_edit_name, sizeof(s_script_edit_name), "%s", name);
+        snprintf(s_script_editor, sizeof(s_script_editor), "print(%d)\n", i);
+        s_script_editor_len = strlen(s_script_editor);
+        s_script_editor_cursor = s_script_editor_len;
+        s_script_editor_scroll_line = 0;
+        snprintf(s_script_status, sizeof(s_script_status), "new - 2nd enter saves");
+        s_page = PAGE_SCRIPT_EDITOR;
         s_current_app = APP_PYTHON;
         ui_draw_current();
         return;
@@ -2121,22 +2264,96 @@ static void create_new_program_file(void)
     status_message("too many programs");
 }
 
+static void script_editor_open_selected(void)
+{
+    if (s_script_count == 0) {
+        snprintf(s_script_status, sizeof(s_script_status), "no scripts");
+        ui_draw_current();
+        return;
+    }
+
+    char path[80];
+    script_path_for_name(s_scripts[s_script_selection], path, sizeof(path));
+    FILE *file = fopen(path, "r");
+    if (file == NULL) {
+        snprintf(s_script_status, sizeof(s_script_status), "open failed");
+        ui_draw_current();
+        return;
+    }
+
+    size_t read = fread(s_script_editor, 1, sizeof(s_script_editor) - 1, file);
+    fclose(file);
+    s_script_editor[read] = '\0';
+    s_script_editor_len = read;
+    s_script_editor_cursor = 0;
+    s_script_editor_scroll_line = 0;
+    snprintf(s_script_edit_name, sizeof(s_script_edit_name), "%s", s_scripts[s_script_selection]);
+    snprintf(s_script_status, sizeof(s_script_status), "editing %.31s", s_script_edit_name);
+    s_page = PAGE_SCRIPT_EDITOR;
+    s_current_app = APP_PYTHON;
+    ui_draw_current();
+}
+
+static void delete_selected_script(void)
+{
+    if (s_script_count == 0) {
+        snprintf(s_script_status, sizeof(s_script_status), "no scripts");
+        ui_draw_current();
+        return;
+    }
+
+    char deleted[32];
+    char path[80];
+    snprintf(deleted, sizeof(deleted), "%s", s_scripts[s_script_selection]);
+    script_path_for_name(deleted, path, sizeof(path));
+    if (remove(path) != 0) {
+        snprintf(s_script_status, sizeof(s_script_status), "delete failed");
+    } else {
+        snprintf(s_script_status, sizeof(s_script_status), "deleted %.31s", deleted);
+    }
+    scripts_scan();
+    s_page = PAGE_SCRIPTS;
+    s_current_app = APP_PYTHON;
+    ui_draw_current();
+}
+
+static void perform_selected_script_action(void)
+{
+    if (s_script_action == SCRIPT_ACTION_EDIT) {
+        script_editor_open_selected();
+    } else if (s_script_action == SCRIPT_ACTION_DELETE) {
+        delete_selected_script();
+    } else {
+        run_selected_script();
+    }
+}
+
 static void ui_draw_scripts(void)
 {
     ui_clear(THEME_BG);
     ui_header(&APPS[APP_PYTHON]);
+    const char *title = s_script_action == SCRIPT_ACTION_EDIT ? "Edit script" :
+                        s_script_action == SCRIPT_ACTION_DELETE ? "Delete script" :
+                        "Run script";
+    const char *footer = s_script_action == SCRIPT_ACTION_EDIT ? "enter - edit  back - menu" :
+                         s_script_action == SCRIPT_ACTION_DELETE ? "enter - delete  back - menu" :
+                         "enter - run  back - menu";
+    ui_text(18, 32, title, THEME_ACCENT, 1);
 
     if (s_script_count == 0) {
         ui_text(22, 54, "No scripts in /scripts", THEME_TEXT, 1);
-        ui_text(22, 76, "Add .py over USB", THEME_TEXT, 1);
+        ui_text(22, 76, s_script_action == SCRIPT_ACTION_RUN ? "Add .py over USB" : "Use New program first", THEME_TEXT, 1);
     }
 
     for (int i = 0; i < s_script_count && i < 6; i++) {
         uint32_t bg = (i == s_script_selection) ? THEME_ACCENT_2 : THEME_SURFACE;
-        ui_rect(18, 40 + i * 20, 284, 17, bg);
-        ui_text(28, 45 + i * 20, s_scripts[i], THEME_TEXT, 1);
+        ui_rect(18, 50 + i * 20, 284, 17, bg);
+        ui_text(28, 55 + i * 20, s_scripts[i], THEME_TEXT, 1);
     }
-    ui_text(18, 220, "enter - run  on - home", THEME_MUTED, 1);
+    if (s_script_status[0] != '\0') {
+        ui_text(18, 196, s_script_status, THEME_MUTED, 1);
+    }
+    ui_text(18, 220, footer, THEME_MUTED, 1);
     ui_present();
 }
 
@@ -2150,9 +2367,9 @@ static void ui_draw_program_menu(void)
     };
     static const char *const detail[PROGRAM_MENU_COUNT] = {
         "Open /scripts and run with Enter",
-        "Open /scripts; edit over USB for now",
-        "Create a starter .py file",
-        "Open /scripts; delete over USB for now",
+        "Choose a file and edit text",
+        "Create and edit a new .py",
+        "Choose a file and delete it",
     };
 
     ui_clear(THEME_BG);
@@ -2419,6 +2636,166 @@ static void ui_draw_script_io(void)
     ui_rect(0, 220, UI_W, 20, THEME_HEADER);
     ui_text(8, 226, s_script_status, s_script_running ? THEME_BATTERY_YELLOW : THEME_TEXT, 1);
     ui_present();
+}
+
+static void ui_draw_script_editor(void)
+{
+    ui_clear(THEME_BG);
+    ui_header(&APPS[APP_PYTHON]);
+
+    int cursor_line = 0;
+    int cursor_col = 0;
+    script_editor_cursor_line_col(&cursor_line, &cursor_col);
+    if (cursor_line < s_script_editor_scroll_line) {
+        s_script_editor_scroll_line = cursor_line;
+    }
+    if (cursor_line >= s_script_editor_scroll_line + 13) {
+        s_script_editor_scroll_line = cursor_line - 12;
+    }
+
+    ui_text(10, 32, s_script_edit_name[0] ? s_script_edit_name : "new script", THEME_ACCENT, 1);
+    ui_rect(8, 46, UI_W - 16, 1, THEME_BORDER);
+
+    size_t index = 0;
+    int line = 0;
+    while (line < s_script_editor_scroll_line && index < s_script_editor_len) {
+        if (s_script_editor[index++] == '\n') {
+            line++;
+        }
+    }
+
+    char lines[13][48];
+    memset(lines, 0, sizeof(lines));
+    for (int row = 0; row < 13; row++) {
+        int col = 0;
+        while (index < s_script_editor_len && s_script_editor[index] != '\n') {
+            if (col < (int)sizeof(lines[row]) - 1) {
+                lines[row][col++] = s_script_editor[index];
+            }
+            index++;
+        }
+        if (index < s_script_editor_len && s_script_editor[index] == '\n') {
+            index++;
+        }
+    }
+
+    for (int row = 0; row < 13; row++) {
+        ui_text(10, 54 + row * 12, lines[row], THEME_TEXT, 1);
+    }
+
+    int visible_line = cursor_line - s_script_editor_scroll_line;
+    if (visible_line >= 0 && visible_line < 13) {
+        int visible_col = cursor_col > 45 ? 45 : cursor_col;
+        ui_draw_calc_cursor(10 + visible_col * 6, 54 + visible_line * 12, false);
+    }
+
+    ui_rect(0, 220, UI_W, 20, THEME_HEADER);
+    ui_text(8, 226, "enter-newline  2nd enter-save  back-exit", THEME_MUTED, 1);
+    if (s_script_status[0] != '\0') {
+        ui_text(10, 208, s_script_status, THEME_MUTED, 1);
+    }
+    ui_present();
+}
+
+static bool script_editor_handle_key(int row, int col)
+{
+    if (row == 2 && col == 2) {
+        scripts_scan();
+        s_page = PAGE_SCRIPTS;
+        s_current_app = APP_PYTHON;
+        ui_draw_current();
+        return true;
+    }
+    if (row == 1 && col == 3) {
+        if (s_script_editor_cursor > 0) {
+            s_script_editor_cursor--;
+        }
+        ui_draw_current();
+        return true;
+    }
+    if (row == 2 && col == 4) {
+        if (s_script_editor_cursor < s_script_editor_len) {
+            s_script_editor_cursor++;
+        }
+        ui_draw_current();
+        return true;
+    }
+    if (row == 1 && col == 4) {
+        script_editor_move_vertical(-1);
+        ui_draw_current();
+        return true;
+    }
+    if (row == 2 && col == 3) {
+        script_editor_move_vertical(1);
+        ui_draw_current();
+        return true;
+    }
+    if (row == 9 && col == 4) {
+        if (s_second_active) {
+            if (script_editor_save()) {
+                s_page = PAGE_SCRIPTS;
+                s_current_app = APP_PYTHON;
+            }
+        } else {
+            script_editor_insert_text("\n");
+        }
+        ui_draw_current();
+        return true;
+    }
+    if (row == 3 && col == 4) {
+        if (s_second_active) {
+            script_editor_clear();
+        } else {
+            script_editor_delete_before_cursor();
+        }
+        ui_draw_current();
+        return true;
+    }
+
+    const board_key_t *key = board_keypad_key_at(row, col);
+    if ((s_alpha_active || s_alpha_locked) && key != NULL && key->alpha != NULL && key->alpha[0] != '\0') {
+        script_editor_insert_text(key->alpha);
+        if (!s_alpha_locked) {
+            s_alpha_active = false;
+        }
+        ui_draw_current();
+        return true;
+    }
+
+    int digit = digit_for_key(row, col);
+    if (digit >= 0) {
+        char text[2] = {(char)('0' + digit), '\0'};
+        script_editor_insert_text(text);
+        ui_draw_current();
+        return true;
+    }
+
+    const char *insert = NULL;
+    if (row == 9 && col == 2) insert = s_second_active ? "\"" : ".";
+    else if (row == 9 && col == 3) insert = s_second_active ? "'" : "-";
+    else if (row == 5 && col == 4) insert = "+";
+    else if (row == 7 && col == 4) insert = "-";
+    else if (row == 6 && col == 4) insert = "*";
+    else if (row == 8 && col == 4) insert = "/";
+    else if (row == 5 && col == 2) insert = s_second_active ? "[" : "(";
+    else if (row == 5 && col == 3) insert = s_second_active ? "]" : ")";
+    else if (row == 5 && col == 1) insert = s_second_active ? " " : ",";
+    else if (row == 2 && col == 1) insert = "x";
+    else if (row == 4 && col == 1) insert = s_second_active ? "csc(" : "sin(";
+    else if (row == 4 && col == 2) insert = s_second_active ? "sec(" : "cos(";
+    else if (row == 4 && col == 3) insert = s_second_active ? "cot(" : "tan(";
+    else if (row == 4 && col == 4) insert = s_second_active ? "e" : "pi";
+    else if (row == 6 && col == 0) insert = "log(";
+    else if (row == 7 && col == 0) insert = "ln(";
+    else if (row == 3 && col == 1) insert = "/";
+
+    if (insert == NULL) {
+        return false;
+    }
+
+    script_editor_insert_text(insert);
+    ui_draw_current();
+    return true;
 }
 
 static void calc_history_push(const char *expr, const char *result)
@@ -2832,6 +3209,7 @@ static void ui_draw_current(void)
     case PAGE_MODE_MENU: ui_draw_mode_menu(); break;
     case PAGE_PROGRAM_MENU: ui_draw_program_menu(); break;
     case PAGE_SCRIPT_IO: ui_draw_script_io(); break;
+    case PAGE_SCRIPT_EDITOR: ui_draw_script_editor(); break;
     case PAGE_APP: ui_draw_app_page(s_current_app); break;
     }
 }
@@ -4908,6 +5286,10 @@ static void key_back(void)
         scripts_scan();
         s_page = PAGE_SCRIPTS;
         s_current_app = APP_PYTHON;
+    } else if (s_page == PAGE_SCRIPT_EDITOR) {
+        scripts_scan();
+        s_page = PAGE_SCRIPTS;
+        s_current_app = APP_PYTHON;
     } else if (s_page == PAGE_SCRIPTS) {
         s_page = PAGE_PROGRAM_MENU;
         s_current_app = APP_PYTHON;
@@ -4929,14 +5311,20 @@ static void key_enter(void)
     if (s_page == PAGE_HOME) {
         ui_open_selected_app();
     } else if (s_page == PAGE_PROGRAM_MENU) {
-        if (s_program_selection == 2) {
-            create_new_program_file();
+        if (s_program_selection == 0) {
+            open_scripts_browser_for(SCRIPT_ACTION_RUN);
+            ui_draw_current();
+        } else if (s_program_selection == 1) {
+            open_scripts_browser_for(SCRIPT_ACTION_EDIT);
+            ui_draw_current();
+        } else if (s_program_selection == 2) {
+            script_editor_open_new();
         } else {
-            open_scripts_browser();
+            open_scripts_browser_for(SCRIPT_ACTION_DELETE);
             ui_draw_current();
         }
     } else if (s_page == PAGE_SCRIPTS) {
-        run_selected_script();
+        perform_selected_script_action();
     } else if (s_page == PAGE_SCRIPT_IO) {
         if (!s_script_running) {
             scripts_scan();
@@ -4944,6 +5332,9 @@ static void key_enter(void)
             s_current_app = APP_PYTHON;
             ui_draw_current();
         }
+    } else if (s_page == PAGE_SCRIPT_EDITOR) {
+        script_editor_insert_text("\n");
+        ui_draw_current();
     } else if (s_page == PAGE_CALCULATOR) {
         if (s_calc_history_selected >= 0 && s_calc_history_selected < s_calc_history_count) {
             const char *copy = s_calc_history_select_answer ?
@@ -5044,7 +5435,7 @@ static bool handle_numbered_menu_key(int row, int col)
         int index = digit - 1;
         if (index < s_script_count) {
             s_script_selection = index;
-            run_selected_script();
+            perform_selected_script_action();
             return true;
         }
     } else if (s_page == PAGE_SETTINGS) {
@@ -5420,6 +5811,10 @@ static void dispatch_key(int row, int col)
         s_second_active = false;
         adjust_brightness(-10);
         return;
+    }
+
+    if (s_page == PAGE_SCRIPT_EDITOR && script_editor_handle_key(row, col)) {
+        goto finish_key;
     }
 
     if (handle_alpha_insert(row, col)) {

@@ -49,7 +49,7 @@ void init_usb_msc(void)
         .fat_fs = {
             .base_path = "/data",
             .config = {
-                .format_if_mount_failed = true,
+                .format_if_mount_failed = false,
                 .max_files = 8,
                 .allocation_unit_size = 4096,
             },

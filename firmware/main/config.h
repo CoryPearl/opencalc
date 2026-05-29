@@ -9,6 +9,7 @@
 #define OPENCALC_ENABLE_WIFI 0
 #define OPENCALC_ENABLE_DOOM 1
 #define OPENCALC_ENABLE_SERIAL_BUTTON_INPUT 1 // For debugging without having to use a physical button matrix
+#define OPENCALC_FLASH_STORAGE_IMAGE 1 // Flash firmware/storage_image into the storage partition
 
 /*
  * Hardware switch.

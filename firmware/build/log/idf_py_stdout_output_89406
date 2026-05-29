@@ -1,0 +1,362 @@
+Command: /Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python /Users/corypearl/.espressif/v6.0.1/esp-idf/tools/idf_monitor.py -p /dev/cu.usbmodem5C361416231 -b 115200 --toolchain-prefix xtensa-esp32s3-elf- --target esp32s3 --revision 0 /Users/corypearl/Desktop/opencalc/firmware/build/opencalc.elf /Users/corypearl/Desktop/opencalc/firmware/build/bootloader/bootloader.elf -m '/Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python' '/Users/corypearl/.espressif/v6.0.1/esp-idf/tools/idf.py'
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0x1 (POWERON),boot:0x8 (SPI_FAST_FLASH_BOOT)
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce2820,len:0x14f0
+load:0x403c8700,len:0xda0
+load:0x403cb700,len:0x2f58
+entry 0x403c8908
+[0;32mI (24) boot: ESP-IDF v6.0.1 2nd stage bootloader[0m
+[0;32mI (25) boot: compile time May 29 2026 18:40:28[0m
+[0;32mI (25) boot: Multicore bootloader[0m
+[0;32mI (25) boot: chip revision: v0.2[0m
+[0;32mI (28) boot: efuse block revision: v1.4[0m
+[0;32mI (31) boot.esp32s3: Boot SPI Speed : 80MHz[0m
+[0;32mI (35) boot.esp32s3: SPI Mode       : DIO[0m
+[0;32mI (39) boot.esp32s3: SPI Flash Size : 16MB[0m
+[0;32mI (43) boot: Enabling RNG early entropy source...[0m
+[0;32mI (47) boot: Partition Table:[0m
+[0;32mI (50) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (56) boot:  0 nvs              WiFi data        01 02 00009000 00005000[0m
+[0;32mI (63) boot:  1 phy_init         RF data          01 01 0000e000 00001000[0m
+[0;32mI (69) boot:  2 factory          factory app      00 00 00010000 00400000[0m
+[0;32mI (76) boot:  3 storage          Unknown data     01 81 00410000 00800000[0m
+[0;32mI (82) boot: End of partition table[0m
+[0;32mI (86) esp_image: segment 0: paddr=00010020 vaddr=3c070020 size=2cc30h (183344) map[0m
+[0;32mI (126) esp_image: segment 1: paddr=0003cc58 vaddr=3fc95700 size=033c0h ( 13248) load[0m
+[0;32mI (129) esp_image: segment 2: paddr=00040020 vaddr=42000020 size=62cf0h (404720) map[0m
+[0;32mI (202) esp_image: segment 3: paddr=000a2d18 vaddr=3fc98ac0 size=25d18h (154904) load[0m
+[0;32mI (234) esp_image: segment 4: paddr=000c8a38 vaddr=40374000 size=11698h ( 71320) load[0m
+[0;32mI (250) esp_image: segment 5: paddr=000da0d8 vaddr=50000000 size=00024h (    36) load[0m
+[0;32mI (250) esp_image: segment 6: paddr=000da104 vaddr=600fe000 size=0006ch (   108) load[0m
+[0;32mI (269) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (269) boot: Disabling RNG early entropy source...[0m
+[0;32mI (280) octal_psram: vendor id    : 0x0d (AP)[0m
+[0;32mI (280) octal_psram: dev id       : 0x02 (generation 3)[0m
+[0;32mI (280) octal_psram: density      : 0x03 (64 Mbit)[0m
+[0;32mI (282) octal_psram: good-die     : 0x01 (Pass)[0m
+[0;32mI (286) octal_psram: Latency      : 0x01 (Fixed)[0m
+[0;32mI (290) octal_psram: VCC          : 0x01 (3V)[0m
+[0;32mI (295) octal_psram: SRF          : 0x01 (Fast Refresh)[0m
+[0;32mI (299) octal_psram: BurstType    : 0x01 (Hybrid Wrap)[0m
+[0;32mI (304) octal_psram: BurstLen     : 0x01 (32 Byte)[0m
+[0;32mI (309) octal_psram: Readlatency  : 0x02 (10 cycles@Fixed)[0m
+[0;32mI (314) octal_psram: DriveStrength: 0x00 (1/1)[0m
+[0;32mI (318) MSPI Timing: Enter psram timing tuning[0m
+[0;32mI (323) esp_psram: Found 8MB PSRAM device[0m
+[0;32mI (326) esp_psram: Speed: 80MHz[0m
+[0;32mI (329) cpu_start: Multicore app[0m
+[0;32mI (765) esp_psram: SPI SRAM memory test OK[0m
+[0;32mI (798) cpu_start: GPIO 44 and 43 are used as console UART I/O pins[0m
+[0;32mI (799) cpu_start: Pro cpu start user code[0m
+[0;32mI (799) cpu_start: cpu freq: 160000000 Hz[0m
+[0;32mI (801) app_init: Application information:[0m
+[0;32mI (804) app_init: Project name:     opencalc[0m
+[0;32mI (808) app_init: App version:      a87bbde-dirty[0m
+[0;32mI (813) app_init: Compile time:     May 29 2026 18:40:23[0m
+[0;32mI (818) app_init: ELF file SHA256:  f215819f3...[0m
+[0;32mI (822) app_init: ESP-IDF:          v6.0.1[0m
+[0;32mI (826) efuse_init: Min chip rev:     v0.0[0m
+[0;32mI (830) efuse_init: Max chip rev:     v0.99 [0m
+[0;32mI (834) efuse_init: Chip rev:         v0.2[0m
+[0;32mI (838) heap_init: Initializing. RAM available for dynamic allocation:[0m
+[0;32mI (844) heap_init: At 3FCDA480 len 0000F290 (60 KiB): RAM[0m
+[0;32mI (849) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM[0m
+[0;32mI (854) heap_init: At 3FCF0000 len 00008000 (32 KiB): DRAM[0m
+[0;32mI (859) heap_init: At 600FE06C len 00001F7C (7 KiB): RTCRAM[0m
+[0;32mI (865) esp_psram: Adding pool of 7391K of PSRAM memory to heap allocator[0m
+[0;32mI (872) spi_flash: detected chip: boya[0m
+[0;32mI (875) spi_flash: flash io: dio[0m
+[0;32mI (878) sleep_gpio: Configure to isolate all GPIO pins in sleep state[0m
+[0;32mI (884) sleep_gpio: Enable automatic switching of GPIO sleep configuration[0m
+[0;32mI (891) main_task: Started on CPU0[0m
+[0;32mI (921) esp_psram: Reserving pool of 32K of internal memory for DMA/internal allocations[0m
+[0;32mI (921) main_task: Calling app_main()[0m
+[0;32mI (921) usb: Starting TinyUSB MSC[0m
+[0;32mI (921) usb: MSC event 0, owner=usb[0m
+[0;32mI (931) usb: MSC event 1, owner=app[0m
+[0;33mW (931) tusb_desc: No Device descriptor provided, using default.[0m
+[0;33mW (941) tusb_desc: No Full-speed configuration descriptor provided, using default.[0m
+[0;33mW (941) tusb_desc: No String descriptors provided, using default.[0m
+[0;32mI (951) tusb_desc: [0m
+┌─────────────────────────────────┐
+│  USB Device Descriptor Summary  │
+├───────────────────┬─────────────┤
+│bDeviceClass       │ 0           │
+├───────────────────┼─────────────┤
+│bDeviceSubClass    │ 0           │
+├───────────────────┼─────────────┤
+│bDeviceProtocol    │ 0           │
+├───────────────────┼─────────────┤
+│bMaxPacketSize0    │ 64          │
+├───────────────────┼─────────────┤
+│idVendor           │ 0x303a      │
+├───────────────────┼─────────────┤
+│idProduct          │ 0x4002      │
+├───────────────────┼─────────────┤
+│bcdDevice          │ 0x100       │
+├───────────────────┼─────────────┤
+│iManufacturer      │ 0x1         │
+├───────────────────┼─────────────┤
+│iProduct           │ 0x2         │
+├───────────────────┼─────────────┤
+│iSerialNumber      │ 0x3         │
+├───────────────────┼─────────────┤
+│bNumConfigurations │ 0x1         │
+└───────────────────┴─────────────┘
+[0;32mI (1121) TinyUSB: TinyUSB Driver installed on port 0[0m
+[0;32mI (1171) storage: Volume label set to opencalc[0m
+[0;32mI (1171) board_init: Wake reason mask: 0x00000001[0m
+[0;32mI (1171) board_init: Initialising ILI9341 on SPI2, 320x240[0m
+[0;32mI (1181) board_init: LCD pins: SCLK=12 MOSI=11 MISO=13 CS=10 DC=14 RST=15 BCKL=-1[0m
+[0;32mI (1191) ili9341: LCD panel create success, version: 2.0.2[0m
+[0;32mI (1361) board_init: LCD visible gap: x=0 y=0[0m
+[0;32mI (1361) board_init: Full-frame LCD DMA buffer ready: 153600 bytes[0m
+[0;32mI (1361) board_init: Keypad matrix disabled for this hardware profile[0m
+[0;32mI (1371) board_init: Touch disabled for bring-up[0m
+[0;32mI (1371) board_init: Battery monitor disabled; UI battery icon will show fallback level[0m
+[0;32mI (1381) board_init: Display ready[0m
+[0;32mI (1381) usb: MSC event 0, owner=app[0m
+[0;32mI (1381) usb: MSC event 1, owner=usb[0m
+[0;32mI (1391) usb: USB storage exported to host[0m
+
+Serial button input enabled. Type a number 1-50, then Enter.
+Each entry is normal / 2nd / alpha where applicable.
+01 y=/plot      02 window/tblset 03 zoom/format  04 trace/calc   05 graph/table
+06 2nd          07 mode/quit     08 stat/list    09 left         10 up/bright+
+11 alpha/lock   12 XthetaTn      13 back         14 down/bright- 15 right
+16 math/ops/A   17 []/[]/frac/B  18 prgm/scripts/C 19 vars/conv/D 20 del/clear/E
+21 sqrt/root/F  22 sin/asin/csc  23 cos/acos/sec  24 tan/atan/cot 25 pi/e/J
+26 ^2/^[]/K     27 comma/E/L     28 (/{/M       29 )/}/N       30 +/O
+31 log/10^/P    32 7/Q           33 8/R         34 9/S         35 */T
+36 ln/e^/U      37 4/V           38 5/W         39 6/X         40 -/Y
+41 sto/get/Z    42 1/G           43 2/H         44 3/I         45 / / %
+46 on/home/off  47 0             48 .           49 (-)/ans     50 enter
+
+button> 18
+button> serial button 18 -> r3 c2 prgm
+key r3 c2
+50
+button> serial button 50 -> r9 c4 enter
+key r9 c4
+[0;32mI (18841) usb: MSC event 0, owner=usb[0m
+[0;32mI (18841) usb: MSC event 1, owner=app[0m
+[0;32mI (18841) usb: USB storage mounted for app[0m
+50
+button> serial button 50 -> r9 c4 enter
+key r9 c4
+
+assert failed: heap_caps_free heap_caps_base.c:80 (heap != NULL && "free() target pointer is outside heap areas")
+
+
+Backtrace: 0x4037f1b5:0x3fcde630 0x4037f17d:0x3fcde650 0x4037df95:0x3fcde670 0x4037657d:0x3fcde790 0x4037dfc5:0x3fcde7b0 0x4201d5bd:0x3fcde7d0 0x420209cb:0x3fcde7f0 0x42016e55:0x3fcde920 0x42016f14:0x3fcde9f0 0x420191af:0x3fcdea10 0x42019a0b:0x3fcdea30 0x42019e85:0x3fcdea80 0x42019ed1:0x3fcdeaa0 0x4200e450:0x3fcdead0 0x42009e60:0x3fcdeb00 0x4206090a:0x3fcdeb30
+
+
+
+
+ELF file SHA256: f215819f3
+
+Rebooting...
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0xc (RTC_SW_CPU_RST),boot:0x8 (SPI_FAST_FLASH_BOOT)
+Saved PC:0x4037f355
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce2820,len:0x14f0
+load:0x403c8700,len:0xda0
+load:0x403cb700,len:0x2f58
+entry 0x403c8908
+[0;32mI (29) boot: ESP-IDF v6.0.1 2nd stage bootloader[0m
+[0;32mI (29) boot: compile time May 29 2026 18:40:28[0m
+[0;32mI (29) boot: Multicore bootloader[0m
+[0;32mI (29) boot: chip revision: v0.2[0m
+[0;32mI (32) boot: efuse block revision: v1.4[0m
+[0;32mI (36) boot.esp32s3: Boot SPI Speed : 80MHz[0m
+[0;32mI (40) boot.esp32s3: SPI Mode       : DIO[0m
+[0;32mI (43) boot.esp32s3: SPI Flash Size : 16MB[0m
+[0;32mI (47) boot: Enabling RNG early entropy source...[0m
+[0;32mI (52) boot: Partition Table:[0m
+[0;32mI (54) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (61) boot:  0 nvs              WiFi data        01 02 00009000 00005000[0m
+[0;32mI (67) boot:  1 phy_init         RF data          01 01 0000e000 00001000[0m
+[0;32mI (74) boot:  2 factory          factory app      00 00 00010000 00400000[0m
+[0;32mI (80) boot:  3 storage          Unknown data     01 81 00410000 00800000[0m
+[0;32mI (87) boot: End of partition table[0m
+[0;32mI (90) esp_image: segment 0: paddr=00010020 vaddr=3c070020 size=2cc30h (183344) map[0m
+[0;32mI (130) esp_image: segment 1: paddr=0003cc58 vaddr=3fc95700 size=033c0h ( 13248) load[0m
+[0;32mI (133) esp_image: segment 2: paddr=00040020 vaddr=42000020 size=62cf0h (404720) map[0m
+[0;32mI (207) esp_image: segment 3: paddr=000a2d18 vaddr=3fc98ac0 size=25d18h (154904) load[0m
+[0;32mI (238) esp_image: segment 4: paddr=000c8a38 vaddr=40374000 size=11698h ( 71320) load[0m
+[0;32mI (254) esp_image: segment 5: paddr=000da0d8 vaddr=50000000 size=00024h (    36) load[0m
+[0;32mI (254) esp_image: segment 6: paddr=000da104 vaddr=600fe000 size=0006ch (   108) load[0m
+[0;32mI (273) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (273) boot: Disabling RNG early entropy source...[0m
+[0;32mI (284) octal_psram: vendor id    : 0x0d (AP)[0m
+[0;32mI (284) octal_psram: dev id       : 0x02 (generation 3)[0m
+[0;32mI (284) octal_psram: density      : 0x03 (64 Mbit)[0m
+[0;32mI (286) octal_psram: good-die     : 0x01 (Pass)[0m
+[0;32mI (290) octal_psram: Latency      : 0x01 (Fixed)[0m
+[0;32mI (295) octal_psram: VCC          : 0x01 (3V)[0m
+[0;32mI (299) octal_psram: SRF          : 0x01 (Fast Refresh)[0m
+[0;32mI (304) octal_psram: BurstType    : 0x01 (Hybrid Wrap)[0m
+[0;32mI (309) octal_psram: BurstLen     : 0x01 (32 Byte)[0m
+[0;32mI (313) octal_psram: Readlatency  : 0x02 (10 cycles@Fixed)[0m
+[0;32mI (318) octal_psram: DriveStrength: 0x00 (1/1)[0m
+[0;32mI (323) MSPI Timing: Enter psram timing tuning[0m
+[0;32mI (327) esp_psram: Found 8MB PSRAM device[0m
+[0;32mI (330) esp_psram: Speed: 80MHz[0m
+[0;32mI (334) cpu_start: Multicore app[0m
+[0;32mI (769) esp_psram: SPI SRAM memory test OK[0m
+[0;32mI (803) cpu_start: GPIO 44 and 43 are used as console UART I/O pins[0m
+[0;32mI (803) cpu_start: Pro cpu start user code[0m
+[0;32mI (804) cpu_start: cpu freq: 160000000 Hz[0m
+[0;32mI (805) app_init: Application information:[0m
+[0;32mI (809) app_init: Project name:     opencalc[0m
+[0;32mI (813) app_init: App version:      a87bbde-dirty[0m
+[0;32mI (817) app_init: Compile time:     May 29 2026 18:40:23[0m
+[0;32mI (822) app_init: ELF file SHA256:  f215819f3...[0m
+[0;32mI (827) app_init: ESP-IDF:          v6.0.1[0m
+[0;32mI (830) efuse_init: Min chip rev:     v0.0[0m
+[0;32mI (834) efuse_init: Max chip rev:     v0.99 [0m
+[0;32mI (838) efuse_init: Chip rev:         v0.2[0m
+[0;32mI (842) heap_init: Initializing. RAM available for dynamic allocation:[0m
+[0;32mI (848) heap_init: At 3FCDA480 len 0000F290 (60 KiB): RAM[0m
+[0;32mI (853) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM[0m
+[0;32mI (859) heap_init: At 3FCF0000 len 00008000 (32 KiB): DRAM[0m
+[0;32mI (864) heap_init: At 600FE06C len 00001F7C (7 KiB): RTCRAM[0m
+[0;32mI (869) esp_psram: Adding pool of 7391K of PSRAM memory to heap allocator[0m
+[0;32mI (876) spi_flash: detected chip: boya[0m
+[0;32mI (879) spi_flash: flash io: dio[0m
+[0;32mI (882) sleep_gpio: Configure to isolate all GPIO pins in sleep state[0m
+[0;32mI (889) sleep_gpio: Enable automatic switching of GPIO sleep configuration[0m
+[0;32mI (896) main_task: Started on CPU0[0m
+[0;32mI (926) esp_psram: Reserving pool of 32K of internal memory for DMA/internal allocations[0m
+[0;32mI (926) main_task: Calling app_main()[0m
+[0;32mI (926) usb: Starting TinyUSB MSC[0m
+[0;32mI (926) usb: MSC event 0, owner=usb[0m
+[0;32mI (936) usb: MSC event 1, owner=app[0m
+[0;33mW (936) tusb_desc: No Device descriptor provided, using default.[0m
+[0;33mW (946) tusb_desc: No Full-speed configuration descriptor provided, using default.[0m
+[0;33mW (946) tusb_desc: No String descriptors provided, using default.[0m
+[0;32mI (956) tusb_desc: [0m
+┌─────────────────────────────────┐
+│  USB Device Descriptor Summary  │
+├───────────────────┬─────────────┤
+│bDeviceClass       │ 0           │
+├───────────────────┼─────────────┤
+│bDeviceSubClass    │ 0           │
+├───────────────────┼─────────────┤
+│bDeviceProtocol    │ 0           │
+├───────────────────┼─────────────┤
+│bMaxPacketSize0    │ 64          │
+├───────────────────┼─────────────┤
+│idVendor           │ 0x303a      │
+├───────────────────┼─────────────┤
+│idProduct          │ 0x4002      │
+├───────────────────┼─────────────┤
+│bcdDevice          │ 0x100       │
+├───────────────────┼─────────────┤
+│iManufacturer      │ 0x1         │
+├───────────────────┼─────────────┤
+│iProduct           │ 0x2         │
+├───────────────────┼─────────────┤
+│iSerialNumber      │ 0x3         │
+├───────────────────┼─────────────┤
+│bNumConfigurations │ 0x1         │
+└───────────────────┴─────────────┘
+[0;32mI (1126) TinyUSB: TinyUSB Driver installed on port 0[0m
+[0;32mI (1176) storage: Volume label set to opencalc[0m
+[0;32mI (1176) board_init: Wake reason mask: 0x00000001[0m
+[0;32mI (1176) board_init: Initialising ILI9341 on SPI2, 320x240[0m
+[0;32mI (1186) board_init: LCD pins: SCLK=12 MOSI=11 MISO=13 CS=10 DC=14 RST=15 BCKL=-1[0m
+[0;32mI (1196) ili9341: LCD panel create success, version: 2.0.2[0m
+[0;32mI (1366) board_init: LCD visible gap: x=0 y=0[0m
+[0;32mI (1366) board_init: Full-frame LCD DMA buffer ready: 153600 bytes[0m
+[0;32mI (1366) board_init: Keypad matrix disabled for this hardware profile[0m
+[0;32mI (1376) board_init: Touch disabled for bring-up[0m
+[0;32mI (1376) board_init: Battery monitor disabled; UI battery icon will show fallback level[0m
+[0;32mI (1386) board_init: Display ready[0m
+[0;32mI (1386) usb: MSC event 0, owner=app[0m
+[0;32mI (1386) usb: MSC event 1, owner=usb[0m
+[0;32mI (1396) usb: USB storage exported to host[0m
+
+Serial button input enabled. Type a number 1-50, then Enter.
+Each entry is normal / 2nd / alpha where applicable.
+01 y=/plot      02 window/tblset 03 zoom/format  04 trace/calc   05 graph/table
+06 2nd          07 mode/quit     08 stat/list    09 left         10 up/bright+
+11 alpha/lock   12 XthetaTn      13 back         14 down/bright- 15 right
+16 math/ops/A   17 []/[]/frac/B  18 prgm/scripts/C 19 vars/conv/D 20 del/clear/E
+21 sqrt/root/F  22 sin/asin/csc  23 cos/acos/sec  24 tan/atan/cot 25 pi/e/J
+26 ^2/^[]/K     27 comma/E/L     28 (/{/M       29 )/}/N       30 +/O
+31 log/10^/P    32 7/Q           33 8/R         34 9/S         35 */T
+36 ln/e^/U      37 4/V           38 5/W         39 6/X         40 -/Y
+41 sto/get/Z    42 1/G           43 2/H         44 3/I         45 / / %
+46 on/home/off  47 0             48 .           49 (-)/ans     50 enter
+
+button> 18
+button> serial button 18 -> r3 c2 prgm
+key r3 c2
+14
+button> serial button 14 -> r2 c3 down
+key r2 c3
+50
+button> serial button 50 -> r9 c4 enter
+key r9 c4
+[0;32mI (6956) usb: MSC event 0, owner=usb[0m
+[0;32mI (6956) usb: MSC event 1, owner=app[0m
+[0;32mI (6956) usb: USB storage mounted for app[0m
+50
+button> serial button 50 -> r9 c4 enter
+key r9 c4
+18
+button> serial button 18 -> r3 c2 prgm
+key r3 c2
+14
+button> serial button 14 -> r2 c3 down
+key r2 c3
+1 50
+button> serial button 50 -> r9 c4 enter
+key r9 c4
+[0;32mI (29416) usb: USB storage mounted for app[0m
+50
+button> serial button 50 -> r9 c4 enter
+key r9 c4
+14
+button> serial button 14 -> r2 c3 down
+key r2 c3
+14
+button> serial button 14 -> r2 c3 down
+key r2 c3
+15
+button> serial button 15 -> r2 c4 right
+key r2 c4
+10
+button> serial button 10 -> r1 c4 up
+key r1 c4
+10
+button> serial button 10 -> r1 c4 up
+key r1 c4
+10
+button> serial button 10 -> r1 c4 up
+key r1 c4
+10
+button> serial button 10 -> r1 c4 up
+key r1 c4
+33
+button> serial button 33 -> r6 c2 8
+key r6 c2
+6
+button> serial button 6 -> r1 c0 2nd
+key r1 c0
+50
+button> serial button 50 -> r9 c4 enter
+key r9 c4
+50
+button> serial button 50 -> r9 c4 enter
+key r9 c4
+18
+button> serial button 18 -> r3 c2 prgm
+key r3 c2

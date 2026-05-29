@@ -19,6 +19,7 @@ endfunction()
 
 opencalc_read_define(OPENCALC_FACTORY_APP_PARTITION_SIZE OPENCALC_FACTORY_APP_PARTITION_SIZE 0x400000)
 opencalc_read_define(OPENCALC_STORAGE_PARTITION_SIZE OPENCALC_STORAGE_PARTITION_SIZE 0x800000)
+opencalc_read_define(OPENCALC_FLASH_STORAGE_IMAGE OPENCALC_FLASH_STORAGE_IMAGE 1)
 
 set(OPENCALC_FACTORY_APP_PARTITION_OFFSET 0x10000)
 math(EXPR OPENCALC_STORAGE_PARTITION_OFFSET
@@ -43,4 +44,13 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
 
 set(OPENCALC_STORAGE_IMAGE_DIR "${CMAKE_CURRENT_LIST_DIR}/storage_image")
 
-fatfs_create_spiflash_image(storage "${OPENCALC_STORAGE_IMAGE_DIR}" FLASH_IN_PROJECT)
+if(OPENCALC_FLASH_STORAGE_IMAGE)
+    if(NOT EXISTS "${OPENCALC_STORAGE_IMAGE_DIR}")
+        message(FATAL_ERROR "OPENCALC_FLASH_STORAGE_IMAGE is enabled, but ${OPENCALC_STORAGE_IMAGE_DIR} does not exist")
+    endif()
+
+    message(STATUS "OpenCalc storage image: flashing ${OPENCALC_STORAGE_IMAGE_DIR} into the storage partition")
+    fatfs_create_spiflash_image(storage "${OPENCALC_STORAGE_IMAGE_DIR}" FLASH_IN_PROJECT)
+else()
+    message(STATUS "OpenCalc storage image: disabled; idf.py flash will not write the storage partition")
+endif()

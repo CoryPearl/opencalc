@@ -1,7 +1,7 @@
 {
     "version":            "1.3",
     "project_name":       "opencalc",
-    "project_version":    "1",
+    "project_version":    "a87bbde-dirty",
     "project_path":       "/Users/corypearl/Desktop/opencalc/firmware",
     "idf_path":           "/Users/corypearl/.espressif/v6.0.1/esp-idf",
     "build_dir":          "/Users/corypearl/Desktop/opencalc/firmware/build",

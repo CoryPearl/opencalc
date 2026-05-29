@@ -176,14 +176,63 @@ typedef struct {
     int loop_signal;
 } parser_t;
 
+#ifdef ESP_PLATFORM
+#ifndef PY_PARSER_POOL_SIZE
+#define PY_PARSER_POOL_SIZE 6
+#endif
+static parser_t *s_parser_pool[PY_PARSER_POOL_SIZE];
+static int s_parser_pool_used[PY_PARSER_POOL_SIZE];
+#endif
+
 static parser_t *parser_alloc(void) {
 #ifdef ESP_PLATFORM
-    parser_t *parser = (parser_t *)heap_caps_calloc(1, sizeof(parser_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    if (parser != NULL) {
-        return parser;
+    for (int i = 0; i < PY_PARSER_POOL_SIZE; i++) {
+        if (s_parser_pool_used[i]) {
+            continue;
+        }
+        if (s_parser_pool[i] == NULL) {
+            s_parser_pool[i] = (parser_t *)heap_caps_malloc(sizeof(parser_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+            if (s_parser_pool[i] == NULL) {
+                s_parser_pool[i] = (parser_t *)malloc(sizeof(parser_t));
+            }
+        }
+        if (s_parser_pool[i] != NULL) {
+            memset(s_parser_pool[i], 0, sizeof(parser_t));
+            s_parser_pool_used[i] = 1;
+            return s_parser_pool[i];
+        }
+    }
+    return NULL;
+#else
+    return (parser_t *)calloc(1, sizeof(parser_t));
+#endif
+}
+
+static void parser_free(parser_t *parser) {
+    if (parser == NULL) {
+        return;
+    }
+#ifdef ESP_PLATFORM
+    for (int i = 0; i < PY_PARSER_POOL_SIZE; i++) {
+        if (s_parser_pool[i] == parser) {
+            s_parser_pool_used[i] = 0;
+            return;
+        }
+    }
+    return;
+#else
+    free(parser);
+#endif
+}
+
+static char *program_buffer_alloc(void) {
+#ifdef ESP_PLATFORM
+    char *buffer = (char *)heap_caps_malloc(PY_MAX_PROGRAM, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (buffer != NULL) {
+        return buffer;
     }
 #endif
-    return (parser_t *)calloc(1, sizeof(parser_t));
+    return (char *)malloc(PY_MAX_PROGRAM);
 }
 
 static void py_error(py_t *py, const char *message) {
@@ -3143,19 +3192,19 @@ static py_value_t py_eval_expression(py_t *py, const char *source) {
     py->error[0] = '\0';
 
     if (!lex(parser)) {
-        free(parser);
+        parser_free(parser);
         return py_none();
     }
     value = parse_expression(parser);
     if (py_has_error(py)) {
-        free(parser);
+        parser_free(parser);
         return py_none();
     }
     if (!expect(parser, TOK_EOF, "unexpected trailing input")) {
-        free(parser);
+        parser_free(parser);
         return py_none();
     }
-    free(parser);
+    parser_free(parser);
     return value;
 }
 
@@ -3258,19 +3307,19 @@ int py_run(py_t *py, const char *line, char *output, size_t output_size) {
     }
 
     if (!lex(parser)) {
-        free(parser);
+        parser_free(parser);
         return 0;
     }
     if (!parse_statement_list(parser)) {
-        free(parser);
+        parser_free(parser);
         return 0;
     }
     if (!expect(parser, TOK_EOF, "unexpected trailing input")) {
-        free(parser);
+        parser_free(parser);
         return 0;
     }
     ok = !py_has_error(py);
-    free(parser);
+    parser_free(parser);
     return ok;
 }
 
@@ -3410,13 +3459,14 @@ static int append_source_line(py_t *py, char *program, size_t program_size, cons
 
 int py_run_source(py_t *py, const char *source, char *output, size_t output_size) {
     char line[PY_MAX_LINE];
-    char program[PY_MAX_PROGRAM];
+    char *program;
     int indents[16];
     int depth = 0;
     int previous_colon = 0;
     size_t line_len = 0;
     size_t source_line = 1;
     const char *s;
+    int ok = 0;
 
     if (py == NULL || source == NULL) {
         return 0;
@@ -3430,6 +3480,12 @@ int py_run_source(py_t *py, const char *source, char *output, size_t output_size
     py->error_col = 0;
     py->current_line = 0;
     py->current_col = 0;
+
+    program = program_buffer_alloc();
+    if (program == NULL) {
+        py_error(py, "out of memory");
+        return 0;
+    }
     program[0] = '\0';
     indents[0] = 0;
     for (s = source; ; ++s) {
@@ -3437,8 +3493,8 @@ int py_run_source(py_t *py, const char *source, char *output, size_t output_size
             line[line_len] = '\0';
             py->current_line = source_line;
             py->current_col = 1;
-            if (!append_source_line(py, program, sizeof(program), line, indents, &depth, &previous_colon)) {
-                return 0;
+            if (!append_source_line(py, program, PY_MAX_PROGRAM, line, indents, &depth, &previous_colon)) {
+                goto done;
             }
 
             line_len = 0;
@@ -3453,28 +3509,33 @@ int py_run_source(py_t *py, const char *source, char *output, size_t output_size
             py->current_line = source_line;
             py->current_col = line_len + 1;
             py_error(py, "line too long");
-            return 0;
+            goto done;
         }
         line[line_len++] = *s;
     }
 
     while (depth > 0) {
-        if (!append_program_text(py, program, sizeof(program), " }")) {
-            return 0;
+        if (!append_program_text(py, program, PY_MAX_PROGRAM, " }")) {
+            goto done;
         }
         depth--;
     }
-    return py_run(py, program, output, output_size);
+    ok = py_run(py, program, output, output_size);
+
+done:
+    free(program);
+    return ok;
 }
 
 int py_run_file(py_t *py, const char *path, char *output, size_t output_size) {
     FILE *file;
     char line[PY_MAX_LINE];
-    char program[PY_MAX_PROGRAM];
+    char *program;
     int indents[16];
     int depth = 0;
     int previous_colon = 0;
     size_t source_line = 1;
+    int ok = 0;
 
     if (py == NULL || path == NULL) {
         return 0;
@@ -3488,9 +3549,16 @@ int py_run_file(py_t *py, const char *path, char *output, size_t output_size) {
     py->current_line = 0;
     py->current_col = 0;
 
+    program = program_buffer_alloc();
+    if (program == NULL) {
+        py_error(py, "out of memory");
+        return 0;
+    }
+
     file = fopen(path, "r");
     if (file == NULL) {
         py_error(py, "could not open file");
+        free(program);
         return 0;
     }
     program[0] = '\0';
@@ -3503,25 +3571,30 @@ int py_run_file(py_t *py, const char *path, char *output, size_t output_size) {
             fclose(file);
             py->current_col = strlen(line);
             py_error(py, "line too long");
+            free(program);
             return 0;
         }
-        if (!append_source_line(py, program, sizeof(program), line, indents, &depth, &previous_colon)) {
+        if (!append_source_line(py, program, PY_MAX_PROGRAM, line, indents, &depth, &previous_colon)) {
             fclose(file);
+            free(program);
             return 0;
         }
         source_line++;
     }
 
     while (depth > 0) {
-        if (!append_program_text(py, program, sizeof(program), " }")) {
+        if (!append_program_text(py, program, PY_MAX_PROGRAM, " }")) {
             fclose(file);
+            free(program);
             return 0;
         }
         depth--;
     }
 
     fclose(file);
-    return py_run(py, program, output, output_size);
+    ok = py_run(py, program, output, output_size);
+    free(program);
+    return ok;
 }
 
 #ifdef PY_DESKTOP_MAIN
