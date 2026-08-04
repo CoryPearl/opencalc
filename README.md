@@ -28,9 +28,18 @@ The current prototype firmware brings up:
 
 See PCB ReadMe for hardware specifications
 
+Cost breakdown (Single PCB not bulk, before shipping and not including manufacturing):
+
+- The board: ~$7
+- The soldederd parts: ~$23
+- Battery: $6
+- Screen: $4
+
+A little higher than I'd like but this is the first prototype.
+
 ## User And Debug Header
 
-Test pads on the back.
+Test pads are located on the back, as well as 2 LEDs. One LED is on the front which is a red power LED, then the 2 on the back are a Power Good green LED and a Charging blue LED
 
 Power off is software-only for the current firmware: `2nd` + `On` shuts off the display/backlight and puts the ESP32-S3 into deep sleep. The PCB should prioritize low quiescent current parts and an ON/HOME key matrix wake path instead of a required firmware-controlled true power latch.
 
