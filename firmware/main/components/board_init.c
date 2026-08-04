@@ -58,12 +58,20 @@ static void log_wakeup_reason(void)
 /* ── Pin map ─────────────────────────────────────────────────── */
 // Screen.
 //
-// MSP2807-style 14-pin LCD/touch header wiring.
+// OpenCalc V3 EasyEDA schematic wiring.
+// Source: hardware/pcb/V3/SCH_Schematic1_1-P1_2026-06-03.png
 //
-// LCD touch is enabled. If touch is not wired yet, set ENABLE_TOUCH_INPUT to 0.
+// ESP32-S3 module nets:
+//   ROW0..ROW9          -> GPIO1,2,42,4,5,6,48,8,9,16
+//   COL0..COL4          -> GPIO17,18,38,39,40, pulled up to 3V3
+//   USB_DM / USB_DP     -> GPIO19 / GPIO20
+//   UART_TX / UART_RX   -> TXD0 / RXD0
+//   VBAT_DIV            -> GPIO7 / ADC1 channel 6
+//   CHG_STAT            -> GPIO41, active low from BQ24074 CHG#
+//   LCD_BACKL           -> GPIO47, drives TPS22918 ON pin
 //
-// LCD and touch are intentionally on separate SPI pins so the PCB can wire
-// every touch signal directly instead of sharing the LCD SPI nets:
+// LCD touch is not wired on this PCB revision, so ENABLE_TOUCH_INPUT is 0.
+//
 //   VCC                  -> 3V3
 //   GND                  -> GND
 //   LCD_CS               -> GPIO10
@@ -72,14 +80,10 @@ static void log_wakeup_reason(void)
 //   LCD_SDI / LCD_MOSI   -> GPIO11
 //   LCD_SCK / LCD_SCLK   -> GPIO12
 //   LCD_LED / backlight  -> TPS22918 load-switch output through 33 ohm.
-//                            TPS22918 ON/EN is driven by GPIO36.
+//                            TPS22918 ON/EN is driven by GPIO47.
 //                            Do not feed the LCD LED pin with 5V.
 //   LCD_SDO / LCD_MISO   -> GPIO13
-//   T_CLK                -> GPIO21
-//   T_CS                 -> GPIO41
-//   T_DIN                -> GPIO47
-//   T_DO / T_DOUT        -> GPIO48
-//   T_IRQ                -> GPIO42
+//   Touch pins           -> unwired
 #ifndef OPENCALC_HARDWARE_PROFILE_DEV_BOARD
 #define OPENCALC_HARDWARE_PROFILE_DEV_BOARD 0
 #endif
@@ -93,7 +97,13 @@ static void log_wakeup_reason(void)
 #define OPENCALC_HARDWARE_IS_PCB_V3 (OPENCALC_HARDWARE_PROFILE == OPENCALC_HARDWARE_PROFILE_PCB_V3)
 
 #define ENABLE_KEYPAD_MATRIX_INPUT OPENCALC_HARDWARE_IS_PCB_V3
-#define ENABLE_TOUCH_INPUT OPENCALC_HARDWARE_IS_PCB_V3
+#ifndef OPENCALC_KEYPAD_HAS_PER_KEY_DIODES
+#define OPENCALC_KEYPAD_HAS_PER_KEY_DIODES 0
+#endif
+#ifndef OPENCALC_KEYPAD_ROW_SETTLE_US
+#define OPENCALC_KEYPAD_ROW_SETTLE_US 5
+#endif
+#define ENABLE_TOUCH_INPUT 0
 #define PIN_NUM_LCD_SCLK 12
 #define PIN_NUM_LCD_MOSI 11
 #define PIN_NUM_LCD_MISO 13
@@ -101,15 +111,15 @@ static void log_wakeup_reason(void)
 #define PIN_NUM_LCD_RST  15
 #define PIN_NUM_LCD_CS   10
 #if OPENCALC_HARDWARE_IS_PCB_V3
-#define PIN_NUM_LCD_BCKL GPIO_NUM_36
+#define PIN_NUM_LCD_BCKL GPIO_NUM_47
 #else
 #define PIN_NUM_LCD_BCKL GPIO_NUM_NC
 #endif
-#define PIN_NUM_TOUCH_CLK 21
-#define PIN_NUM_TOUCH_DIN 47
-#define PIN_NUM_TOUCH_DO  48
-#define PIN_NUM_TOUCH_CS  41
-#define PIN_NUM_TOUCH_IRQ 42
+#define PIN_NUM_TOUCH_CLK GPIO_NUM_NC
+#define PIN_NUM_TOUCH_DIN GPIO_NUM_NC
+#define PIN_NUM_TOUCH_DO  GPIO_NUM_NC
+#define PIN_NUM_TOUCH_CS  GPIO_NUM_NC
+#define PIN_NUM_TOUCH_IRQ GPIO_NUM_NC
 #define ONBOARD_RGB_LED_ENABLED 0
 #define PIN_NUM_ONBOARD_RGB_LED GPIO_NUM_NC
 #define LCD_BCKL_LEDC_MODE LEDC_LOW_SPEED_MODE
@@ -123,25 +133,25 @@ static void log_wakeup_reason(void)
 #define PIN_NUM_POWER_HOLD GPIO_NUM_NC
 #define BATTERY_MONITOR_ENABLED OPENCALC_HARDWARE_IS_PCB_V3
 #define BATTERY_ADC_UNIT ADC_UNIT_1
-#define BATTERY_ADC_CHANNEL ADC_CHANNEL_4
-#define PIN_NUM_BATTERY_ADC GPIO_NUM_35
+#define BATTERY_ADC_CHANNEL ADC_CHANNEL_6
+#define PIN_NUM_BATTERY_ADC GPIO_NUM_7
 #define BATTERY_ADC_ATTEN ADC_ATTEN_DB_12
 #define BATTERY_DIVIDER_R_TOP_OHMS 100000.0f
 #define BATTERY_DIVIDER_R_BOTTOM_OHMS 100000.0f
 #define BATTERY_EMPTY_MV 3300
 #define BATTERY_FULL_MV 4200
 #define BATTERY_CHARGE_STATUS_ENABLED OPENCALC_HARDWARE_IS_PCB_V3
-#define PIN_NUM_BATTERY_CHARGE_STATUS GPIO_NUM_37
+#define PIN_NUM_BATTERY_CHARGE_STATUS GPIO_NUM_41
 #define BATTERY_CHARGE_STATUS_ACTIVE_LOW 1
  
 // Button matrix
 #define PIN_NUM_KEYPAD_ROW0 GPIO_NUM_1
 #define PIN_NUM_KEYPAD_ROW1 GPIO_NUM_2
-#define PIN_NUM_KEYPAD_ROW2 GPIO_NUM_3
+#define PIN_NUM_KEYPAD_ROW2 GPIO_NUM_42
 #define PIN_NUM_KEYPAD_ROW3 GPIO_NUM_4
 #define PIN_NUM_KEYPAD_ROW4 GPIO_NUM_5
 #define PIN_NUM_KEYPAD_ROW5 GPIO_NUM_6
-#define PIN_NUM_KEYPAD_ROW6 GPIO_NUM_7
+#define PIN_NUM_KEYPAD_ROW6 GPIO_NUM_48
 #define PIN_NUM_KEYPAD_ROW7 GPIO_NUM_8
 #define PIN_NUM_KEYPAD_ROW8 GPIO_NUM_9
 #define PIN_NUM_KEYPAD_ROW9 GPIO_NUM_16
@@ -239,7 +249,7 @@ static const board_key_t KEYPAD_MAP[BOARD_KEYPAD_ROWS][BOARD_KEYPAD_COLS] = {
     {
         {"on (home)", "off", NULL, BOARD_KEY_ROLE_HOME},
         {"0", NULL, NULL, BOARD_KEY_ROLE_NONE},
-        {".", NULL, NULL, BOARD_KEY_ROLE_NONE},
+        {".", NULL, "#", BOARD_KEY_ROLE_NONE},
         {"(-)", "ans", NULL, BOARD_KEY_ROLE_NONE},
         {"enter", NULL, NULL, BOARD_KEY_ROLE_NONE},
     },
@@ -447,6 +457,56 @@ static void backlight_off(void)
     ledc_update_duty(LCD_BCKL_LEDC_MODE, LCD_BCKL_LEDC_CHANNEL);
 }
 
+static void sleep_drive_output(gpio_num_t pin, int level)
+{
+    if (pin == GPIO_NUM_NC) {
+        return;
+    }
+
+    (void)gpio_reset_pin(pin);
+    (void)gpio_set_direction(pin, GPIO_MODE_OUTPUT);
+    (void)gpio_set_level(pin, level);
+    (void)gpio_sleep_sel_en(pin);
+    (void)gpio_sleep_set_direction(pin, GPIO_MODE_OUTPUT);
+    (void)gpio_sleep_set_pull_mode(pin, GPIO_FLOATING);
+}
+
+static void sleep_drive_input_pulldown(gpio_num_t pin)
+{
+    if (pin == GPIO_NUM_NC) {
+        return;
+    }
+
+    (void)gpio_reset_pin(pin);
+    (void)gpio_set_direction(pin, GPIO_MODE_INPUT);
+    (void)gpio_set_pull_mode(pin, GPIO_PULLDOWN_ONLY);
+    (void)gpio_sleep_sel_en(pin);
+    (void)gpio_sleep_set_direction(pin, GPIO_MODE_INPUT);
+    (void)gpio_sleep_set_pull_mode(pin, GPIO_PULLDOWN_ONLY);
+}
+
+static void lcd_prepare_for_deep_sleep(void)
+{
+    backlight_off();
+
+    if (s_panel_handle != NULL) {
+        (void)esp_lcd_panel_disp_on_off(s_panel_handle, false);
+    }
+
+    /*
+     * The PCB V3 backlight uses GPIO47 to drive the TPS22918 ON pin.
+     * Put that pin back under GPIO control and hold it low for deep sleep.
+     */
+    sleep_drive_output(PIN_NUM_LCD_BCKL, 0);
+
+    sleep_drive_output(PIN_NUM_LCD_CS, 1);
+    sleep_drive_output(PIN_NUM_LCD_DC, 0);
+    sleep_drive_output(PIN_NUM_LCD_RST, 0);
+    sleep_drive_output(PIN_NUM_LCD_SCLK, 0);
+    sleep_drive_output(PIN_NUM_LCD_MOSI, 0);
+    sleep_drive_input_pulldown(PIN_NUM_LCD_MISO);
+}
+
 static void keypad_init(void)
 {
 #if !ENABLE_KEYPAD_MATRIX_INPUT
@@ -489,7 +549,12 @@ static void keypad_init(void)
         ESP_ERROR_CHECK(gpio_isr_handler_add(KEYPAD_COL_PINS[col], keypad_gpio_isr, NULL));
     }
 
-    ESP_LOGI(TAG, "Keypad ready: %dx%d matrix", BOARD_KEYPAD_ROWS, BOARD_KEYPAD_COLS);
+    ESP_LOGI(TAG,
+             "Keypad ready: %dx%d matrix, per-key diodes=%d, settle=%dus",
+             BOARD_KEYPAD_ROWS,
+             BOARD_KEYPAD_COLS,
+             OPENCALC_KEYPAD_HAS_PER_KEY_DIODES,
+             OPENCALC_KEYPAD_ROW_SETTLE_US);
 #endif
 }
 
@@ -763,6 +828,7 @@ bool board_keypad_scan(int *row, int *col)
         }
 
         gpio_set_level(KEYPAD_ROW_PINS[scan_row], 0);
+        esp_rom_delay_us(OPENCALC_KEYPAD_ROW_SETTLE_US);
 
         for (int scan_col = 0; scan_col < BOARD_KEYPAD_COLS; scan_col++) {
             if (gpio_get_level(KEYPAD_COL_PINS[scan_col]) == 0) {
@@ -803,7 +869,7 @@ bool board_keypad_scan_matrix(bool pressed[BOARD_KEYPAD_ROWS][BOARD_KEYPAD_COLS]
         }
 
         gpio_set_level(KEYPAD_ROW_PINS[scan_row], 0);
-        esp_rom_delay_us(50);
+        esp_rom_delay_us(OPENCALC_KEYPAD_ROW_SETTLE_US);
 
         for (int scan_col = 0; scan_col < BOARD_KEYPAD_COLS; scan_col++) {
             if (gpio_get_level(KEYPAD_COL_PINS[scan_col]) == 0) {
@@ -896,16 +962,8 @@ void board_enter_deep_sleep(void)
 {
     ESP_LOGI(TAG, "Entering software off (deep sleep)");
 
-    backlight_off();
-    if (s_panel_handle != NULL) {
-        esp_lcd_panel_disp_on_off(s_panel_handle, false);
-    }
+    lcd_prepare_for_deep_sleep();
     onboard_led_off();
-
-    gpio_set_level(PIN_NUM_LCD_CS, 1);
-#if ENABLE_TOUCH_INPUT
-    gpio_set_level(PIN_NUM_TOUCH_CS, 1);
-#endif
 
     ESP_ERROR_CHECK(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL));
 
@@ -1076,6 +1134,7 @@ static const uint8_t *glyph_for(char c)
     static const uint8_t star[7]     = {0x00, 0x15, 0x0e, 0x1f, 0x0e, 0x15, 0x00};
     static const uint8_t percent[7]  = {0x18, 0x19, 0x02, 0x04, 0x08, 0x13, 0x03};
     static const uint8_t equals[7]   = {0x00, 0x00, 0x1f, 0x00, 0x1f, 0x00, 0x00};
+    static const uint8_t hash[7]     = {0x0a, 0x0a, 0x1f, 0x0a, 0x1f, 0x0a, 0x0a};
     static const uint8_t lparen[7]   = {0x02, 0x04, 0x08, 0x08, 0x08, 0x04, 0x02};
     static const uint8_t rparen[7]   = {0x08, 0x04, 0x02, 0x02, 0x02, 0x04, 0x08};
     static const uint8_t unknown[7]  = {0x0e, 0x11, 0x01, 0x02, 0x04, 0x00, 0x04};
@@ -1130,6 +1189,7 @@ static const uint8_t *glyph_for(char c)
     case '*': return star;
     case '%': return percent;
     case '=': return equals;
+    case '#': return hash;
     case '(': return lparen;
     case ')': return rparen;
     case ' ': return space;

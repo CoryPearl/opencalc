@@ -92,6 +92,31 @@ static unsigned char doom_next_weapon_key(void)
 
 static unsigned char doom_key_for_matrix_position(int row, int col)
 {
+    // Doom-only controls: Zoom becomes Use/Open and 1-7 select weapons.
+    if (row == 0 && col == 2) {
+        return KEY_USE;
+    }
+    if (row == 0 && col == 3) {
+        return KEY_TAB;
+    }
+    if (row == 8 && col >= 1 && col <= 3) {
+        return (unsigned char)('1' + (col - 1));
+    }
+    if (row == 7 && col >= 1 && col <= 3) {
+        return (unsigned char)('4' + (col - 1));
+    }
+    if (row == 6 && col == 1) {
+        return '7';
+    }
+    if (row == 1 && col == 1) {
+        return (unsigned char)key_speed;
+    }
+    if (row == 2 && col == 2) {
+        return KEY_ESCAPE;
+    }
+    if (row == 3 && col == 4) {
+        return (unsigned char)key_strafe;
+    }
     if (row == 1 && col == 3) {
         return KEY_LEFTARROW;
     }
@@ -113,10 +138,6 @@ static unsigned char doom_key_for_matrix_position(int row, int col)
     if (row == 9 && col == 4) {
         return KEY_ENTER;
     }
-    if (row == 1 && col == 1) {
-        return KEY_ESCAPE;
-    }
-
     return 0;
 }
 

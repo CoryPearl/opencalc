@@ -1,6 +1,6 @@
-# OpenCalc Firmware
+# OpenCalc OS
 
-ESP-IDF firmware for the OpenCalc ESP32-S3 board. It brings up the ILI9341 LCD, touch controller, button matrix, USB mass storage, script storage, calculator apps, serial button simulation, and optional Doom support.
+OpenCalc OS is the open-source ESP-IDF operating environment for the OpenCalc ESP32-S3 graphing calculator. It brings up the ILI9341 LCD, touch controller, button matrix, USB mass storage, script storage, calculator apps, math and graphing engines, serial button simulation, power management, and optional Doom support.
 
 ## Build and Flash
 
@@ -15,7 +15,7 @@ idf.py flash
 
 Use `idf.py flash`, not `idf.py app-flash`, because the normal flash target also writes the generated storage image to the `storage` partition.
 
-To edit the firmware, change files under `main/`, rebuild with `idf.py build`, then flash with `idf.py flash`. Use `idf.py monitor` to view logs after flashing.
+To edit OpenCalc OS, change files under `main/`, rebuild with `idf.py build`, then flash with `idf.py flash`. Use `idf.py monitor` to view logs after flashing.
 
 Common commands:
 
@@ -85,7 +85,7 @@ Power off is software-only in the current firmware. `2nd` + `On` turns off the d
 
 ## Controls
 
-The firmware supports both the physical 10×5 button matrix and serial button simulation. When serial input is enabled, type a button number from `1` to `50` and press Enter. Serial button requests are queued and handled by the main UI task so scripts and drawing do not run from the serial input task. The serial numbering matches `hardware/graphic-designs/Design-V2-keymap.png`.
+OpenCalc OS supports both the physical 10×5 button matrix and serial button simulation. When serial input is enabled, type a button number from `1` to `50` and press Enter. Serial button requests are queued and handled by the main UI task so scripts and drawing do not run from the serial input task. The serial numbering matches `hardware/graphic-designs/Design-V2-keymap.png`.
 
 Important key behavior:
 
@@ -104,7 +104,7 @@ Important key behavior:
 
 ## Calculator Feature Coverage
 
-The firmware exposes only features that have a real implementation path. TI-style features not listed as working here should be treated as planned, not complete.
+OpenCalc OS exposes only features that have a real implementation path. TI-style features not listed as working here should be treated as planned, not complete.
 
 Working now:
 
@@ -162,9 +162,19 @@ Doom controls:
 - Direction keys move.
 - `Y=` shoots.
 - `Window` cycles weapons.
+- `Zoom` uses switches and opens doors.
+- `Trace` opens and closes the automap.
+- Number keys `1` through `7` directly select weapon slots.
+- Hold `Mode` while moving to run or sprint.
+- Hold `Del` with Left or Right to strafe.
 - `Enter` selects/uses menus.
-- `Mode` is back/escape.
+- `Back` is back/escape.
 - `ON (Home)` quits Doom and returns home.
+
+The production 10x5 keypad expects one series diode per key. With columns
+pulled high and rows scanned low, diode anodes face the columns and diode
+cathodes/bars face the rows. This enables simultaneous movement, sprint,
+strafe, fire, and use inputs without matrix ghosting.
 
 ## Notes
 

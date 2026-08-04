@@ -119,9 +119,9 @@ void app_main(void) {
 
 Mount SPIFFS, LittleFS, or SD before calling `py_run_file(...)`. The interpreter uses standard `fopen`, so the path must be available through the ESP32 VFS, such as `/spiffs/main.py`.
 
-## OpenCalc Integration
+## OpenCalc OS Integration
 
-OpenCalc runs script files from `/data/scripts/` through `py_run_file(...)`. The Python app scans the USB-backed storage folder, runs the selected script on the main UI task, and routes `print(...)` output to the on-screen Python console. `input()` opens a modal keypad input line on the calculator screen; Enter submits, `CLEAR` deletes, and `DEL/Back` cancels. Serial button input only queues button numbers; script execution itself is handled by the main UI loop to avoid running the interpreter from the serial input task stack.
+OpenCalc OS runs script files from `/data/scripts/` through `py_run_file(...)`. The Python app scans the USB-backed storage folder, runs the selected script on the main UI task, and routes `print(...)` output to the on-screen Python console. `input()` opens a modal keypad input line on the calculator screen; Enter submits, `CLEAR` deletes, and `DEL/Back` cancels. Serial button input only queues button numbers; script execution itself is handled by the main UI loop to avoid running the interpreter from the serial input task stack.
 
 ## GPIO
 

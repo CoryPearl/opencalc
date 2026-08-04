@@ -1,0 +1,5 @@
+Command: cmake -G Ninja -B /Users/corypearl/Desktop/opencalc/firmware/build -DPYTHON_DEPS_CHECKED=1 -DPYTHON=/Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python -DESP_PLATFORM=1 -DCCACHE_ENABLE=False /Users/corypearl/Desktop/opencalc/firmware
+-- Component directory /Users/corypearl/.espressif/v6.0.1/esp-idf/components/mqtt does not contain a CMakeLists.txt file. No component will be added
+-- Minimal build - OFF
+-- Building ESP-IDF components for target esp32s3
+-- Configuring incomplete, errors occurred!

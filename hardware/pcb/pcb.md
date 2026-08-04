@@ -1,3 +1,4 @@
+# NEED TO UPDATE - OUT OF DATE
 # OpenCalc PCB
 
 This file is the working PCB bill of materials and build checklist for the
@@ -15,8 +16,8 @@ part values, and net names. This document reflects that schematic.
 - 10×5 keypad layout with 50 physical buttons
 - Adafruit 258 style protected 3.7 V 1200 mAh JST-PH LiPo battery on the back of the PCB
 - Back-side `2x6` user/debug header (`U9`) with `GND`, `3V3`, `5V/VBUS`, `VBAT`, `RESET/EN`, `BOOT/GPIO0`, UART, USB debug, `PWR_HOLD`, and spare GPIOs
-- Software-off power behavior: the firmware turns off the display/backlight and enters ESP32-S3 deep sleep; do not design around a required firmware-controlled true power latch
-- 16 MB flash ESP32-S3 module so firmware can use the 8 MB FAT storage partition
+- Software-off power behavior: OpenCalc OS turns off the display/backlight and enters ESP32-S3 deep sleep; do not design around a required firmware-controlled true power latch
+- 16 MB flash ESP32-S3 module so OpenCalc OS can use the 8 MB FAT storage partition
 - EasyEDA Pro/JLCEDA project source for the next PCB revision
 
 ## EasyEDA Project Setup
@@ -93,7 +94,7 @@ Display placement requirements:
   `DC/RS`, `SDI(MOSI)`, `SCK`, `LED`, `SDO(MISO)`, `T_CLK`, `T_CS`, `T_DIN`,
   `T_DO`, and `T_IRQ`.
 - Install a 1x14 2.54 mm female header/socket on the PCB so the MSP2807 module can plug in and be removed.
-- The firmware currently expects LCD SPI and touch wiring on the pins listed in
+- OpenCalc OS currently expects LCD SPI and touch wiring on the pins listed in
   `hardware/pcb.md`; keep those net names identical.
 
 ## Buttons
@@ -119,6 +120,13 @@ Notes:
   are driven low one at a time. Each key diode should conduct from the column
   side toward the active row side, so place the diode anode on the column side
   and the cathode/bar toward the row side.
+- Wire every key as `COLx -> switch -> diode anode -> diode cathode/bar -> ROWx`.
+  The switch and diode may trade physical order because they are in series, but
+  the diode's electrical orientation must remain anode toward the column and
+  cathode/bar toward the row. Use one diode per switch, not one per row or
+  column. A 1N4148W/1N4148WS is suitable.
+- Do not place a diode across the switch. The diode belongs in series with the
+  switch. All 50 diodes must use the same column-to-row orientation.
 - Include the ON/HOME key's matrix diode like every other key. Place it on the
   firmware wake column so the calculator can wake cleanly from software off.
 

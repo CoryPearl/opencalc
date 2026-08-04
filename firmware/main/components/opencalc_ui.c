@@ -6,6 +6,7 @@
 #include "freertos/task.h"
 
 #include <dirent.h>
+#include "esp_heap_caps.h"
 #include "esp_timer.h"
 #include <math.h>
 #include <stdbool.h>
@@ -21,6 +22,8 @@
 #include "tiny-python.h"
 #include "usb_msc.h"
 
+static bool s_light_mode = false;
+
 #define UI_W 320
 #define UI_H 240
 #define GRAPH_TOP 0
@@ -34,7 +37,7 @@
 #define UI_HOME_GRID_STEP_Y 50
 #define SCRIPT_MAX 12
 #define SCRIPT_EDITOR_MAX 2048
-#define SETTINGS_COUNT 3
+#define SETTINGS_COUNT 4
 #define PROGRAM_MENU_COUNT 4
 #define CALC_HISTORY_MAX 8
 #define LIST_COUNT 6
@@ -44,15 +47,17 @@
 #define GRAPH_POI_LIMIT 16
 #define GRAPH_COLOR_COUNT 15
 
-#define THEME_BG        0x0b0d10
-#define THEME_SURFACE   0x171b21
-#define THEME_SURFACE_2 0x242a32
-#define THEME_HEADER    0x30363f
-#define THEME_ACCENT    0x4aa3ff
-#define THEME_ACCENT_2  0x2d4258
-#define THEME_TEXT      0xf4f7fb
-#define THEME_MUTED     0x9aa8b6
-#define THEME_BORDER    0x586575
+#define THEME_BG        (s_light_mode ? 0xf5f9ff : 0x0b0d10)
+#define THEME_SURFACE   (s_light_mode ? 0xdbeafe : 0x171b21)
+#define THEME_SURFACE_2 (s_light_mode ? 0xbfdbfe : 0x242a32)
+#define THEME_HEADER    (s_light_mode ? 0x2563a8 : 0x30363f)
+#define THEME_ACCENT    (s_light_mode ? 0x1677d2 : 0x4aa3ff)
+#define THEME_ACCENT_2  (s_light_mode ? 0xb9dcff : 0x2d4258)
+#define THEME_TEXT      (s_light_mode ? 0x10243e : 0xf4f7fb)
+#define THEME_MUTED     (s_light_mode ? 0x506b88 : 0x9aa8b6)
+#define THEME_BORDER    (s_light_mode ? 0x7aa8d8 : 0x586575)
+#define THEME_HEADER_TEXT 0xf4f7fb
+#define THEME_GRID      (s_light_mode ? 0xc8daf0 : 0x1b2027)
 #define THEME_WHITE     0xf4f7fb
 #define THEME_BATTERY_GREEN  0x33d17a
 #define THEME_BATTERY_YELLOW 0xf5c542
@@ -109,7 +114,7 @@ static const app_info_t APPS[UI_APP_COUNT] = {
     {"Lists", "L", 0x8f9db4, {"Named lists", "999 values", "List math", NULL}},
     {"Matrices", "M", 0xc1a6ff, {"Set A", "Det inverse rref", "Transpose", NULL}},
     {"Solver", "=", 0x5d8fd6, {"Numeric E1=E2", "Guess based solve", "Result fraction", NULL}},
-    {"Settings", "*", 0x6d7d91, {"Brightness", "Auto sleep", NULL}},
+    {"Settings", "*", 0x6d7d91, {"Brightness", "Auto sleep", "Dark / light theme", NULL}},
     {"Finance", "$", 0x8aa4c4, {"TVM solver", "NPV / IRR", "Begin / end", NULL}},
     {"Conics", "O", 0xd0d7e2, {"Lines", "Conic templates", "Multi-graph", "Intersections", NULL}},
     {"Inequality", "<", 0xa9b4c4, {"Graph relations", "Shade regions", "x/y inequalities", "Intersections", NULL}},
@@ -312,7 +317,7 @@ static int s_app_selection = 0;
 static int s_math_tab = 0;
 static int s_math_selection = 0;
 static char s_scripts[SCRIPT_MAX][32];
-static EXT_RAM_BSS_ATTR char s_script_editor[SCRIPT_EDITOR_MAX];
+static char s_script_editor[SCRIPT_EDITOR_MAX];
 static char s_script_edit_name[32] = "";
 static size_t s_script_editor_len = 0;
 static size_t s_script_editor_cursor = 0;
@@ -411,7 +416,7 @@ static void calc_expand_ans(const char *input, char *out, size_t out_size);
 static int digit_for_key(int row, int col);
 static void run_selected_script(void);
 
-static const uint8_t FONT[37][7] = {
+static const uint8_t FONT[38][7] = {
     {0x0e,0x11,0x13,0x15,0x19,0x11,0x0e}, {0x04,0x0c,0x04,0x04,0x04,0x04,0x0e},
     {0x0e,0x11,0x01,0x02,0x04,0x08,0x1f}, {0x1e,0x01,0x01,0x0e,0x01,0x01,0x1e},
     {0x02,0x06,0x0a,0x12,0x1f,0x02,0x02}, {0x1f,0x10,0x10,0x1e,0x01,0x01,0x1e},
@@ -430,6 +435,7 @@ static const uint8_t FONT[37][7] = {
     {0x11,0x11,0x11,0x11,0x11,0x11,0x0e}, {0x11,0x11,0x11,0x11,0x11,0x0a,0x04},
     {0x11,0x11,0x11,0x15,0x15,0x15,0x0a}, {0x11,0x11,0x0a,0x04,0x0a,0x11,0x11},
     {0x11,0x11,0x0a,0x04,0x04,0x04,0x04}, {0x1f,0x01,0x02,0x04,0x08,0x10,0x1f},
+    {0x0a,0x0a,0x1f,0x0a,0x1f,0x0a,0x0a},
     {0x0e,0x11,0x01,0x02,0x04,0x00,0x04},
 };
 
@@ -444,7 +450,10 @@ static const uint8_t *font_for(char c)
     if (c >= 'A' && c <= 'Z') {
         return FONT[10 + c - 'A'];
     }
-    return FONT[36];
+    if (c == '#') {
+        return FONT[36];
+    }
+    return FONT[37];
 }
 
 static void ui_pixel(int x, int y, uint32_t color)
@@ -503,6 +512,33 @@ static void ui_line(int x0, int y0, int x1, int y1, uint32_t color)
     }
 }
 
+static void ui_circle_outline(int cx, int cy, int r, uint32_t color)
+{
+    int x = r;
+    int y = 0;
+    int err = 0;
+
+    while (x >= y) {
+        ui_pixel(cx + x, cy + y, color);
+        ui_pixel(cx + y, cy + x, color);
+        ui_pixel(cx - y, cy + x, color);
+        ui_pixel(cx - x, cy + y, color);
+        ui_pixel(cx - x, cy - y, color);
+        ui_pixel(cx - y, cy - x, color);
+        ui_pixel(cx + y, cy - x, color);
+        ui_pixel(cx + x, cy - y, color);
+
+        y++;
+        if (err <= 0) {
+            err += 2 * y + 1;
+        }
+        if (err > 0) {
+            x--;
+            err -= 2 * x + 1;
+        }
+    }
+}
+
 static void ui_app_icon(app_id_t app, int x, int y, int size, uint32_t color)
 {
     int cx = x + size / 2;
@@ -511,9 +547,13 @@ static void ui_app_icon(app_id_t app, int x, int y, int size, uint32_t color)
 
     switch (app) {
     case APP_CALCULATOR:
-        ui_rect(cx - 1, y + 3, 3, size - 6, color);
-        ui_rect(x + 3, cy - 1, size - 6, 3, color);
+    {
+        int arm = size / 2 - 3;
+        int length = arm * 2 + 1;
+        ui_rect(cx - 1, cy - arm, 3, length, color);
+        ui_rect(cx - arm, cy - 1, length, 3, color);
         break;
+    }
     case APP_GRAPH:
         ui_line(x + 2, y + size - 4, x + size - 2, y + size - 4, color);
         ui_line(x + 4, y + size - 2, x + 4, y + 2, color);
@@ -561,8 +601,7 @@ static void ui_app_icon(app_id_t app, int x, int y, int size, uint32_t color)
         ui_line(cx + 2, y + size - 6, cx - 6, y + size - 6, color);
         break;
     case APP_CONICS:
-        ui_border(x + 4, y + 5, size - 8, size - 10, color);
-        ui_rect(cx - 1, cy - 1, 3, 3, color);
+        ui_circle_outline(cx, cy, size / 2 - 4, color);
         break;
     case APP_SETTINGS:
         ui_rect(cx - 2, y + 2, 4, 4, color);
@@ -619,6 +658,12 @@ static void ui_text(int x, int y, const char *text, uint32_t color, int scale)
         if (c == ',') {
             ui_rect(cx + 2 * scale, y + 6 * scale, scale, scale, color);
             ui_rect(cx + scale, y + 7 * scale, scale, scale, color);
+            cx += 4 * scale;
+            continue;
+        }
+        if (c == '\'') {
+            ui_rect(cx + 2 * scale, y, scale, 2 * scale, color);
+            ui_rect(cx + scale, y + 2 * scale, scale, scale, color);
             cx += 4 * scale;
             continue;
         }
@@ -715,11 +760,82 @@ static int ui_text_width(const char *text, size_t max_chars, int scale)
     }
     for (size_t i = 0; text[i] != '\0' && i < max_chars; i++) {
         char c = text[i];
-        if (c == ' ' || c == '.' || c == ',') {
+        if (c == ' ' || c == '.' || c == ',' || c == '\'') {
             width += 4 * scale;
         } else {
             width += 6 * scale;
         }
+    }
+    return width;
+}
+
+static const uint8_t *ui_calc_glyph(char c, uint8_t custom[7])
+{
+    memset(custom, 0, 7);
+    switch (c) {
+    case ' ': break;
+    case '.': custom[6] = 0x04; break;
+    case ',': custom[5] = 0x04; custom[6] = 0x08; break;
+    case '\'': custom[0] = 0x04; custom[1] = 0x04; custom[2] = 0x08; break;
+    case '(':
+        custom[0] = 0x02; custom[1] = 0x04; custom[2] = 0x08;
+        custom[3] = 0x08; custom[4] = 0x08; custom[5] = 0x04; custom[6] = 0x02;
+        break;
+    case ')':
+        custom[0] = 0x08; custom[1] = 0x04; custom[2] = 0x02;
+        custom[3] = 0x02; custom[4] = 0x02; custom[5] = 0x04; custom[6] = 0x08;
+        break;
+    case '^': custom[0] = 0x04; custom[1] = 0x0a; custom[2] = 0x11; break;
+    case '-': custom[3] = 0x1f; break;
+    case '+': custom[1] = 0x04; custom[2] = 0x04; custom[3] = 0x1f; custom[4] = 0x04; custom[5] = 0x04; break;
+    case '=': custom[2] = 0x1f; custom[4] = 0x1f; break;
+    case '<': custom[1] = 0x02; custom[2] = 0x04; custom[3] = 0x08; custom[4] = 0x04; custom[5] = 0x02; break;
+    case '>': custom[1] = 0x08; custom[2] = 0x04; custom[3] = 0x02; custom[4] = 0x04; custom[5] = 0x08; break;
+    case '/': custom[0] = 0x01; custom[1] = 0x02; custom[2] = 0x02; custom[3] = 0x04; custom[4] = 0x08; custom[5] = 0x08; custom[6] = 0x10; break;
+    case '%': custom[0] = 0x19; custom[1] = 0x1a; custom[2] = 0x04; custom[3] = 0x04; custom[4] = 0x0b; custom[5] = 0x13; break;
+    case '*': c = 'X'; break;
+    case '$': c = 'S'; break;
+    default: return font_for(c);
+    }
+    return custom;
+}
+
+static int ui_calc_char_width(char c)
+{
+    return (c == ' ' || c == '.' || c == ',' || c == '\'') ? 8 : 12;
+}
+
+static void ui_calc_text(int x, int y, const char *text, uint32_t color)
+{
+    if (text == NULL) {
+        return;
+    }
+
+    int cx = x;
+    for (size_t i = 0; text[i] != '\0'; i++) {
+        char c = text[i];
+        uint8_t custom[7];
+        const uint8_t *glyph = ui_calc_glyph(c, custom);
+        for (int gy = 0; gy < 7; gy++) {
+            for (int gx = 0; gx < 5; gx++) {
+                if ((glyph[gy] & (1 << (4 - gx))) == 0) {
+                    continue;
+                }
+                ui_rect(cx + gx * 2, y + gy * 2, 2, 2, color);
+            }
+        }
+        cx += ui_calc_char_width(c);
+    }
+}
+
+static int ui_calc_text_width(const char *text, size_t max_chars)
+{
+    int width = 0;
+    if (text == NULL) {
+        return 0;
+    }
+    for (size_t i = 0; text[i] != '\0' && i < max_chars; i++) {
+        width += ui_calc_char_width(text[i]);
     }
     return width;
 }
@@ -807,17 +923,18 @@ static void ui_draw_calc_cursor(int x, int y, bool raised)
     ui_rect(x, raised ? y - 11 : y - 2, 6, raised ? 10 : 11, THEME_ACCENT);
 }
 
-static void ui_draw_calc_cursor_char(int x, int y, char c, bool raised)
+static void ui_draw_calc_cursor_large(int x, int y, char c, bool has_char)
 {
-    if (!s_cursor_blink_visible) {
+    if (s_cursor_blink_visible) {
+        ui_rect(x, y - 1, ui_calc_char_width(c), 16, THEME_ACCENT);
+        if (has_char) {
+            char one[2] = {c, '\0'};
+            ui_calc_text(x, y, one, THEME_BG);
+        }
+    } else if (has_char) {
         char one[2] = {c, '\0'};
-        ui_text(x, y, one, THEME_TEXT, 1);
-        return;
+        ui_calc_text(x, y, one, THEME_TEXT);
     }
-
-    ui_draw_calc_cursor(x, y, raised);
-    char one[2] = {c, '\0'};
-    ui_text(x, y, one, THEME_BG, 1);
 }
 
 static int ui_tiny_text_width(const char *text, size_t max_len)
@@ -828,7 +945,7 @@ static int ui_tiny_text_width(const char *text, size_t max_len)
     }
     for (size_t i = 0; text[i] != '\0' && i < max_len; i++) {
         char c = text[i];
-        width += (c == '.' || c == ',' || c == ' ') ? 2 : 4;
+        width += (c == '.' || c == ',' || c == ' ' || c == '\'') ? 4 : 6;
     }
     return width;
 }
@@ -838,56 +955,55 @@ static void ui_tiny_symbol(int x, int y, char c, uint32_t color)
     switch (c) {
     case '.':
     case ',':
-        ui_pixel(x + 1, y + 4, color);
+        ui_pixel(x + 2, y + 6, color);
         break;
-    case '-':
-        ui_line(x, y + 2, x + 2, y + 2, color);
-        break;
-    case '+':
-        ui_line(x + 1, y + 1, x + 1, y + 3, color);
-        ui_line(x, y + 2, x + 2, y + 2, color);
-        break;
-    case '*':
-        ui_pixel(x + 1, y + 1, color);
-        ui_pixel(x, y + 2, color);
-        ui_pixel(x + 2, y + 2, color);
-        ui_pixel(x + 1, y + 3, color);
-        break;
-    case '/':
+    case '\'':
         ui_pixel(x + 2, y, color);
         ui_pixel(x + 2, y + 1, color);
         ui_pixel(x + 1, y + 2, color);
-        ui_pixel(x, y + 3, color);
-        ui_pixel(x, y + 4, color);
+        break;
+    case '-':
+        ui_line(x, y + 3, x + 4, y + 3, color);
+        break;
+    case '+':
+        ui_line(x + 2, y + 1, x + 2, y + 5, color);
+        ui_line(x, y + 3, x + 4, y + 3, color);
+        break;
+    case '*':
+        ui_pixel(x + 2, y + 1, color);
+        ui_pixel(x + 1, y + 2, color);
+        ui_pixel(x + 3, y + 2, color);
+        ui_pixel(x + 2, y + 3, color);
+        break;
+    case '/':
+        ui_pixel(x + 4, y, color);
+        ui_pixel(x + 3, y + 1, color);
+        ui_pixel(x + 2, y + 2, color);
+        ui_pixel(x + 2, y + 3, color);
+        ui_pixel(x + 1, y + 4, color);
+        ui_pixel(x, y + 5, color);
+        ui_pixel(x, y + 6, color);
         break;
     case '(':
-        ui_pixel(x + 2, y, color);
-        ui_line(x + 1, y + 1, x + 1, y + 3, color);
-        ui_pixel(x + 2, y + 4, color);
+        ui_pixel(x + 3, y, color);
+        ui_pixel(x + 2, y + 1, color);
+        ui_line(x + 1, y + 2, x + 1, y + 4, color);
+        ui_pixel(x + 2, y + 5, color);
+        ui_pixel(x + 3, y + 6, color);
         break;
     case ')':
-        ui_pixel(x, y, color);
-        ui_line(x + 1, y + 1, x + 1, y + 3, color);
-        ui_pixel(x, y + 4, color);
+        ui_pixel(x + 1, y, color);
+        ui_pixel(x + 2, y + 1, color);
+        ui_line(x + 3, y + 2, x + 3, y + 4, color);
+        ui_pixel(x + 2, y + 5, color);
+        ui_pixel(x + 1, y + 6, color);
         break;
     default: {
         const uint8_t *glyph = font_for(c);
-        for (int ty = 0; ty < 5; ty++) {
-            for (int tx = 0; tx < 3; tx++) {
-                int sx0 = tx * 5 / 3;
-                int sx1 = ((tx + 1) * 5 + 2) / 3;
-                int sy0 = ty * 7 / 5;
-                int sy1 = ((ty + 1) * 7 + 4) / 5;
-                bool on = false;
-                for (int sy = sy0; sy < sy1 && sy < 7; sy++) {
-                    for (int sx = sx0; sx < sx1 && sx < 5; sx++) {
-                        if ((glyph[sy] & (1 << (4 - sx))) != 0) {
-                            on = true;
-                        }
-                    }
-                }
-                if (on) {
-                    ui_pixel(x + tx, y + ty, color);
+        for (int gy = 0; gy < 7; gy++) {
+            for (int gx = 0; gx < 5; gx++) {
+                if ((glyph[gy] & (1 << (4 - gx))) != 0) {
+                    ui_pixel(x + gx, y + gy, color);
                 }
             }
         }
@@ -906,21 +1022,21 @@ static void ui_tiny_text(int x, int y, const char *text, uint32_t color)
         if (text[i] != ' ') {
             ui_tiny_symbol(cx, y, text[i], color);
         }
-        cx += (text[i] == '.' || text[i] == ',' || text[i] == ' ') ? 2 : 4;
+        cx += (text[i] == '.' || text[i] == ',' || text[i] == ' ' || text[i] == '\'') ? 4 : 6;
     }
 }
 
 static void ui_draw_calc_cursor_tiny(int x, int y)
 {
     if (s_cursor_blink_visible) {
-        ui_rect(x, y - 1, 4, 7, THEME_ACCENT);
+        ui_rect(x, y - 1, 6, 9, THEME_ACCENT);
     }
 }
 
 static void ui_draw_calc_expression(int x, int y, const char *text, size_t cursor)
 {
     if (text == NULL || text[0] == '\0') {
-        ui_draw_calc_cursor(x, y, false);
+        ui_draw_calc_cursor_large(x, y, ' ', false);
         return;
     }
 
@@ -1110,18 +1226,160 @@ static void ui_draw_calc_expression(int x, int y, const char *text, size_t curso
 
         char one[2] = {text[i], '\0'};
         if (!cursor_drawn && cursor == i) {
-            ui_draw_calc_cursor_char(cx, y, text[i], false);
+            ui_draw_calc_cursor_large(cx, y, text[i], true);
             cursor_drawn = true;
         } else {
-            ui_text(cx, y, one, THEME_TEXT, 1);
+            ui_calc_text(cx, y, one, THEME_TEXT);
         }
-        cx += ui_text_width(one, 1, 1);
+        cx += ui_calc_text_width(one, 1);
         i++;
     }
 
     if (!cursor_drawn && cursor == len) {
-        ui_draw_calc_cursor(cx, y, false);
+        ui_draw_calc_cursor_large(cx, y, ' ', false);
     }
+}
+
+static bool display_simple_fraction(const char *text, size_t *slash)
+{
+    if (text == NULL || text[0] == '\0') {
+        return false;
+    }
+
+    const char *found = strchr(text, '/');
+    if (found == NULL || found == text || found[1] == '\0' || strchr(found + 1, '/') != NULL) {
+        return false;
+    }
+
+    for (const char *p = text; *p != '\0'; p++) {
+        if (p == found) {
+            continue;
+        }
+        if (!((*p >= '0' && *p <= '9') || *p == '-' || *p == '+' || *p == '.')) {
+            return false;
+        }
+    }
+
+    *slash = (size_t)(found - text);
+    return true;
+}
+
+static int ui_math_text(int x, int y, const char *text, uint32_t color, bool draw)
+{
+    if (text == NULL) {
+        return 0;
+    }
+
+    size_t simple_slash = 0;
+    if (display_simple_fraction(text, &simple_slash)) {
+        char numerator[48];
+        char denominator[48];
+        size_t numerator_len = simple_slash;
+        size_t denominator_len = strlen(text + simple_slash + 1);
+        if (numerator_len >= sizeof(numerator)) {
+            numerator_len = sizeof(numerator) - 1;
+        }
+        if (denominator_len >= sizeof(denominator)) {
+            denominator_len = sizeof(denominator) - 1;
+        }
+        memcpy(numerator, text, numerator_len);
+        numerator[numerator_len] = '\0';
+        memcpy(denominator, text + simple_slash + 1, denominator_len);
+        denominator[denominator_len] = '\0';
+
+        int numerator_w = ui_tiny_text_width(numerator, numerator_len);
+        int denominator_w = ui_tiny_text_width(denominator, denominator_len);
+        int width = numerator_w > denominator_w ? numerator_w : denominator_w;
+        if (width < 10) {
+            width = 10;
+        }
+        if (draw) {
+            ui_tiny_text(x + (width - numerator_w) / 2, y - 5, numerator, color);
+            ui_line(x, y + 1, x + width, y + 1, color);
+            ui_tiny_text(x + (width - denominator_w) / 2, y + 3, denominator, color);
+        }
+        return width + 1;
+    }
+
+    int cx = x;
+    size_t len = strlen(text);
+    for (size_t i = 0; i < len;) {
+        size_t num_start = 0;
+        size_t comma = 0;
+        size_t close = 0;
+        if (expression_find_frac_parts(text, i, &num_start, &comma, &close)) {
+            char numerator[48];
+            char denominator[48];
+            size_t numerator_len = comma - num_start;
+            size_t denominator_start = comma + 1;
+            size_t denominator_len = close - denominator_start;
+            if (numerator_len >= sizeof(numerator)) {
+                numerator_len = sizeof(numerator) - 1;
+            }
+            if (denominator_len >= sizeof(denominator)) {
+                denominator_len = sizeof(denominator) - 1;
+            }
+            memcpy(numerator, text + num_start, numerator_len);
+            numerator[numerator_len] = '\0';
+            memcpy(denominator, text + denominator_start, denominator_len);
+            denominator[denominator_len] = '\0';
+
+            int numerator_w = ui_tiny_text_width(numerator, numerator_len);
+            int denominator_w = ui_tiny_text_width(denominator, denominator_len);
+            int width = numerator_w > denominator_w ? numerator_w : denominator_w;
+            if (width < 10) {
+                width = 10;
+            }
+            if (draw) {
+                ui_tiny_text(cx + (width - numerator_w) / 2, y - 5, numerator, color);
+                ui_line(cx, y + 1, cx + width, y + 1, color);
+                ui_tiny_text(cx + (width - denominator_w) / 2, y + 3, denominator, color);
+            }
+            cx += width + 3;
+            i = close + 1;
+            continue;
+        }
+
+        if (text[i] == '^') {
+            size_t exp_start = i + 1;
+            size_t exp_end = exp_start;
+            if (text[exp_start] == '(') {
+                size_t exp_close = expression_find_matching_paren(text, exp_start);
+                exp_start++;
+                exp_end = exp_close;
+                i = exp_close + 1;
+            } else if (text[exp_start] != '\0') {
+                exp_end = exp_start + 1;
+                i = exp_end;
+            } else {
+                i++;
+            }
+
+            size_t exp_len = exp_end > exp_start ? exp_end - exp_start : 0;
+            if (exp_len > 0) {
+                char exponent[48];
+                if (exp_len >= sizeof(exponent)) {
+                    exp_len = sizeof(exponent) - 1;
+                }
+                memcpy(exponent, text + exp_start, exp_len);
+                exponent[exp_len] = '\0';
+                int width = ui_tiny_text_width(exponent, exp_len);
+                if (draw) {
+                    ui_tiny_text(cx, y - 5, exponent, color);
+                }
+                cx += width + 1;
+            }
+            continue;
+        }
+
+        char one[2] = {text[i], '\0'};
+        if (draw) {
+            ui_calc_text(cx, y, one, color);
+        }
+        cx += ui_calc_text_width(one, 1);
+        i++;
+    }
+    return cx - x;
 }
 
 static void ui_text_center(int y, const char *text, uint32_t color, int scale)
@@ -1172,8 +1430,8 @@ static void ui_battery_indicator(int x, int y)
     bool flash_off = percent > 0 && percent <= 10 &&
         ((esp_timer_get_time() / 500000) % 2) == 0;
 
-    ui_border(x, y, 24, 10, THEME_TEXT);
-    ui_rect(x + 24, y + 3, 3, 4, THEME_TEXT);
+    ui_border(x, y, 24, 10, THEME_HEADER_TEXT);
+    ui_rect(x + 24, y + 3, 3, 4, THEME_HEADER_TEXT);
     for (int i = 0; i < 4; i++) {
         ui_rect(x + 3 + i * 5, y + 3, 4, 4,
                 (i < bars && !flash_off) ? fill : THEME_SURFACE_2);
@@ -1235,7 +1493,7 @@ static void ui_header(const app_info_t *app)
     ui_rect(0, y + UI_HEADER_H - 2, UI_W, 2, THEME_ACCENT);
     ui_rect(7, y + 5, 18, 18, THEME_SURFACE_2);
     ui_app_icon(app_id, 8, y + 6, 16, header_app->color);
-    ui_text_center(y + 10, header_app->title, THEME_TEXT, 1);
+    ui_text_center(y + 10, header_app->title, THEME_HEADER_TEXT, 1);
     ui_shift_indicators(y + 7);
     ui_charge_indicator(276, y + 7);
     ui_battery_indicator(288, y + 9);
@@ -1447,11 +1705,27 @@ static bool graph_refine_zero(int fn, double lo, double hi, double *x, double *y
         return false;
     }
 
+    if (fabs(f_lo) <= 1e-12) {
+        *x = fabs(lo) <= 1e-9 ? 0.0 : lo;
+        *y = 0.0;
+        return true;
+    }
+    if (fabs(f_hi) <= 1e-12) {
+        *x = fabs(hi) <= 1e-9 ? 0.0 : hi;
+        *y = 0.0;
+        return true;
+    }
+
     for (int i = 0; i < 28; i++) {
         double mid = (lo + hi) * 0.5;
         double f_mid = 0.0;
         if (!graph_eval_fn_at(fn, mid, &f_mid)) {
             return false;
+        }
+        if (fabs(f_mid) <= 1e-12) {
+            *x = fabs(mid) <= 1e-9 ? 0.0 : mid;
+            *y = 0.0;
+            return true;
         }
         if ((f_lo <= 0.0 && f_mid >= 0.0) || (f_lo >= 0.0 && f_mid <= 0.0)) {
             hi = mid;
@@ -1464,7 +1738,16 @@ static bool graph_refine_zero(int fn, double lo, double hi, double *x, double *y
     }
 
     *x = (lo + hi) * 0.5;
-    return graph_eval_fn_at(fn, *x, y);
+    if (!graph_eval_fn_at(fn, *x, y)) {
+        return false;
+    }
+    if (fabs(*x) <= 1e-9) {
+        *x = 0.0;
+    }
+    if (fabs(*y) <= 1e-9) {
+        *y = 0.0;
+    }
+    return true;
 }
 
 static bool graph_refine_intersection(int fn_a, int fn_b, double lo, double hi, double *x, double *y)
@@ -1654,10 +1937,12 @@ static bool graph_jump_to_nearest_poi(graph_poi_type_t type)
     }
 
     s_graph_trace = true;
-    s_graph_trace_x = pois[best].x;
+    double display_x = fabs(pois[best].x) <= 1e-9 ? 0.0 : pois[best].x;
+    double display_y = fabs(pois[best].y) <= 1e-9 ? 0.0 : pois[best].y;
+    s_graph_trace_x = display_x;
     s_graph_trace_fn = pois[best].fn;
     snprintf(s_graph_status, sizeof(s_graph_status), "%s Y%d x %.4g y %.4g",
-             graph_poi_label(type), pois[best].fn + 1, pois[best].x, pois[best].y);
+             graph_poi_label(type), pois[best].fn + 1, display_x, display_y);
     return true;
 }
 
@@ -1842,7 +2127,7 @@ static void ui_draw_home(void)
         ui_text_centered_in_box(x + 2, y + 30, 66, HOME_LABELS[i], THEME_TEXT, 1);
     }
 
-    ui_text_center(216, "touch/enter - open", THEME_MUTED, 1);
+    ui_text_center(216, "enter - open", THEME_MUTED, 1);
     ui_present();
 }
 
@@ -2013,15 +2298,18 @@ static void ui_draw_settings(void)
 {
     char brightness[40];
     char sleep[40];
+    char theme[40];
     char reset[40];
 
     snprintf(brightness, sizeof(brightness), "Brightness %d%%", board_get_backlight_brightness());
     snprintf(sleep, sizeof(sleep), "Auto sleep %s", s_sleep_enabled ? "on" : "off");
+    snprintf(theme, sizeof(theme), "Theme %s", s_light_mode ? "light" : "dark");
     snprintf(reset, sizeof(reset), "Reset to factory");
 
     const char *items[SETTINGS_COUNT] = {
         brightness,
         sleep,
+        theme,
         reset,
     };
 
@@ -2032,7 +2320,13 @@ static void ui_draw_settings(void)
         ui_rect(18, 34 + i * 22, 284, 18, bg);
         ui_text(28, 40 + i * 22, items[i], THEME_TEXT, 1);
     }
-    ui_text(18, 220, "left, right - bright  enter - toggle", THEME_MUTED, 1);
+    const char *footer = "enter - toggle";
+    if (s_script_selection == 0) {
+        footer = "left, right - brightness";
+    } else if (s_script_selection == SETTINGS_COUNT - 1) {
+        footer = "enter - reset";
+    }
+    ui_text(18, 220, footer, THEME_MUTED, 1);
     ui_present();
 }
 
@@ -2062,12 +2356,18 @@ static void ui_draw_mode_menu(void)
     ui_present();
 }
 
-static void scripts_scan(void)
+static bool scripts_scan(void)
 {
+    if (!usb_msc_mount_app()) {
+        snprintf(s_script_status, sizeof(s_script_status), "storage busy - eject USB drive");
+        return false;
+    }
+    s_usb_storage_enabled = false;
     s_script_count = 0;
     DIR *dir = opendir("/data/scripts");
     if (dir == NULL) {
-        return;
+        snprintf(s_script_status, sizeof(s_script_status), "scripts unavailable");
+        return false;
     }
 
     struct dirent *entry = NULL;
@@ -2083,6 +2383,7 @@ static void scripts_scan(void)
     if (s_script_selection >= s_script_count) {
         s_script_selection = 0;
     }
+    return true;
 }
 
 static void script_path_for_name(const char *name, char *path, size_t path_size)
@@ -2092,7 +2393,13 @@ static void script_path_for_name(const char *name, char *path, size_t path_size)
 
 static void open_scripts_browser_for(script_action_t action)
 {
-    usb_msc_mount_app();
+    if (!usb_msc_mount_app()) {
+        snprintf(s_script_status, sizeof(s_script_status), "storage busy - eject USB drive");
+        s_page = PAGE_PROGRAM_MENU;
+        s_current_app = APP_PYTHON;
+        ui_draw_current();
+        return;
+    }
     s_usb_storage_enabled = false;
     s_script_action = action;
     scripts_scan();
@@ -2213,6 +2520,12 @@ static bool script_editor_save(void)
         return false;
     }
 
+    if (!usb_msc_mount_app()) {
+        snprintf(s_script_status, sizeof(s_script_status), "storage busy - eject USB drive");
+        return false;
+    }
+    s_usb_storage_enabled = false;
+
     char path[80];
     script_path_for_name(s_script_edit_name, path, sizeof(path));
     FILE *file = fopen(path, "w");
@@ -2235,7 +2548,13 @@ static bool script_editor_save(void)
 
 static void script_editor_open_new(void)
 {
-    usb_msc_mount_app();
+    if (!usb_msc_mount_app()) {
+        snprintf(s_script_status, sizeof(s_script_status), "storage busy - eject USB drive");
+        s_page = PAGE_PROGRAM_MENU;
+        s_current_app = APP_PYTHON;
+        ui_draw_current();
+        return;
+    }
     s_usb_storage_enabled = false;
 
     for (int i = 1; i <= 99; i++) {
@@ -2272,6 +2591,13 @@ static void script_editor_open_selected(void)
         return;
     }
 
+    if (!usb_msc_mount_app()) {
+        snprintf(s_script_status, sizeof(s_script_status), "storage busy - eject USB drive");
+        ui_draw_current();
+        return;
+    }
+    s_usb_storage_enabled = false;
+
     char path[80];
     script_path_for_name(s_scripts[s_script_selection], path, sizeof(path));
     FILE *file = fopen(path, "r");
@@ -2301,6 +2627,13 @@ static void delete_selected_script(void)
         ui_draw_current();
         return;
     }
+
+    if (!usb_msc_mount_app()) {
+        snprintf(s_script_status, sizeof(s_script_status), "storage busy - eject USB drive");
+        ui_draw_current();
+        return;
+    }
+    s_usb_storage_enabled = false;
 
     char deleted[32];
     char path[80];
@@ -2366,7 +2699,7 @@ static void ui_draw_program_menu(void)
         "Delete script",
     };
     static const char *const detail[PROGRAM_MENU_COUNT] = {
-        "Open /scripts and run with Enter",
+        "Open /scripts and run",
         "Choose a file and edit text",
         "Create and edit a new .py",
         "Choose a file and delete it",
@@ -2409,7 +2742,7 @@ static void script_output_callback(const char *text, void *user_data)
 {
     (void)user_data;
     script_output_append(text);
-    ui_draw_current();
+    vTaskDelay(pdMS_TO_TICKS(1));
 }
 
 static bool script_input_append_text(const char *text)
@@ -2901,6 +3234,7 @@ static void factory_reset_runtime_state(void)
     s_alpha_active = false;
     s_alpha_locked = false;
     s_sleep_enabled = true;
+    s_light_mode = false;
     board_set_backlight_brightness(80);
     s_page = PAGE_CALCULATOR;
     printf("factory reset runtime state\n");
@@ -2912,9 +3246,10 @@ static void ui_draw_calculator(void)
     ui_clear(THEME_BG);
     ui_header(&APPS[APP_CALCULATOR]);
 
-    const int first_y = 34;
-    const int row_h = 20;
-    int start = s_calc_history_count > 7 ? s_calc_history_count - 7 : 0;
+    const int first_y = 36;
+    const int row_h = 42;
+    const int visible_rows = 4;
+    int start = s_calc_history_count > visible_rows ? s_calc_history_count - visible_rows : 0;
     if (s_calc_history_selected >= 0 && s_calc_history_selected < start) {
         start = s_calc_history_selected;
     }
@@ -2922,18 +3257,23 @@ static void ui_draw_calculator(void)
         int visible = i - start;
         int y = first_y + visible * row_h;
         bool selected = i == s_calc_history_selected;
+        uint32_t expression_color = selected && !s_calc_history_select_answer ? THEME_ACCENT : THEME_TEXT;
+        uint32_t result_color = selected && s_calc_history_select_answer ? THEME_ACCENT : THEME_TEXT;
 
-        if (selected) {
-            ui_rect(6, y - 2, UI_W - 12, row_h - 1, THEME_ACCENT_2);
+        int expression_w = ui_math_text(0, 0, s_calc_history_expr[i], expression_color, false);
+        if (selected && !s_calc_history_select_answer) {
+            ui_rect(8, y - 5, expression_w + 4, 22, THEME_ACCENT_2);
         }
-
-        ui_text(10, y, s_calc_history_expr[i], selected && !s_calc_history_select_answer ? THEME_ACCENT : THEME_TEXT, 1);
-        int result_w = ui_text_width(s_calc_history_result[i], 32, 1);
+        ui_math_text(10, y + 2, s_calc_history_expr[i], expression_color, true);
+        int result_w = ui_math_text(0, 0, s_calc_history_result[i], result_color, false);
         int result_x = UI_W - 10 - result_w;
         if (result_x < 120) {
             result_x = 120;
         }
-        ui_text(result_x, y + 9, s_calc_history_result[i], selected && s_calc_history_select_answer ? THEME_ACCENT : THEME_TEXT, 1);
+        if (selected && s_calc_history_select_answer) {
+            ui_rect(result_x - 2, y + 15, result_w + 4, 22, THEME_ACCENT_2);
+        }
+        ui_math_text(result_x, y + 22, s_calc_history_result[i], result_color, true);
     }
 
     ui_rect(0, 202, UI_W, 1, THEME_BORDER);
@@ -3010,7 +3350,7 @@ static void ui_draw_graph(void)
             continue;
         }
         int sx = graph_screen_x(&view, gx);
-        uint32_t color = axis ? THEME_BORDER : 0x1b2027;
+        uint32_t color = axis ? THEME_BORDER : THEME_GRID;
         ui_line(sx, top, sx, bottom, color);
     }
     for (double gy = ceil(s_graph_ymin / ytick) * ytick; gy <= s_graph_ymax + ytick * 0.25; gy += ytick) {
@@ -3019,7 +3359,7 @@ static void ui_draw_graph(void)
             continue;
         }
         int sy = graph_screen_y(&view, gy);
-        uint32_t color = axis ? THEME_BORDER : 0x1b2027;
+        uint32_t color = axis ? THEME_BORDER : THEME_GRID;
         ui_line(0, sy, UI_W - 1, sy, color);
     }
 
@@ -5161,6 +5501,7 @@ static void run_selected_script(void)
 
     char path[80];
     snprintf(path, sizeof(path), "/data/scripts/%s", s_scripts[s_script_selection]);
+    printf("Running %s\n", path);
     s_script_output[0] = '\0';
     snprintf(s_script_title, sizeof(s_script_title), "Running %.36s", s_scripts[s_script_selection]);
     snprintf(s_script_status, sizeof(s_script_status), "running...");
@@ -5169,12 +5510,20 @@ static void run_selected_script(void)
     ui_draw_current();
 
     s_script_running = true;
+    printf("python memory: stack_free=%u internal_free=%u psram_free=%u\n",
+           (unsigned)uxTaskGetStackHighWaterMark(NULL),
+           (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
+           (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
     py_init(&s_script_py);
     py_set_output_callback(&s_script_py, script_output_callback, NULL);
     py_set_input_callback(&s_script_py, script_input_callback, NULL);
     int ok = py_run_file(&s_script_py, path, NULL, 0);
     char error[PY_MAX_ERROR];
     snprintf(error, sizeof(error), "%s", s_script_py.error);
+    printf("Python finished: %s%s%s\n",
+           ok ? "ok" : "error",
+           error[0] != '\0' ? " - " : "",
+           error);
     py_deinit(&s_script_py);
     s_script_running = false;
 
@@ -5253,8 +5602,7 @@ static void key_home(void)
     }
     s_home_selection = APP_CALCULATOR;
     s_page = PAGE_HOME;
-    usb_msc_mount_usb();
-    s_usb_storage_enabled = true;
+    s_usb_storage_enabled = usb_msc_mount_usb();
     ui_draw_current();
 }
 
@@ -5377,6 +5725,9 @@ static void key_enter(void)
             s_sleep_enabled = !s_sleep_enabled;
             ui_draw_current();
         } else if (s_script_selection == 2) {
+            s_light_mode = !s_light_mode;
+            ui_draw_current();
+        } else if (s_script_selection == 3) {
             factory_reset_runtime_state();
         }
     } else if (s_page == PAGE_APP) {
@@ -5760,6 +6111,7 @@ static void key_down(void)
 static void dispatch_key(int row, int col)
 {
     printf("key r%d c%d\n", row, col);
+    bool had_second_active = s_second_active;
 
     if (row == 1 && col == 0) {
         if (s_alpha_locked) {
@@ -5793,11 +6145,11 @@ static void dispatch_key(int row, int col)
 
     if (row == 9 && col == 0) {
         if (s_second_active) {
+            s_second_active = false;
             power_off_calculator();
         } else {
             key_home();
         }
-        s_second_active = false;
         return;
     }
 
@@ -6005,6 +6357,9 @@ finish_key:
     if (!(row == 1 && col == 0) && !(row == 2 && col == 0)) {
         s_second_active = false;
         s_alpha_active = false;
+        if (had_second_active) {
+            ui_draw_current();
+        }
     }
 }
 

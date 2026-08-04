@@ -1,0 +1,78 @@
+Command: /Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python /Users/corypearl/.espressif/v6.0.1/esp-idf/tools/idf_monitor.py -p /dev/cu.usbmodem5C361416231 -b 115200 --toolchain-prefix xtensa-esp32s3-elf- --target esp32s3 --revision 0 /Users/corypearl/Desktop/opencalc/firmware/build/opencalc.elf /Users/corypearl/Desktop/opencalc/firmware/build/bootloader/bootloader.elf -m '/Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python' '/Users/corypearl/.espressif/v6.0.1/esp-idf/tools/idf.py'
+[0;33m--- esp-idf-monitor 1.9.0 on /dev/cu.usbmodem5C361416231 115200[0m
+[0;33m--- Quit: Ctrl+] | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H[0m
+[0m--- 0x403c8700: [0;33m_stext[0m[0m at [0;32m??[0m[0m:[1;31m?[0m
+[0m--- 0x403c8908: [0;33mcall_start_cpu0[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/bootloader/subproject/main/bootloader_start.c[0m[0m:[1;31m27[0m
+[0m--- 0x4037651c: [0;33mheap_caps_aligned_alloc_base[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/heap/heap_caps_base.c[0m[0m:[1;31m146[0m
+[0m--- 0x400570e8: [0;33mmemset[0m[0m in [0;32mROM[0m
+[0m--- 0x400570f3: [0;33mmemset[0m[0m in [0;32mROM[0m
+[0m--- 0x40376519: [0;33mheap_caps_aligned_alloc_base[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/heap/heap_caps_base.c[0m[0m:[1;31m145[0m
+[0m--- 0x40376575: [0;33mheap_caps_malloc_base[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/heap/heap_caps_base.c[0m[0m:[1;31m207[0m
+[0m--- 0x40376331: [0;33mheap_caps_malloc_default[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/heap/heap_caps.c[0m[0m:[1;31m118[0m
+[0m--- 0x4037df01: [0;33mmalloc[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_libc/src/heap.c[0m[0m:[1;31m24[0m
+[0m--- 0x420486c5: [0;33mff_memalloc[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/fatfs/port/freertos/ffsystem.c[0m[0m:[1;31m26[0m
+[0m--- 0x42049436: [0;33mvfs_fat_opendir[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/fatfs/vfs/vfs_fat.c[0m[0m:[1;31m889[0m
+[0m--- 0x4200c936: [0;33mesp_vfs_opendir[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/vfs/vfs_calls.c[0m[0m:[1;31m322[0m
+[0m--- 0x42010f0e: [0;33mscripts_scan[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/opencalc_ui.c[0m[0m:[1;31m2356[0m
+[0m--- 0x42018f4c: [0;33mopen_scripts_browser_for[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/opencalc_ui.c[0m[0m:[1;31m2394[0m
+[0m--- 0x4201a3fe: [0;33mkey_enter[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/opencalc_ui.c[0m[0m:[1;31m5631[0m
+[0m--- 0x4201ac8a: [0;33mdispatch_key[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/opencalc_ui.c[0m[0m:[1;31m6216[0m
+[0m--- 0x4201b109: [0;33mopencalc_ui_press_button_number[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/opencalc_ui.c[0m[0m:[1;31m6352[0m
+[0m--- 0x4201b155: [0;33mopencalc_ui_handle_serial_buttons[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/opencalc_ui.c[0m[0m:[1;31m6376[0m
+[0m--- 0x4200e494: [0;33mapp_main[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/main.c[0m[0m:[1;31m113[0m
+[0m--- 0x42009ea4: [0;33mmain_task[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/freertos/app_startup.c[0m[0m:[1;31m199[0m
+[0m--- 0x42061ece: [0;33mvPortTaskWrapper[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c[0m[0m:[1;31m143[0m
+[0m--- 0x4037f2b1: [0;33mesp_restart_noos[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_system/port/soc/esp32s3/system_internal.c[0m[0m:[1;31m165[0m
+[0m--- 0x403c8700: [0;33m_stext[0m[0m at [0;32m??[0m[0m:[1;31m?[0m
+[0m--- 0x403c8908: [0;33mcall_start_cpu0[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/bootloader/subproject/main/bootloader_start.c[0m[0m:[1;31m27[0m
+[0m--- 0x403764b6: [0;33mfind_containing_heap[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/heap/heap_private.h[0m[0m:[1;31m78[0m
+[0m--- (inlined by) [0;33mheap_caps_free[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/heap/heap_caps_base.c[0m[0m:[1;31m79[0m
+[0m--- 0x400570e8: [0;33mmemset[0m[0m in [0;32mROM[0m
+[0m--- 0x400570f3: [0;33mmemset[0m[0m in [0;32mROM[0m
+[0m--- 0x403764b3: [0;33mfind_containing_heap[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/heap/heap_private.h[0m[0m:[1;31m77[0m
+[0m--- (inlined by) [0;33mheap_caps_free[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/heap/heap_caps_base.c[0m[0m:[1;31m79[0m
+[0m--- 0x4200a009: [0;33mvPortFree[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/freertos/heap_idf.c[0m[0m:[1;31m63[0m
+[0m--- 0x420627f7: [0;33mvQueueDelete[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/freertos/FreeRTOS-Kernel/queue.c[0m[0m:[1;31m2376[0m
+[0m--- 0x42048701: [0;33mff_mutex_delete[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/fatfs/port/freertos/ffsystem.c[0m[0m:[1;31m142[0m
+[0m--- 0x42046c0c: [0;33mf_mount[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/fatfs/src/ff.c[0m[0m:[1;31m3689[0m
+[0m--- 0x42044b66: [0;33mstorage_spiflash_unmount[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/storage_spiflash.c[0m[0m:[1;31m37[0m
+[0m--- 0x42043d0c: [0;33mmsc_storage_unmount[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/tinyusb_msc.c[0m[0m:[1;31m567[0m
+[0m--- 0x42044678: [0;33mtinyusb_msc_set_storage_mount_point[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/tinyusb_msc.c[0m[0m:[1;31m1064[0m
+[0m--- 0x4201b437: [0;33mset_storage_mount_point[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/usb_msc.c[0m[0m:[1;31m101[0m
+[0m--- 0x4201b60d: [0;33musb_msc_mount_usb[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/usb_msc.c[0m[0m:[1;31m117[0m
+[0m--- 0x4201940c: [0;33mkey_home[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/opencalc_ui.c[0m[0m:[1;31m5569[0m
+[0m--- 0x4201a9cc: [0;33mdispatch_key[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/opencalc_ui.c[0m[0m:[1;31m6116[0m
+[0m--- 0x4201b109: [0;33mopencalc_ui_press_button_number[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/opencalc_ui.c[0m[0m:[1;31m6352[0m
+[0m--- 0x4201b155: [0;33mopencalc_ui_handle_serial_buttons[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/opencalc_ui.c[0m[0m:[1;31m6376[0m
+[0m--- 0x4200e494: [0;33mapp_main[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/main.c[0m[0m:[1;31m113[0m
+[0m--- 0x42009ea4: [0;33mmain_task[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/freertos/app_startup.c[0m[0m:[1;31m199[0m
+[0m--- 0x42061ece: [0;33mvPortTaskWrapper[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c[0m[0m:[1;31m143[0m
+[0m--- 0x4037f2b1: [0;33mesp_restart_noos[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_system/port/soc/esp32s3/system_internal.c[0m[0m:[1;31m165[0m
+[0m--- 0x403c8700: [0;33m_stext[0m[0m at [0;32m??[0m[0m:[1;31m?[0m
+[0m--- 0x403c8908: [0;33mcall_start_cpu0[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/bootloader/subproject/main/bootloader_start.c[0m[0m:[1;31m27[0m
+[0m--- 0x403764b6: [0;33mfind_containing_heap[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/heap/heap_private.h[0m[0m:[1;31m78[0m
+[0m--- (inlined by) [0;33mheap_caps_free[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/heap/heap_caps_base.c[0m[0m:[1;31m79[0m
+[0m--- 0x400570e8: [0;33mmemset[0m[0m in [0;32mROM[0m
+[0m--- 0x400570f3: [0;33mmemset[0m[0m in [0;32mROM[0m
+[0m--- 0x403764b3: [0;33mfind_containing_heap[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/heap/heap_private.h[0m[0m:[1;31m77[0m
+[0m--- (inlined by) [0;33mheap_caps_free[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/heap/heap_caps_base.c[0m[0m:[1;31m79[0m
+[0m--- 0x4200a009: [0;33mvPortFree[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/freertos/heap_idf.c[0m[0m:[1;31m63[0m
+[0m--- 0x420627f7: [0;33mvQueueDelete[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/freertos/FreeRTOS-Kernel/queue.c[0m[0m:[1;31m2376[0m
+[0m--- 0x42048701: [0;33mff_mutex_delete[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/fatfs/port/freertos/ffsystem.c[0m[0m:[1;31m142[0m
+[0m--- 0x42046c0c: [0;33mf_mount[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/fatfs/src/ff.c[0m[0m:[1;31m3689[0m
+[0m--- 0x42044b66: [0;33mstorage_spiflash_unmount[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/storage_spiflash.c[0m[0m:[1;31m37[0m
+[0m--- 0x42043d0c: [0;33mmsc_storage_unmount[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/tinyusb_msc.c[0m[0m:[1;31m567[0m
+[0m--- 0x42044678: [0;33mtinyusb_msc_set_storage_mount_point[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/tinyusb_msc.c[0m[0m:[1;31m1064[0m
+[0m--- 0x4201b437: [0;33mset_storage_mount_point[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/usb_msc.c[0m[0m:[1;31m101[0m
+[0m--- 0x4201b60d: [0;33musb_msc_mount_usb[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/usb_msc.c[0m[0m:[1;31m117[0m
+[0m--- 0x4201940c: [0;33mkey_home[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/opencalc_ui.c[0m[0m:[1;31m5569[0m
+[0m--- 0x4201a9cc: [0;33mdispatch_key[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/opencalc_ui.c[0m[0m:[1;31m6116[0m
+[0m--- 0x4201b109: [0;33mopencalc_ui_press_button_number[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/opencalc_ui.c[0m[0m:[1;31m6352[0m
+[0m--- 0x4201b155: [0;33mopencalc_ui_handle_serial_buttons[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/opencalc_ui.c[0m[0m:[1;31m6376[0m
+[0m--- 0x4200e494: [0;33mapp_main[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/main.c[0m[0m:[1;31m113[0m
+[0m--- 0x42009ea4: [0;33mmain_task[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/freertos/app_startup.c[0m[0m:[1;31m199[0m
+[0m--- 0x42061ece: [0;33mvPortTaskWrapper[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c[0m[0m:[1;31m143[0m
+[0m--- 0x4037f2b1: [0;33mesp_restart_noos[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_system/port/soc/esp32s3/system_internal.c[0m[0m:[1;31m165[0m
+[0m--- 0x403c8700: [0;33m_stext[0m[0m at [0;32m??[0m[0m:[1;31m?[0m
+[0m--- 0x403c8908: [0;33mcall_start_cpu0[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/bootloader/subproject/main/bootloader_start.c[0m[0m:[1;31m27[0m
+[0m

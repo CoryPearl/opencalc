@@ -8,8 +8,16 @@
 #define OPENCALC_ENABLE_BLUETOOTH 0
 #define OPENCALC_ENABLE_WIFI 0
 #define OPENCALC_ENABLE_DOOM 1
-#define OPENCALC_ENABLE_SERIAL_BUTTON_INPUT 1 // For debugging without having to use a physical button matrix
+#define OPENCALC_ENABLE_SERIAL_BUTTON_INPUT 0 // For debugging without having to use a physical button matrix
 #define OPENCALC_FLASH_STORAGE_IMAGE 1 // Flash firmware/storage_image into the storage partition
+
+/*
+ * The PCB keypad uses one isolation diode in series with every switch.
+ * Columns are pulled high and rows are scanned low, so each diode must have
+ * its anode toward COL0..COL4 and its cathode/bar toward ROW0..ROW9.
+ */
+#define OPENCALC_KEYPAD_HAS_PER_KEY_DIODES 1
+#define OPENCALC_KEYPAD_ROW_SETTLE_US 5
 
 /*
  * Hardware switch.

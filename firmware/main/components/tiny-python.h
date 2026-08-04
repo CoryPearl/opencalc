@@ -16,7 +16,11 @@ extern "C" {
 #endif
 
 #ifndef PY_MAX_STRING
+#ifdef ESP_PLATFORM
+#define PY_MAX_STRING 128
+#else
 #define PY_MAX_STRING 256
+#endif
 #endif
 
 #ifndef PY_MAX_ERROR

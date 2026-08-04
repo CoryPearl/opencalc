@@ -1,0 +1,26 @@
+Command: /Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python /Users/corypearl/.espressif/v6.0.1/esp-idf/tools/idf_monitor.py -p /dev/cu.usbmodem5C361416231 -b 115200 --toolchain-prefix xtensa-esp32s3-elf- --target esp32s3 --revision 0 /Users/corypearl/Desktop/opencalc/firmware/build/opencalc.elf /Users/corypearl/Desktop/opencalc/firmware/build/bootloader/bootloader.elf -m '/Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python' '/Users/corypearl/.espressif/v6.0.1/esp-idf/tools/idf.py'
+[0;33m--- esp-idf-monitor 1.9.0 on /dev/cu.usbmodem5C361416231 115200[0m
+[0;33m--- Quit: Ctrl+] | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H[0m
+[0m--- 0x403c8700: [0;33m_stext[0m[0m at [0;32m??[0m[0m:[1;31m?[0m
+[0m--- 0x403c8908: [0;33mcall_start_cpu0[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/bootloader/subproject/main/bootloader_start.c[0m[0m:[1;31m27[0m
+[0;33m--- Warning: Checksum mismatch between flashed and built applications. Checksum of built application is 8d6ea93ba17972867486ce8ece4a3711a74cf1a92fc666c1dbd65a5037310edf[0m
+[0m--- 0x4037f1b5: [0;33mpanic_abort[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_system/panic.c[0m[0m:[1;31m464[0m
+[0m--- 0x4037f17d: [0;33mesp_system_abort[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_system/port/esp_system_chip.c[0m[0m:[1;31m87[0m
+[0m--- 0x4037df95: [0;33m__assert_func[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_libc/src/assert.c[0m[0m:[1;31m81[0m
+[0m--- 0x4037657d: [0;33mheap_caps_free[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/heap/heap_caps_base.c[0m[0m:[1;31m80[0m
+[0m--- 0x4037dfc5: [0;33mfree[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_libc/src/heap.c[0m[0m:[1;31m34[0m
+[0m--- 0x42020afd: [0;33mpy_run_file[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/tiny-python.c[0m[0m:[1;31m3593[0m
+[0m--- 0x42016ee9: [0;33mrun_selected_script[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/opencalc_ui.c[0m[0m:[1;31m5188[0m
+[0m--- 0x42016fa8: [0;33mrun_selected_script[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/opencalc_ui.c[0m[0m:[1;31m5212[0m
+[0m--- 0x4201923b: [0;33mscript_editor_open_new[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/opencalc_ui.c[0m[0m:[1;31m2284[0m
+[0m--- 0x42019a9f: [0;33mdispatch_key[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/opencalc_ui.c[0m[0m:[1;31m5917[0m
+[0m--- 0x42019f1b: [0;33mdispatch_key[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/opencalc_ui.c[0m[0m:[1;31m6037[0m
+[0m--- 0x42019f69: [0;33mopencalc_ui_press_button_number[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/components/opencalc_ui.c[0m[0m:[1;31m6057[0m
+[0m--- 0x4200e464: [0;33mapp_main[0m[0m at [0;32m/Users/corypearl/Desktop/opencalc/firmware/main/main.c[0m[0m:[1;31m109[0m
+[0m--- 0x42009e74: [0;33mmain_task[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/freertos/app_startup.c[0m[0m:[1;31m197[0m
+[0m--- 0x42060a32: [0;33mesp_panic_handler_feed_wdts[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_system/panic.c[0m[0m:[1;31m234[0m
+[0;33m--- Warning: Checksum mismatch between flashed and built applications. Checksum of built application is 8d6ea93ba17972867486ce8ece4a3711a74cf1a92fc666c1dbd65a5037310edf[0m
+[0m--- 0x4037f355: [0;33mesp_restart_noos[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_system/port/soc/esp32s3/system_internal.c[0m[0m:[1;31m165[0m
+[0m--- 0x403c8700: [0;33m_stext[0m[0m at [0;32m??[0m[0m:[1;31m?[0m
+[0m--- 0x403c8908: [0;33mcall_start_cpu0[0m[0m at [0;32m/Users/corypearl/.espressif/v6.0.1/esp-idf/components/bootloader/subproject/main/bootloader_start.c[0m[0m:[1;31m27[0m
+[0;33m--- Warning: Checksum mismatch between flashed and built applications. Checksum of built application is 8d6ea93ba17972867486ce8ece4a3711a74cf1a92fc666c1dbd65a5037310edf[0m

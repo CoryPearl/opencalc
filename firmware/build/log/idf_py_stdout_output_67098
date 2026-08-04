@@ -1,0 +1,19 @@
+Command: ninja all
+[1/10] Performing build step for 'bootloader'
+[1/1] cd /Users/corypearl/Desktop/opencalc/firmware/build/bootloader && /Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python /Users/corypearl/.espressif/v6.0.1/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x0 /Users/corypearl/Desktop/opencalc/firmware/build/bootloader/bootloader.bin
+Bootloader binary size 0x5240 bytes. 0x2dc0 bytes (36%) free.
+[2/10] No install step for 'bootloader'
+[3/10] Completed 'bootloader'
+[4/10] cd /Users/corypearl/Desktop/opencalc/firmware/build && /Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python /Users/corypearl/.espressif/v6.0.1/esp-idf/components/fatfs/wl_fatfsgen.py /Users/corypearl/Desktop/opencalc/firmware/storage_image --long_name_support --use_default_datetime --partition_size 0x800000 --output_file /Users/corypearl/Desktop/opencalc/firmware/build/storage.bin --sector_size 4096
+[5/10] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/opencalc_doom.c.obj
+[6/10] Linking C static library esp-idf/main/libmain.a
+[7/10] Generating esp-idf/esp_system/ld/sections.ld
+[8/10] Linking CXX executable opencalc.elf
+[9/10] Generating binary image from built executable
+esptool v5.3.dev3
+Creating ESP32-S3 image...
+Merged 4 ELF sections.
+Successfully created ESP32-S3 image.
+Generated /Users/corypearl/Desktop/opencalc/firmware/build/opencalc.bin
+[10/10] cd /Users/corypearl/Desktop/opencalc/firmware/build && /Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python /Users/corypearl/.espressif/v6.0.1/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /Users/corypearl/Desktop/opencalc/firmware/build/partition_table/partition-table.bin /Users/corypearl/Desktop/opencalc/firmware/build/opencalc.bin
+opencalc.bin binary size 0xcb710 bytes. Smallest app partition is 0x400000 bytes. 0x3348f0 bytes (80%) free.

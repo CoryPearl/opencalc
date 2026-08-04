@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdbool.h>
+
 void init_usb_msc(void);
-void usb_msc_mount_app(void);
-void usb_msc_mount_usb(void);
+bool usb_msc_mount_app(void);
+bool usb_msc_mount_usb(void);

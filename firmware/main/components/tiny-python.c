@@ -51,6 +51,7 @@ int main(void) {
 #include <string.h>
 
 #ifdef ESP_PLATFORM
+#include "esp_attr.h"
 #include "esp_heap_caps.h"
 #endif
 
@@ -180,7 +181,7 @@ typedef struct {
 #ifndef PY_PARSER_POOL_SIZE
 #define PY_PARSER_POOL_SIZE 6
 #endif
-static parser_t *s_parser_pool[PY_PARSER_POOL_SIZE];
+static EXT_RAM_BSS_ATTR parser_t s_parser_pool[PY_PARSER_POOL_SIZE];
 static int s_parser_pool_used[PY_PARSER_POOL_SIZE];
 #endif
 
@@ -190,17 +191,9 @@ static parser_t *parser_alloc(void) {
         if (s_parser_pool_used[i]) {
             continue;
         }
-        if (s_parser_pool[i] == NULL) {
-            s_parser_pool[i] = (parser_t *)heap_caps_malloc(sizeof(parser_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-            if (s_parser_pool[i] == NULL) {
-                s_parser_pool[i] = (parser_t *)malloc(sizeof(parser_t));
-            }
-        }
-        if (s_parser_pool[i] != NULL) {
-            memset(s_parser_pool[i], 0, sizeof(parser_t));
-            s_parser_pool_used[i] = 1;
-            return s_parser_pool[i];
-        }
+        memset(&s_parser_pool[i], 0, sizeof(s_parser_pool[i]));
+        s_parser_pool_used[i] = 1;
+        return &s_parser_pool[i];
     }
     return NULL;
 #else
@@ -214,7 +207,7 @@ static void parser_free(parser_t *parser) {
     }
 #ifdef ESP_PLATFORM
     for (int i = 0; i < PY_PARSER_POOL_SIZE; i++) {
-        if (s_parser_pool[i] == parser) {
+        if (&s_parser_pool[i] == parser) {
             s_parser_pool_used[i] = 0;
             return;
         }
@@ -227,12 +220,19 @@ static void parser_free(parser_t *parser) {
 
 static char *program_buffer_alloc(void) {
 #ifdef ESP_PLATFORM
-    char *buffer = (char *)heap_caps_malloc(PY_MAX_PROGRAM, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    if (buffer != NULL) {
-        return buffer;
-    }
-#endif
+    static EXT_RAM_BSS_ATTR char program_buffer[PY_MAX_PROGRAM];
+    return program_buffer;
+#else
     return (char *)malloc(PY_MAX_PROGRAM);
+#endif
+}
+
+static void program_buffer_free(char *program) {
+#ifndef ESP_PLATFORM
+    free(program);
+#else
+    (void)program;
+#endif
 }
 
 static void py_error(py_t *py, const char *message) {
@@ -1012,6 +1012,13 @@ static int lex(parser_t *p) {
 }
 
 static token_t *current(parser_t *p) {
+    if (p->token_count == 0) {
+        py_error(p->py, "parser has no tokens");
+        return NULL;
+    }
+    if (p->pos >= p->token_count) {
+        p->pos = p->token_count - 1;
+    }
     if (p->pos < p->token_count) {
         p->py->current_line = p->tokens[p->pos].line;
         p->py->current_col = p->tokens[p->pos].col;
@@ -1028,7 +1035,8 @@ static token_t *peek(parser_t *p, size_t ahead) {
 }
 
 static int match(parser_t *p, token_type_t type) {
-    if (current(p)->type == type) {
+    token_t *token = current(p);
+    if (token != NULL && token->type == type) {
         p->pos++;
         return 1;
     }
@@ -1140,6 +1148,52 @@ static py_value_t call_function(parser_t *p, const char *name) {
     if (!expect(p, TOK_LPAREN, "expected '(' after function name")) {
         return py_none();
     }
+
+    if (strcmp(name, "int") == 0 &&
+        current(p)->type == TOK_IDENT &&
+        strncmp(current(p)->text, "input", PY_MAX_NAME) == 0 &&
+        peek(p, 1)->type == TOK_LPAREN) {
+        char input[PY_MAX_STRING];
+        size_t len;
+
+        p->pos += 2;
+        if (!match(p, TOK_RPAREN)) {
+            py_value_t prompt = parse_expression(p);
+            char prompt_text[PY_MAX_STRING];
+            if (py_has_error(p->py)) {
+                return py_none();
+            }
+            if (!expect(p, TOK_RPAREN, "expected ')' after input prompt")) {
+                return py_none();
+            }
+            py_value_to_string(&prompt, prompt_text, sizeof(prompt_text));
+            py_append(p, prompt_text);
+        }
+        if (!match(p, TOK_RPAREN) &&
+            current(p)->type != TOK_SEMI &&
+            current(p)->type != TOK_RBRACE &&
+            current(p)->type != TOK_EOF) {
+            py_error(p->py, "expected ')' after int(input())");
+            return py_none();
+        }
+        if (p->py->input_callback == NULL) {
+            py_error(p->py, "input callback not set");
+            return py_none();
+        }
+
+        input[0] = '\0';
+        if (!p->py->input_callback(input, sizeof(input), p->py->input_user_data)) {
+            py_error(p->py, "input failed");
+            return py_none();
+        }
+        input[sizeof(input) - 1] = '\0';
+        len = strlen(input);
+        while (len > 0 && (input[len - 1] == '\n' || input[len - 1] == '\r')) {
+            input[--len] = '\0';
+        }
+        return py_int(atoi(input));
+    }
+
     if (!match(p, TOK_RPAREN)) {
         do {
             if (argc >= PY_MAX_PARAMS) {
@@ -3523,7 +3577,7 @@ int py_run_source(py_t *py, const char *source, char *output, size_t output_size
     ok = py_run(py, program, output, output_size);
 
 done:
-    free(program);
+    program_buffer_free(program);
     return ok;
 }
 
@@ -3558,7 +3612,7 @@ int py_run_file(py_t *py, const char *path, char *output, size_t output_size) {
     file = fopen(path, "r");
     if (file == NULL) {
         py_error(py, "could not open file");
-        free(program);
+        program_buffer_free(program);
         return 0;
     }
     program[0] = '\0';
@@ -3571,12 +3625,12 @@ int py_run_file(py_t *py, const char *path, char *output, size_t output_size) {
             fclose(file);
             py->current_col = strlen(line);
             py_error(py, "line too long");
-            free(program);
+            program_buffer_free(program);
             return 0;
         }
         if (!append_source_line(py, program, PY_MAX_PROGRAM, line, indents, &depth, &previous_colon)) {
             fclose(file);
-            free(program);
+            program_buffer_free(program);
             return 0;
         }
         source_line++;
@@ -3585,7 +3639,7 @@ int py_run_file(py_t *py, const char *path, char *output, size_t output_size) {
     while (depth > 0) {
         if (!append_program_text(py, program, PY_MAX_PROGRAM, " }")) {
             fclose(file);
-            free(program);
+            program_buffer_free(program);
             return 0;
         }
         depth--;
@@ -3593,7 +3647,7 @@ int py_run_file(py_t *py, const char *path, char *output, size_t output_size) {
 
     fclose(file);
     ok = py_run(py, program, output, output_size);
-    free(program);
+    program_buffer_free(program);
     return ok;
 }
 

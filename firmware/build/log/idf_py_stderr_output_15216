@@ -1,0 +1,12 @@
+Command: ninja flash
+
+A fatal error occurred: Could not open /dev/cu.usbmodem5C361416231, the port is busy or doesn't exist.
+([Errno 35] Could not exclusively lock port /dev/cu.usbmodem5C361416231: [Errno 35] Resource temporarily unavailable)
+
+CMake Error at /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esptool_py/run_serial_tool.cmake:67 (message):
+  
+  /Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python;-m;esptool;--chip;esp32s3
+  failed.
+
+
+

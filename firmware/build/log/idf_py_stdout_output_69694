@@ -1,0 +1,107 @@
+Command: ninja all
+[0/1] Re-running CMake...
+-- Component directory /Users/corypearl/.espressif/v6.0.1/esp-idf/components/mqtt does not contain a CMakeLists.txt file. No component will be added
+-- Minimal build - OFF
+-- Building ESP-IDF components for target esp32s3
+NOTICE: Processing 5 dependencies:
+NOTICE: [1/5] espressif/cmake_utilities (0.5.3)
+NOTICE: [2/5] espressif/esp_lcd_ili9341 (2.0.2)
+NOTICE: [3/5] espressif/esp_tinyusb (2.2.0)
+NOTICE: [4/5] espressif/tinyusb (0.19.0~3)
+NOTICE: [5/5] idf (6.0.1)
+-- ESP-TEE is currently supported only on the esp32c6;esp32h2;esp32c5;esp32c61 SoCs
+-- KCONFIG_REPORT_VERBOSITY not set, using default
+-- Project sdkconfig file /Users/corypearl/Desktop/opencalc/firmware/sdkconfig
+-- Compiler supported targets: xtensa-esp-elf
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- App "opencalc" version: 6c1d515-dirty
+-- Setting up mbedtls configuration
+-- Linkage type is PUBLIC
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_wdt/esp32s3/rom.wdt.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_system/ld/esp32s3/memory.ld.in
+--   -> Preprocessing .in script: /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_system/ld/esp32s3/memory.ld.in
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_system/ld/esp32s3/sections.ld.in
+--   -> Preprocessing .in script: /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_system/ld/esp32s3/sections.ld.in
+--   -> Applying ldgen processing: /Users/corypearl/Desktop/opencalc/firmware/build/esp-idf/esp_system/ld/sections.ld.in
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.api.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.bt_funcs.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.libgcc.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.version.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.ble_master.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.ble_50.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.ble_smp.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.ble_dtm.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.ble_test.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.ble_scan.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.libc.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/soc/esp32s3/ld/esp32s3.peripherals.ld
+-- ESP_LCD_ILI9341: 2.0.2
+-- Component idf::esp_trace will be linked with -Wl,--whole-archive
+-- Components: app_trace app_update bootloader bootloader_support bt cmock console cxx driver efuse esp-tls esp_adc esp_app_format esp_blockdev esp_blockdev_util esp_bootloader_format esp_coex esp_common esp_driver_ana_cmpr esp_driver_bitscrambler esp_driver_cam esp_driver_dac esp_driver_dma esp_driver_gpio esp_driver_gptimer esp_driver_i2c esp_driver_i2s esp_driver_i3c esp_driver_isp esp_driver_jpeg esp_driver_ledc esp_driver_mcpwm esp_driver_parlio esp_driver_pcnt esp_driver_ppa esp_driver_rmt esp_driver_sd_intf esp_driver_sdio esp_driver_sdm esp_driver_sdmmc esp_driver_sdspi esp_driver_spi esp_driver_touch_sens esp_driver_tsens esp_driver_twai esp_driver_uart esp_driver_usb_serial_jtag esp_eth esp_event esp_gdbstub esp_hal_ana_cmpr esp_hal_ana_conv esp_hal_cam esp_hal_clock esp_hal_dma esp_hal_gpio esp_hal_gpspi esp_hal_i2c esp_hal_i2s esp_hal_ieee802154 esp_hal_jpeg esp_hal_lcd esp_hal_ledc esp_hal_mcpwm esp_hal_mspi esp_hal_parlio esp_hal_pcnt esp_hal_pmu esp_hal_ppa esp_hal_rmt esp_hal_rtc_timer esp_hal_sd esp_hal_security esp_hal_timg esp_hal_touch_sens esp_hal_twai esp_hal_uart esp_hal_usb esp_hal_wdt esp_hid esp_http_client esp_http_server esp_https_ota esp_https_server esp_hw_support esp_lcd esp_libc esp_local_ctrl esp_mm esp_netif esp_netif_stack esp_partition esp_phy esp_pm esp_psram esp_ringbuf esp_rom esp_security esp_stdio esp_system esp_timer esp_trace esp_usb_cdc_rom_console esp_wifi espcoredump espressif__cmake_utilities espressif__esp_lcd_ili9341 espressif__esp_tinyusb espressif__tinyusb esptool_py fatfs freertos hal heap http_parser idf_test ieee802154 log lwip main mbedtls nvs_flash nvs_sec_provider openthread partition_table perfmon protobuf-c protocomm pthread rt sdmmc soc spi_flash spiffs tcp_transport ulp unity vfs wear_levelling wpa_supplicant xtensa
+-- Component paths: /Users/corypearl/.espressif/v6.0.1/esp-idf/components/app_trace /Users/corypearl/.espressif/v6.0.1/esp-idf/components/app_update /Users/corypearl/.espressif/v6.0.1/esp-idf/components/bootloader /Users/corypearl/.espressif/v6.0.1/esp-idf/components/bootloader_support /Users/corypearl/.espressif/v6.0.1/esp-idf/components/bt /Users/corypearl/.espressif/v6.0.1/esp-idf/components/cmock /Users/corypearl/.espressif/v6.0.1/esp-idf/components/console /Users/corypearl/.espressif/v6.0.1/esp-idf/components/cxx /Users/corypearl/.espressif/v6.0.1/esp-idf/components/driver /Users/corypearl/.espressif/v6.0.1/esp-idf/components/efuse /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp-tls /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_adc /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_app_format /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_blockdev /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_blockdev_util /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_bootloader_format /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_coex /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_common /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_ana_cmpr /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_bitscrambler /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_cam /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_dac /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_dma /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_gpio /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_gptimer /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_i2c /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_i2s /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_i3c /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_isp /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_jpeg /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_ledc /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_mcpwm /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_parlio /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_pcnt /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_ppa /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_rmt /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_sd_intf /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_sdio /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_sdm /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_sdmmc /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_sdspi /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_spi /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_touch_sens /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_tsens /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_twai /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_uart /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_usb_serial_jtag /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_eth /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_event /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_gdbstub /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_ana_cmpr /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_ana_conv /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_cam /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_clock /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_dma /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_gpio /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_gpspi /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_i2c /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_i2s /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_ieee802154 /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_jpeg /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_lcd /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_ledc /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_mcpwm /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_mspi /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_parlio /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_pcnt /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_pmu /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_ppa /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_rmt /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_rtc_timer /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_sd /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_security /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_timg /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_touch_sens /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_twai /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_uart /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_usb /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_wdt /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hid /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_http_client /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_http_server /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_https_ota /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_https_server /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hw_support /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_lcd /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_libc /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_local_ctrl /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_mm /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_netif /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_netif_stack /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_partition /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_phy /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_pm /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_psram /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_ringbuf /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_security /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_stdio /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_system /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_timer /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_trace /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_usb_cdc_rom_console /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_wifi /Users/corypearl/.espressif/v6.0.1/esp-idf/components/espcoredump /Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__cmake_utilities /Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_lcd_ili9341 /Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb /Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__tinyusb /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esptool_py /Users/corypearl/.espressif/v6.0.1/esp-idf/components/fatfs /Users/corypearl/.espressif/v6.0.1/esp-idf/components/freertos /Users/corypearl/.espressif/v6.0.1/esp-idf/components/hal /Users/corypearl/.espressif/v6.0.1/esp-idf/components/heap /Users/corypearl/.espressif/v6.0.1/esp-idf/components/http_parser /Users/corypearl/.espressif/v6.0.1/esp-idf/components/idf_test /Users/corypearl/.espressif/v6.0.1/esp-idf/components/ieee802154 /Users/corypearl/.espressif/v6.0.1/esp-idf/components/log /Users/corypearl/.espressif/v6.0.1/esp-idf/components/lwip /Users/corypearl/Desktop/opencalc/firmware/main /Users/corypearl/.espressif/v6.0.1/esp-idf/components/mbedtls /Users/corypearl/.espressif/v6.0.1/esp-idf/components/nvs_flash /Users/corypearl/.espressif/v6.0.1/esp-idf/components/nvs_sec_provider /Users/corypearl/.espressif/v6.0.1/esp-idf/components/openthread /Users/corypearl/.espressif/v6.0.1/esp-idf/components/partition_table /Users/corypearl/.espressif/v6.0.1/esp-idf/components/perfmon /Users/corypearl/.espressif/v6.0.1/esp-idf/components/protobuf-c /Users/corypearl/.espressif/v6.0.1/esp-idf/components/protocomm /Users/corypearl/.espressif/v6.0.1/esp-idf/components/pthread /Users/corypearl/.espressif/v6.0.1/esp-idf/components/rt /Users/corypearl/.espressif/v6.0.1/esp-idf/components/sdmmc /Users/corypearl/.espressif/v6.0.1/esp-idf/components/soc /Users/corypearl/.espressif/v6.0.1/esp-idf/components/spi_flash /Users/corypearl/.espressif/v6.0.1/esp-idf/components/spiffs /Users/corypearl/.espressif/v6.0.1/esp-idf/components/tcp_transport /Users/corypearl/.espressif/v6.0.1/esp-idf/components/ulp /Users/corypearl/.espressif/v6.0.1/esp-idf/components/unity /Users/corypearl/.espressif/v6.0.1/esp-idf/components/vfs /Users/corypearl/.espressif/v6.0.1/esp-idf/components/wear_levelling /Users/corypearl/.espressif/v6.0.1/esp-idf/components/wpa_supplicant /Users/corypearl/.espressif/v6.0.1/esp-idf/components/xtensa
+-- OpenCalc storage image: flashing /Users/corypearl/Desktop/opencalc/firmware/storage_image into the storage partition
+-- Configuring done (5.2s)
+-- Generating done (0.4s)
+-- Build files have been written to: /Users/corypearl/Desktop/opencalc/firmware/build
+[1/14] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/main.c.obj
+[2/14] cd /Users/corypearl/Desktop/opencalc/firmware/build && /Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python /Users/corypearl/.espressif/v6.0.1/esp-idf/components/fatfs/wl_fatfsgen.py /Users/corypearl/Desktop/opencalc/firmware/storage_image --long_name_support --use_default_datetime --partition_size 0x800000 --output_file /Users/corypearl/Desktop/opencalc/firmware/build/storage.bin --sector_size 4096
+[3/14] Generating ../../partition_table/partition-table.bin
+Partition table binary generated. Contents:
+*******************************************************************************
+# ESP-IDF Partition Table
+# Name, Type, SubType, Offset, Size, Flags
+nvs,data,nvs,0x9000,20K,
+phy_init,data,phy,0xe000,4K,
+factory,app,factory,0x10000,4M,
+storage,data,fat,0x410000,8M,
+*******************************************************************************
+[4/14] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/board_init.c.obj
+/Users/corypearl/Desktop/opencalc/firmware/main/components/board_init.c:376:13: warning: 'gpio_isr_service_init' defined but not used [-Wunused-function]
+  376 | static void gpio_isr_service_init(void)
+      |             ^~~~~~~~~~~~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/board_init.c:346:23: warning: 'keypad_gpio_isr' defined but not used [-Wunused-function]
+  346 | static void IRAM_ATTR keypad_gpio_isr(void *arg)
+      |                       ^~~~~~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/board_init.c:177:25: warning: 'KEYPAD_COL_PINS' defined but not used [-Wunused-const-variable=]
+  177 | static const gpio_num_t KEYPAD_COL_PINS[BOARD_KEYPAD_COLS] = {
+      |                         ^~~~~~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/board_init.c:164:25: warning: 'KEYPAD_ROW_PINS' defined but not used [-Wunused-const-variable=]
+  164 | static const gpio_num_t KEYPAD_ROW_PINS[BOARD_KEYPAD_ROWS] = {
+      |                         ^~~~~~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/board_init.c:42:13: warning: 's_battery_adc_calibrated' defined but not used [-Wunused-variable]
+   42 | static bool s_battery_adc_calibrated = false;
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/board_init.c:41:13: warning: 's_battery_adc_ready' defined but not used [-Wunused-variable]
+   41 | static bool s_battery_adc_ready = false;
+      |             ^~~~~~~~~~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/board_init.c:40:26: warning: 's_battery_adc_cali' defined but not used [-Wunused-variable]
+   40 | static adc_cali_handle_t s_battery_adc_cali = NULL;
+      |                          ^~~~~~~~~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/board_init.c:39:34: warning: 's_battery_adc_unit' defined but not used [-Wunused-variable]
+   39 | static adc_oneshot_unit_handle_t s_battery_adc_unit = NULL;
+      |                                  ^~~~~~~~~~~~~~~~~~
+[5/14] Performing build step for 'bootloader'
+[1/1] cd /Users/corypearl/Desktop/opencalc/firmware/build/bootloader && /Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python /Users/corypearl/.espressif/v6.0.1/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x0 /Users/corypearl/Desktop/opencalc/firmware/build/bootloader/bootloader.bin
+Bootloader binary size 0x5240 bytes. 0x2dc0 bytes (36%) free.
+[6/14] No install step for 'bootloader'
+[7/14] Completed 'bootloader'
+[8/14] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/opencalc_ui.c.obj
+[9/14] Linking C static library esp-idf/main/libmain.a
+[10/14] Generating esp-idf/esp_system/ld/sections.ld
+[11/14] Linking CXX executable opencalc.elf
+[12/14] Generating binary image from built executable
+esptool v5.3.dev3
+Creating ESP32-S3 image...
+Merged 4 ELF sections.
+Successfully created ESP32-S3 image.
+Generated /Users/corypearl/Desktop/opencalc/firmware/build/opencalc.bin
+[13/14] cd /Users/corypearl/Desktop/opencalc/firmware/build && /Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python /Users/corypearl/.espressif/v6.0.1/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /Users/corypearl/Desktop/opencalc/firmware/build/partition_table/partition-table.bin /Users/corypearl/Desktop/opencalc/firmware/build/opencalc.bin
+opencalc.bin binary size 0xcb740 bytes. Smallest app partition is 0x400000 bytes. 0x3348c0 bytes (80%) free.

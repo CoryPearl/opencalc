@@ -18,7 +18,7 @@
 #include "components/usb_msc.h"
 
 #if OPENCALC_ENABLE_SERIAL_BUTTON_INPUT
-static void serial_button_task(void *arg)
+static void serial_button_task(void *arg) 
 {
     (void)arg;
 
@@ -33,7 +33,7 @@ static void serial_button_task(void *arg)
     printf("31 log/10^/P    32 7/Q           33 8/R         34 9/S         35 */T\n");
     printf("36 ln/e^/U      37 4/V           38 5/W         39 6/X         40 -/Y\n");
     printf("41 sto/get/Z    42 1/G           43 2/H         44 3/I         45 / / %%\n");
-    printf("46 on/home/off  47 0             48 .           49 (-)/ans     50 enter\n\n");
+    printf("46 on/home/off  47 0             48 ./#           49 (-)/ans     50 enter\n\n");
     printf("button> ");
     fflush(stdout);
 
@@ -112,6 +112,6 @@ void app_main(void) {
 
         opencalc_ui_handle_serial_buttons();
         opencalc_ui_handle_keypad_interrupt();
-        opencalc_ui_handle_touch_interrupt();
+        // opencalc_ui_handle_touch_interrupt();
     }
 }
