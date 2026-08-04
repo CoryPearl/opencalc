@@ -1,67 +1,75 @@
-# OpenCalc PCB — General Overview
+# OpenCalc
 
-A plain-language summary of what's actually on this board, based on the V4 pcb.
+Blog: [https://corypearl.github.io/opencalc/blog.html](https://corypearl.github.io/opencalc/blog.html)
 
-## Brain
+OpenCalc is an open source graphing calculator project inspired by the TI-84, but built around a faster ESP32-S3, a color LCD, USB-C, Python-style scripting, and expandable firmware.
 
-- ESP32-S3-WROOM-1-N16R8 (16 MB flash, 8 MB PSRAM), with standard decoupling
-  capacitors.
-- A power-on indicator LED (LED1) that's always lit whenever 3.3 V is present.
-- Separate reset and boot buttons, each with its own pull-up resistor. Reset
-  also has a 1 µF debounce cap; boot doesn't.
+The calculator runs **OpenCalc OS**, the project’s open-source ESP32-S3 operating environment. OpenCalc OS includes the calculator interface, math and graphing engines, built-in apps, Python-style scripting runtime, USB file storage, keypad handling, display drivers, and power management.
 
-## Power Path
+## Why OpenCalc Is Different
 
-USB-C receptacle → single polyfuse on VBUS → BQ24074 LiPo charger (charges
-the battery and produces a VSYS rail) → TPS63802 buck-boost regulator →
-regulated 3.3 V rail.
+OpenCalc is meant to feel like a graphing calculator, but with more open hardware and a much more flexible firmware base than a closed classroom calculator.
 
-- Two status LEDs come off the charger: a green one for "charging" and a
-  blue one for "power good," each with its own pull-up and series resistor.
-- A simple resistor divider (two 1 MΩ resistors) halves the battery voltage
-  so it can be read on an ESP32 ADC pin.
+- **ESP32-S3 processor:** dual-core 32-bit MCU running up to 240 MHz, giving the calculator far more general-purpose compute headroom than older calculator hardware.
+- **More memory to build with:** the firmware targets ESP32-S3 boards with RAM plus PSRAM support, so graphics, scripting, menus, and games have room to grow.
+- **8 MB user storage partition:** scripts, WAD files, and other user files live in a FAT storage area exposed by the calculator.
+- **Easy USB-C file access:** plug the USB port into a computer and it appears as `opencalc` storage, so files can be added without special linking software.
+- **OpenCalc OS:** the calculator UI, math parser, graphing, keypad, touch, storage, apps, and hardware behavior are all editable in this repo.
+- **Modern extras:** color LCD, USB mass storage, Python-style scripts, doom, and a configurable app launcher.
 
-## USB-C
+The current prototype firmware brings up:
 
-- Standard CC1/CC2 5.1 kΩ pulldowns.
-- A small ESD protection chip (TPD2E2U06DCKR) sits between the connector's
-  D+/D− lines and the ESP32's native USB pins.
-- Only VBUS is fused — D+/D− are not individually fused.
+- ILI9341 LCD output
+- 10x5 button matrix support
+- USB mass storage named `opencalc`
+- flashed script/storage image support
+- graphing calculator UI with calculator, graph, table, apps, settings, scripts, matrix, stats, finance, conics, and inequality graphing
+- optional Doom support
 
-## Display
+See PCB ReadMe for hardware specifications
 
-- A 14-pin, 2.54 mm header wired for an ILI9341 SPI display: power, GND, CS,
-  RST, DC, MOSI, SCLK, MISO, and a backlight line.
-- The backlight is switched by a small load-switch IC (TPS22918) rather than
-  a plain transistor, gated by a PWM signal from the ESP32 with a pulldown to
-  keep it off by default.
-- The last 5 pins on that header — the ones that would carry touchscreen
-  signals — are left unconnected. As drawn, there's no touch support.
+## User And Debug Header
 
-## Keypad
+Test pads on the back.
 
-- A 10-row × 5-column scan matrix, 50 keys total.
-- Each key has its own series diode (anode toward the column, cathode toward
-  the row) to prevent ghosting on multi-key presses.
-- Each column has its own 10 kΩ pull-up to 3.3 V.
-- The ON/HOME key sits in the matrix like any other key, on the column used
-  for waking from sleep.
+Power off is software-only for the current firmware: `2nd` + `On` shuts off the display/backlight and puts the ESP32-S3 into deep sleep. The PCB should prioritize low quiescent current parts and an ON/HOME key matrix wake path instead of a required firmware-controlled true power latch.
 
-## Battery
+## Doom Controls
 
-- 3.7 V 2000 mAh LiPo pack (103454 form factor), connecting through a 2-pin
-  JST-PHR connector.
-- No separate protection circuitry is shown on the board itself — that would
-  need to live in the battery pack.
+Doom is toggled from the calculator with `Alpha` then `2nd`. Press the same combo again to leave Doom and return to the calculator UI.
 
-## Test Points
+| Calculator button        | Doom action               |
+| ------------------------ | ------------------------- |
+| Up / Down / Left / Right | Move                      |
+| `Y=`                     | Fire                      |
+| `Window`                 | Cycle weapons             |
+| `Zoom`                   | Use / open doors          |
+| `Trace`                  | Open / close automap      |
+| `1`-`7`                  | Select weapon slot        |
+| Hold `Mode`              | Run / sprint              |
+| Hold `Del` + Left/Right  | Strafe                    |
+| `Enter`                  | Menu/select               |
+| `Back`                   | Escape/back               |
+| `On (Home)`              | Quit Doom and return home |
 
-Ten labeled probe pads: 3V3, GND, VBAT, USB_VBUS, RESET, BOOT, UART_TX,
-UART_RX, USB_DP, and USB_DM.
+General calculator controls: `DEL` is Back, `CLEAR` deletes, and `2nd` + `CLEAR` clears the current input field. `Alpha` + `sin/cos/tan` inserts `csc(`/`sec(`/`cot(`; `Alpha` + `1/2/3` now enters `G/H/I`.
 
-## Worth Flagging
+`PRGM` opens the program menu with Run/Edit/New/Delete entries. `2nd` + `PRGM` jumps straight to the scripts browser.
 
-There's no debug/expansion header, no power-hold/latch circuit, and no spare
-GPIO breakout anywhere on this sheet. If these were expected from an earlier
-version of the design, they've been dropped (or never made it into this
-schematic).
+## Project Layout
+
+```text
+firmware/   OpenCalc OS source for the ESP32-S3 calculator
+hardware/   key layouts, graphics, and hardware design files
+docs/       notes and project website files
+```
+
+See [firmware/FIRMWARE_README.md](firmware/FIRMWARE_README.md) for build, flash, USB storage, and Doom setup notes.
+
+## Status
+
+This is still prototype hardware and OpenCalc OS software. The current goal is to keep the calculator booting directly into a usable interface, expose files over USB when connected to a computer, and continue filling out the TI-style apps with working implementations rather than placeholder screens.
+
+## Credits
+
+Created by Cory Pearl.
