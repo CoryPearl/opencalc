@@ -110,7 +110,10 @@ void app_main(void) {
             opencalc_ui_tick();
         }
 
+    #if OPENCALC_ENABLE_SERIAL_BUTTON_INPUT
         opencalc_ui_handle_serial_buttons();
+    #endif
+
         opencalc_ui_handle_keypad_interrupt();
         // opencalc_ui_handle_touch_interrupt();
     }
