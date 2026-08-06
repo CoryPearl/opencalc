@@ -1,4 +1,0 @@
-(fp_lib_table
-  (version 7)
-  (lib (name "ProPrj_opencalc_2026-08-05")(type "KiCad")(uri "$(KIPRJMOD)/ProPrj_opencalc_2026-08-05.pretty")(options "")(descr ""))
-)

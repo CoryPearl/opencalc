@@ -1,3 +1,6 @@
+Finish V5 pcb in kikad
+- Find all part files, even small things, everything, and add to that folder
+
 - 2nd alpha opens menu of games?
     - tetris
     - nes super mario bros
@@ -27,7 +30,3 @@ https://stardance.hackclub.com/resources/how_to_ship#node=hardware.electronics
 https://www.amazon.com/ViCep-Rechargeable-JST-PHR-02-Connector-Bluetooth/dp/B0F8ML39WJ/ref=sr_1_7?crid=33GLQCMJBETR3&dib=eyJ2IjoiMSJ9.x-UgelNEldRIwLVdjuGk0LPXbqfIbAdSPDnH1ekFRrjU8hvQuN8wdupZzmLidYyKt_R-eJxCi3zjh6EE9h6akGbKJ6P7e5MscUswysC944PQ-roOR0HiW8Binl28_IzwRVPJM7hD7mcD5ZAQOzzE2cec1kRVPKtGK_xcDoWsDCOuGh9POOx-TzcjAPe6HA1Oc1br6WpwkxT87RkTi2xlscMXZAikuLq84WXJIPfbpZ4tw06BZ_IWPWXlbVoycHtUMAzoq7MIRk_Mn9B6tfQFXjm8VFnUBh9YzMg3SEFgB5o.IfjL3lKXBRIKi_hwLb01hq4koiWxk0P4PeIy-GUeIBs&dib_tag=se&keywords=Lithium%2BIon%2BBattery%2B-%2B3.7V%2B2000mAh&qid=1779939787&sprefix=lithium%2Bion%2Bbattery%2B-%2B3.7v%2B2000mah%2Caps%2C126&sr=8-7&th=1
 
 https://www.pcbway.com/project/gifts_detail/Digital_High_precision_Automatic_Multimeter_ZTY890Dpro_3c6b4d0b.html
-
-https://www.youtube.com/shorts/xJu5fUn4m2k
-
-Kikad for next circut
