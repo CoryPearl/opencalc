@@ -1,12 +1,25 @@
 Finish V5 pcb in kikad
 - Find all part files, even small things, everything, and add to that folder
+- change to fast charging at 1000 mah or 2000 mah - thicker traces
+- switch to esp32-s31
+- fix decopling
+- organize better
 
-- 2nd alpha opens menu of games?
-    - tetris
-    - nes super mario bros
-    - snake
-    - the breakout game
-    - dino run game
+Codex prompt this:
+look through the new tetris files, snake files, breakout files, mairo files (also in storage_image, give mario similar controlls to doom, 
+the emulation code is there from https://github.com/Shim06/Anemoia-ESP32?tab=GPL-3.0-1-ov-file but not fully setup) i added in components, make sure they will
+work with the current program and change these things: make it so when doom is activated, instead have a game menu
+with tetris, doom, snake, breakout, and mario for now, also add saved high scores to memory somwhere for doom and tetris and snake and mario and breakout, make sure settings and scores are not reset when powerd off and are saved on chip
+
+next prompt:
+- Make one core draw and one core do math, draw core can also run games
+- Make a power save mode where it’s just on one core (turn off other core) and lowers brightness, toggle in settings
+- Make sure wifi and bluetooth are in sleep modes when the config.h is toggeled off for them
+
+set fps to max??
+
+
+
 
 - add directions to flash
 

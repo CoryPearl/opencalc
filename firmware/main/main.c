@@ -1,6 +1,5 @@
 // Cory Pearl
 // 05/22/26
-// Total lines (doom excluded) - 12,655
 
 // See config.h for settings
 

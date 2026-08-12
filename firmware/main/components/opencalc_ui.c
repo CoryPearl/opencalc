@@ -39,7 +39,7 @@ static bool s_light_mode = false;
 #define SCRIPT_EDITOR_MAX 2048
 #define SETTINGS_COUNT 4
 #define PROGRAM_MENU_COUNT 4
-#define CALC_HISTORY_MAX 8
+#define CALC_HISTORY_MAX 16
 #define LIST_COUNT 6
 #define LIST_MAX_VALUES 999
 #define MATRIX_MAX_N 4

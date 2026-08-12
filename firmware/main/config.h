@@ -30,7 +30,7 @@
  *     Enables the full keypad matrix, touch controller, battery monitor,
  *     charge indicator, backlight PWM, and ON/HOME wake path.
  */
-#define OPENCALC_USE_REAL_PCB 0
+#define OPENCALC_USE_REAL_PCB 1
 
 #define OPENCALC_HARDWARE_PROFILE_DEV_BOARD 0
 #define OPENCALC_HARDWARE_PROFILE_PCB_V3 1

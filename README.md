@@ -17,7 +17,7 @@ OpenCalc is meant to feel like a graphing calculator, but with more open hardwar
 - **OpenCalc OS:** the calculator UI, math parser, graphing, keypad, touch, storage, apps, and hardware behavior are all editable in this repo.
 - **Modern extras:** color LCD, USB mass storage, Python-style scripts, doom, and a configurable app launcher.
 
-The current prototype firmware brings up:
+The current prototype includes:
 
 - ILI9341 LCD output
 - 10x5 button matrix support
@@ -25,7 +25,7 @@ The current prototype firmware brings up:
 - flashed script/storage image support
 - graphing calculator UI with calculator, graph, table, apps, settings, scripts, matrix, stats, finance, conics, and inequality graphing
 - optional Doom support
-- Wi-Fi + b luetooth available but disabled for now due to no use for them
+- Wi-Fi + bluetooth available but disabled for now due to no use for them
 
 See PCB ReadMe for hardware specifications
 
@@ -44,7 +44,7 @@ Test pads are located on the back, as well as 2 LEDs. One LED is on the front wh
 
 Power off is software-only for the current firmware: `2nd` + `On` shuts off the display/backlight and puts the ESP32-S3 into deep sleep. The PCB should prioritize low quiescent current parts and an ON/HOME key matrix wake path instead of a required firmware-controlled true power latch.
 
-## Doom Controls
+## Games
 
 Doom is toggled from the calculator with `Alpha` then `2nd`. Press the same combo again to leave Doom and return to the calculator UI.
 
@@ -62,9 +62,12 @@ Doom is toggled from the calculator with `Alpha` then `2nd`. Press the same comb
 | `Back`                   | Escape/back               |
 | `On (Home)`              | Quit Doom and return home |
 
-General calculator controls: `DEL` is Back, `CLEAR` deletes, and `2nd` + `CLEAR` clears the current input field. `Alpha` + `sin/cos/tan` inserts `csc(`/`sec(`/`cot(`; `Alpha` + `1/2/3` now enters `G/H/I`.
+Other games:
 
-`PRGM` opens the program menu with Run/Edit/New/Delete entries. `2nd` + `PRGM` jumps straight to the scripts browser.
+- Tetris
+- Snake
+- Breakout
+- Mario (work in progress)
 
 ## Project Layout
 
@@ -80,6 +83,19 @@ See [firmware/FIRMWARE_README.md](firmware/FIRMWARE_README.md) for build, flash,
 
 This is still prototype hardware and OpenCalc OS software. The current goal is to keep the calculator booting directly into a usable interface, expose files over USB when connected to a computer, and continue filling out the TI-style apps with working implementations rather than placeholder screens.
 
+## Plans
+
+- switch to esp32-s31 for a big speed boost
+- increase charging speed form 500mah to 1000/2000mah
+- Reorganize PCB
+- Flush out firmware
+
 ## Credits
 
-Created by Cory Pearl.
+This project was partially funded by [https://pcbway.com](PCBWay) in order to be able to test my PCB designs. They were extreamly easy to work with and communicated fast and well, I highly recomend.
+
+Doom port in /doomgeneric made by @ozkl on github at [https://github.com/ozkl/doomgeneric](https://github.com/ozkl/doomgeneric)
+
+NES Emulator in /mairo created by @Shim06, @jethomson, and @ferytell on github at [https://github.com/Shim06/Anemoia-ESP32](https://github.com/Shim06/Anemoia-ESP32)
+
+All other code and designs created by Cory Pearl.
