@@ -360,7 +360,7 @@ Mbed TLS_IS_TOP_LEVEL:STATIC=OFF
 Mbed TLS_SOURCE_DIR:STATIC=/Users/corypearl/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls
 
 //No help, variable specified on the command line.
-PYTHON:UNINITIALIZED=/Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python
+PYTHON:UNINITIALIZED=/Users/corypearl/.espressif/python_env/idf6.0_py3.13_env/bin/python
 
 //No help, variable specified on the command line.
 PYTHON_DEPS_CHECKED:UNINITIALIZED=1
@@ -431,7 +431,7 @@ opencalc_SOURCE_DIR:STATIC=/Users/corypearl/Desktop/opencalc/firmware
 p256m_LIB_DEPENDS:STATIC=general;__idf_cxx;general;__idf_esp_libc;general;__idf_freertos;general;__idf_esp_hw_support;general;__idf_heap;general;__idf_log;general;__idf_soc;general;__idf_hal;general;__idf_esp_rom;general;__idf_esp_common;general;__idf_esp_system;general;__idf_esp_stdio;general;__idf_xtensa;general;idf::esp_security;
 
 //Dependencies for the target
-tfpsacrypto_LIB_DEPENDS:STATIC=general;__idf_cxx;general;__idf_esp_libc;general;__idf_freertos;general;__idf_esp_hw_support;general;__idf_heap;general;__idf_log;general;__idf_soc;general;__idf_hal;general;__idf_esp_rom;general;__idf_esp_common;general;__idf_esp_system;general;__idf_esp_stdio;general;__idf_xtensa;general;builtin;general;everest;general;p256m;general;__idf_nvs_flash;general;idf::esp_security;general;idf::esp_driver_dma;general;idf::esp_mm;general;idf::efuse;general;idf::efuse;
+tfpsacrypto_LIB_DEPENDS:STATIC=general;__idf_cxx;general;__idf_esp_libc;general;__idf_freertos;general;__idf_esp_hw_support;general;__idf_heap;general;__idf_log;general;__idf_soc;general;__idf_hal;general;__idf_esp_rom;general;__idf_esp_common;general;__idf_esp_system;general;__idf_esp_stdio;general;__idf_xtensa;general;builtin;general;everest;general;p256m;general;__idf_nvs_flash;general;idf::esp_security;general;idf::esp_driver_dma;general;idf::esp_mm;general;idf::efuse;general;idf::efuse;general;idf::esp_pm;
 
 
 ########################
@@ -635,7 +635,7 @@ C_COMPILER_SUPPORTS_WFORMAT_SIGNEDNESS:INTERNAL=1
 //Details about finding Git
 FIND_PACKAGE_MESSAGE_DETAILS_Git:INTERNAL=[/usr/bin/git][v2.50.1 (Apple Git-155)()]
 //Details about finding Python3
-FIND_PACKAGE_MESSAGE_DETAILS_Python3:INTERNAL=[/Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python][found components: Interpreter ][v3.14.4()]
+FIND_PACKAGE_MESSAGE_DETAILS_Python3:INTERNAL=[/Users/corypearl/.espressif/python_env/idf6.0_py3.13_env/bin/python][found components: Interpreter ][v3.13.6()]
 //Details about finding Threads
 FIND_PACKAGE_MESSAGE_DETAILS_Threads:INTERNAL=[TRUE][v()]
 //ADVANCED property for variable: GIT_EXECUTABLE
@@ -646,10 +646,10 @@ _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX:INTERNAL=/usr/local
 _Python3_Compiler_REASON_FAILURE:INTERNAL=
 //Development reason failure
 _Python3_Development_REASON_FAILURE:INTERNAL=
-_Python3_EXECUTABLE:INTERNAL=/Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python
+_Python3_EXECUTABLE:INTERNAL=/Users/corypearl/.espressif/python_env/idf6.0_py3.13_env/bin/python
 //Python3 Properties
-_Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;14;4;32;64;;;abi3;/opt/homebrew/opt/python@3.14/Frameworks/Python.framework/Versions/3.14/lib/python3.14;/Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/lib/python3.14;/Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/lib/python3.14/site-packages;/Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/lib/python3.14/site-packages
-_Python3_INTERPRETER_SIGNATURE:INTERNAL=ef1920b92609c4c75b4b0c1aab287ba9
+_Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;13;6;32;64;;;abi3;/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13;/Users/corypearl/.espressif/python_env/idf6.0_py3.13_env/lib/python3.13;/Users/corypearl/.espressif/python_env/idf6.0_py3.13_env/lib/python3.13/site-packages;/Users/corypearl/.espressif/python_env/idf6.0_py3.13_env/lib/python3.13/site-packages
+_Python3_INTERPRETER_SIGNATURE:INTERNAL=1a3428ae447c4220c745bb88cddfd670
 //NumPy reason failure
 _Python3_NumPy_REASON_FAILURE:INTERNAL=
 

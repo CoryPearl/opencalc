@@ -12,9 +12,13 @@
 
 #include "components/board_init.h"
 #include "components/opencalc_config.h"
+#include "components/opencalc_persist.h"
+#include "components/opencalc_power.h"
 #include "components/opencalc_ui.h"
 #include "components/storage.h"
 #include "components/usb_msc.h"
+
+#define OPENCALC_FRAME_DELAY_MS (1000 / OPENCALC_TARGET_FPS > 0 ? 1000 / OPENCALC_TARGET_FPS : 1)
 
 #if OPENCALC_ENABLE_SERIAL_BUTTON_INPUT
 static void serial_button_task(void *arg) 
@@ -84,28 +88,22 @@ static void serial_button_task(void *arg)
 }
 #endif
 
-void app_main(void) {
-    init_storage();
-    init_usb_msc();
-    storage_set_label();
+static void opencalc_ui_task(void *arg)
+{
+    (void)arg;
 
-    board_init();
     board_set_event_task(xTaskGetCurrentTaskHandle());
     usb_msc_mount_usb();
 
     opencalc_ui_init();
     opencalc_ui_draw();
 
-#if OPENCALC_ENABLE_SERIAL_BUTTON_INPUT
-    xTaskCreate(serial_button_task, "serial_buttons", 16384, NULL, 5, NULL);
-#endif
-
     while (true) {
         if (opencalc_ui_doom_active()) {
             opencalc_ui_tick_doom();
-            ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1));
+            ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(OPENCALC_FRAME_DELAY_MS));
         } else {
-            ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(50));
+            ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(OPENCALC_FRAME_DELAY_MS));
             opencalc_ui_tick();
         }
 
@@ -116,4 +114,21 @@ void app_main(void) {
         opencalc_ui_handle_keypad_interrupt();
         // opencalc_ui_handle_touch_interrupt();
     }
+}
+
+void app_main(void) {
+    opencalc_persist_init();
+    opencalc_power_init();
+    init_storage();
+    init_usb_msc();
+    storage_set_label();
+
+    board_init();
+    opencalc_ui_start_worker();
+
+#if OPENCALC_ENABLE_SERIAL_BUTTON_INPUT
+    xTaskCreatePinnedToCore(serial_button_task, "serial_buttons", 16384, NULL, 5, NULL, OPENCALC_WORKER_CORE);
+#endif
+
+    xTaskCreatePinnedToCore(opencalc_ui_task, "opencalc_ui", OPENCALC_UI_TASK_STACK, NULL, 6, NULL, OPENCALC_UI_CORE);
 }

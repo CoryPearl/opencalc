@@ -52,6 +52,7 @@
 /Users/corypearl/Desktop/opencalc/firmware/build/esp-idf/esp_driver_dma/libesp_driver_dma.a
 /Users/corypearl/Desktop/opencalc/firmware/build/esp-idf/esp_psram/libesp_psram.a
 /Users/corypearl/Desktop/opencalc/firmware/build/esp-idf/efuse/libefuse.a
+/Users/corypearl/Desktop/opencalc/firmware/build/esp-idf/esp_pm/libesp_pm.a
 /Users/corypearl/Desktop/opencalc/firmware/build/esp-idf/esp_hal_wdt/libesp_hal_wdt.a
 /Users/corypearl/Desktop/opencalc/firmware/build/esp-idf/esp_hal_ana_conv/libesp_hal_ana_conv.a
 /Users/corypearl/Desktop/opencalc/firmware/build/esp-idf/esp_ringbuf/libesp_ringbuf.a
@@ -97,7 +98,6 @@
 /Users/corypearl/Desktop/opencalc/firmware/build/esp-idf/esp_partition/libesp_partition.a
 /Users/corypearl/Desktop/opencalc/firmware/build/esp-idf/esp_driver_gpio/libesp_driver_gpio.a
 /Users/corypearl/Desktop/opencalc/firmware/build/esp-idf/esp_hal_uart/libesp_hal_uart.a
-/Users/corypearl/Desktop/opencalc/firmware/build/esp-idf/esp_pm/libesp_pm.a
 /Users/corypearl/Desktop/opencalc/firmware/build/esp-idf/esp_hal_timg/libesp_hal_timg.a
 /Users/corypearl/Desktop/opencalc/firmware/build/esp-idf/esp_hal_wdt/libesp_hal_wdt.a
 /Users/corypearl/Desktop/opencalc/firmware/build/esp-idf/esp_hal_ana_conv/libesp_hal_ana_conv.a

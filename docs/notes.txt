@@ -5,40 +5,17 @@ Finish V5 pcb in kikad
 - fix decopling
 - organize better
 
-Codex prompt this:
-look through the new tetris files, snake files, breakout files, mairo files (also in storage_image, give mario similar controlls to doom, 
-the emulation code is there from https://github.com/Shim06/Anemoia-ESP32?tab=GPL-3.0-1-ov-file but not fully setup) i added in components, make sure they will
-work with the current program and change these things: make it so when doom is activated, instead have a game menu
-with tetris, doom, snake, breakout, and mario for now, also add saved high scores to memory somwhere for doom and tetris and snake and mario and breakout, make sure settings and scores are not reset when powerd off and are saved on chip
-
-next prompt:
-- Make one core draw and one core do math, draw core can also run games
-- Make a power save mode where it’s just on one core (turn off other core) and lowers brightness, toggle in settings
-- Make sure wifi and bluetooth are in sleep modes when the config.h is toggeled off for them
-
-set fps to max??
-
-
-
-
 - add directions to flash
-
 - make sure font looks good for everything
-
-- test all program things
+- test all scripting things
 - test nderive and nint
 - test sto and get and variable setting
 - check through all apps
-
 - lower case by default, for alpha charecters, then can turn on caps and caps lock, find a button for it
-
 - test brigtness
-
-- make tyouch screen do more
+- make touch screen do stuff
 
 codex resume 019e5120-6419-79a2-838e-e21c6775bba5
-
-https://stardance.hackclub.com/resources/how_to_ship#node=hardware.electronics
 
 https://www.amazon.com/ViCep-Rechargeable-JST-PHR-02-Connector-Bluetooth/dp/B0F8ML39WJ/ref=sr_1_7?crid=33GLQCMJBETR3&dib=eyJ2IjoiMSJ9.x-UgelNEldRIwLVdjuGk0LPXbqfIbAdSPDnH1ekFRrjU8hvQuN8wdupZzmLidYyKt_R-eJxCi3zjh6EE9h6akGbKJ6P7e5MscUswysC944PQ-roOR0HiW8Binl28_IzwRVPJM7hD7mcD5ZAQOzzE2cec1kRVPKtGK_xcDoWsDCOuGh9POOx-TzcjAPe6HA1Oc1br6WpwkxT87RkTi2xlscMXZAikuLq84WXJIPfbpZ4tw06BZ_IWPWXlbVoycHtUMAzoq7MIRk_Mn9B6tfQFXjm8VFnUBh9YzMg3SEFgB5o.IfjL3lKXBRIKi_hwLb01hq4koiWxk0P4PeIy-GUeIBs&dib_tag=se&keywords=Lithium%2BIon%2BBattery%2B-%2B3.7V%2B2000mAh&qid=1779939787&sprefix=lithium%2Bion%2Bbattery%2B-%2B3.7v%2B2000mah%2Caps%2C126&sr=8-7&th=1
 

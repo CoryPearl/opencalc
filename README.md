@@ -1,5 +1,7 @@
 # OpenCalc
 
+This project was partially funded by [https://pcbway.com](PCBWay) in order to be able to test my PCB designs. They were extreamly easy to work with and communicated fast and well, I highly recomend untilizing them.
+
 Blog: [https://corypearl.github.io/opencalc/blog.html](https://corypearl.github.io/opencalc/blog.html)
 
 OpenCalc is an open source graphing calculator project inspired by the TI-84, but built around a faster ESP32-S3, a color LCD, USB-C, Python-style scripting, and expandable firmware.
@@ -14,8 +16,8 @@ OpenCalc is meant to feel like a graphing calculator, but with more open hardwar
 - **More memory to build with:** the firmware targets ESP32-S3 boards with RAM plus PSRAM support, so graphics, scripting, menus, and games have room to grow.
 - **8 MB user storage partition:** scripts, WAD files, and other user files live in a FAT storage area exposed by the calculator.
 - **Easy USB-C file access:** plug the USB port into a computer and it appears as `opencalc` storage, so files can be added without special linking software.
-- **OpenCalc OS:** the calculator UI, math parser, graphing, keypad, touch, storage, apps, and hardware behavior are all editable in this repo.
-- **Modern extras:** color LCD, USB mass storage, Python-style scripts, doom, and a configurable app launcher.
+- **OpenCalc OS:** the calculator UI, math parser, graphing, keypad, touch, storage, apps, pcbdesigns, and hardware behavior are all open source.
+- **Modern extras:** color LCD, USB mass storage, Python-style scripts, and a configurable app launcher.
 
 The current prototype includes:
 
@@ -24,29 +26,29 @@ The current prototype includes:
 - USB mass storage named `opencalc`
 - flashed script/storage image support
 - graphing calculator UI with calculator, graph, table, apps, settings, scripts, matrix, stats, finance, conics, and inequality graphing
-- optional Doom support
+- A few games
 - Wi-Fi + bluetooth available but disabled for now due to no use for them
-
-See PCB ReadMe for hardware specifications
 
 Cost breakdown (Single PCB not bulk, before shipping and not including manufacturing):
 
 - The board: ~$7
-- The soldederd parts: ~$23
+- The soldederd parts: ~$34
 - Battery: $6
-- Screen: $4
+- Screen: $6
 
-A little higher than I'd like but this is the first prototype.
+A little higher than I'd like but this is the first prototype (still way less than the bs $130 TI though).
 
-## User And Debug Header
+## User And Debug
 
 Test pads are located on the back, as well as 2 LEDs. One LED is on the front which is a red power LED, then the 2 on the back are a Charging green LED and a Power good blue LED
 
 Power off is software-only for the current firmware: `2nd` + `On` shuts off the display/backlight and puts the ESP32-S3 into deep sleep. The PCB should prioritize low quiescent current parts and an ON/HOME key matrix wake path instead of a required firmware-controlled true power latch.
 
+See config.h in firmware to change many diffrent settings in the opencalc software.
+
 ## Games
 
-Doom is toggled from the calculator with `Alpha` then `2nd`. Press the same combo again to leave Doom and return to the calculator UI.
+Game menu is toggled from the calculator with `Alpha` then `2nd`. Press the same combo again to leave Doom and return to the calculator UI.
 
 | Calculator button        | Doom action               |
 | ------------------------ | ------------------------- |
@@ -61,6 +63,17 @@ Doom is toggled from the calculator with `Alpha` then `2nd`. Press the same comb
 | `Enter`                  | Menu/select               |
 | `Back`                   | Escape/back               |
 | `On (Home)`              | Quit Doom and return home |
+
+| Calculator button        | Mario action                    |
+| ------------------------ | ------------------------------- |
+| Up / Down / Left / Right | Move                            |
+| `Y=`                     | B / action                      |
+| `Zoom`                   | A / jump                        |
+| `Enter`                  | Start                           |
+| `Back`                   | Select/back                     |
+| `On (Home)`              | Quit Mario and return game menu |
+
+\*All other game controlls are listed on screen
 
 Other games:
 
@@ -78,6 +91,7 @@ docs/       notes and project website files
 ```
 
 See [firmware/FIRMWARE_README.md](firmware/FIRMWARE_README.md) for build, flash, USB storage, and Doom setup notes.
+See [hardware/pcb/pcb.md](hardware/pcb/pcb.md) for info on the current pcb design.
 
 ## Status
 
@@ -91,8 +105,6 @@ This is still prototype hardware and OpenCalc OS software. The current goal is t
 - Flush out firmware
 
 ## Credits
-
-This project was partially funded by [https://pcbway.com](PCBWay) in order to be able to test my PCB designs. They were extreamly easy to work with and communicated fast and well, I highly recomend.
 
 Doom port in /doomgeneric made by @ozkl on github at [https://github.com/ozkl/doomgeneric](https://github.com/ozkl/doomgeneric)
 

@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 void opencalc_ui_init(void);
+void opencalc_ui_start_worker(void);
 void opencalc_ui_draw(void);
 void opencalc_ui_tick(void);
 void opencalc_ui_handle_keypad_interrupt(void);

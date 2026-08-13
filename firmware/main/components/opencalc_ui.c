@@ -15,9 +15,15 @@
 #include <string.h>
 
 #include "board_init.h"
+#include "opencalc_breakout.h"
 #include "opencalc_config.h"
 #include "opencalc_doom.h"
+#include "opencalc_mario.h"
 #include "opencalc_math.h"
+#include "opencalc_persist.h"
+#include "opencalc_power.h"
+#include "opencalc_snake.h"
+#include "opencalc_tetris.h"
 #include "opencalc_ui.h"
 #include "tiny-python.h"
 #include "usb_msc.h"
@@ -37,7 +43,7 @@ static bool s_light_mode = false;
 #define UI_HOME_GRID_STEP_Y 50
 #define SCRIPT_MAX 12
 #define SCRIPT_EDITOR_MAX 2048
-#define SETTINGS_COUNT 4
+#define SETTINGS_COUNT 5
 #define PROGRAM_MENU_COUNT 4
 #define CALC_HISTORY_MAX 16
 #define LIST_COUNT 6
@@ -94,9 +100,19 @@ typedef enum {
     PAGE_LIST_EDITOR,
     PAGE_MODE_MENU,
     PAGE_PROGRAM_MENU,
+    PAGE_GAME_MENU,
     PAGE_SCRIPT_IO,
     PAGE_SCRIPT_EDITOR,
 } page_id_t;
+
+typedef enum {
+    GAME_NONE = 0,
+    GAME_TETRIS,
+    GAME_DOOM,
+    GAME_SNAKE,
+    GAME_BREAKOUT,
+    GAME_MARIO,
+} game_id_t;
 
 typedef struct {
     const char *title;
@@ -166,6 +182,59 @@ typedef struct {
     int other_fn;
     graph_poi_type_t type;
 } graph_poi_t;
+
+typedef enum {
+    UI_WORK_CALC_EVAL = 0,
+    UI_WORK_SOLVER_SOLVE,
+    UI_WORK_GRAPH_CALC,
+} ui_work_type_t;
+
+typedef struct {
+    ui_work_type_t type;
+    bool degrees;
+    union {
+        struct {
+            char expr[96];
+            char ans[32];
+        } calc;
+        struct {
+            char e1[96];
+            char e2[96];
+            double guess;
+        } solver;
+        struct {
+            int selection;
+            char exprs[10][96];
+            bool enabled[10];
+            double xmin;
+            double xmax;
+            bool trace;
+            double trace_x;
+            int trace_fn;
+        } graph;
+    };
+} ui_work_job_t;
+
+typedef struct {
+    ui_work_type_t type;
+    bool ok;
+    union {
+        struct {
+            char expr[96];
+            char output[96];
+            bool update_ans;
+        } calc;
+        struct {
+            double root;
+        } solver;
+        struct {
+            char status[72];
+            bool trace;
+            double trace_x;
+            int trace_fn;
+        } graph;
+    };
+} ui_work_result_t;
 
 typedef struct {
     bool enabled;
@@ -331,6 +400,12 @@ static bool s_script_input_active = false;
 static char s_script_input[96] = "";
 static size_t s_script_input_len = 0;
 static QueueHandle_t s_serial_button_queue = NULL;
+static QueueHandle_t s_work_queue = NULL;
+static QueueHandle_t s_work_result_queue = NULL;
+static TaskHandle_t s_work_task = NULL;
+static bool s_calc_eval_pending = false;
+static bool s_solver_solve_pending = false;
+static bool s_graph_calc_pending = false;
 static char s_calc_input[96] = "";
 static size_t s_calc_cursor = 0;
 static char s_calc_output[96] = "0";
@@ -375,9 +450,14 @@ static bool s_cursor_blink_last_visible = true;
 static bool s_second_active = false;
 static bool s_alpha_active = false;
 static bool s_alpha_locked = false;
-static bool s_doom_active = false;
+static game_id_t s_active_game = GAME_NONE;
+static int s_game_selection = 0;
+static uint32_t s_doom_high_score = 0;
+static uint32_t s_doom_last_saved_high_score = 0;
 static bool s_usb_storage_enabled = true;
 static bool s_sleep_enabled = true;
+static bool s_power_save_enabled = false;
+static int s_power_save_saved_brightness = 80;
 static int s_mode_selection = 0;
 static int s_display_format = 0;
 static int s_print_mode = 0;
@@ -409,7 +489,18 @@ static double s_conic_b = 1.0;
 static double s_conic_r = 5.0;
 
 static void ui_draw_current(void);
+static void calc_history_push(const char *expr, const char *result);
+static bool calc_take_wrapped_expression(const char *input, const char *name, char *out, size_t out_size);
+static void calc_expand_ans_value(const char *input, const char *ans, char *out, size_t out_size);
+static bool calc_format_fraction_value(double value, char *out, size_t out_size);
+static void ui_work_task(void *arg);
+static bool submit_calc_eval_job(void);
+static bool submit_solver_solve_job(void);
+static bool submit_graph_calc_job(void);
+
+static void ui_draw_current(void);
 static void status_message(const char *text);
+static void app_output(const char *text);
 static void reset_graph_view_defaults(void);
 static bool calc_format_fraction_value(double value, char *out, size_t out_size);
 static void calc_expand_ans(const char *input, char *out, size_t out_size);
@@ -1537,6 +1628,365 @@ static bool graph_eval_fn_at(int fn, double x, double *y)
         graph_eval_expression(s_graph_exprs[fn], x, y);
 }
 
+static bool work_graph_eval_fn_at(const ui_work_job_t *job, int fn, double x, double *y)
+{
+    return job != NULL && fn >= 0 && fn < 10 && job->graph.enabled[fn] &&
+        job->graph.exprs[fn][0] != '\0' && graph_eval_expression(job->graph.exprs[fn], x, y);
+}
+
+static bool work_graph_refine_zero(const ui_work_job_t *job, int fn, double lo, double hi, double *x, double *y)
+{
+    double f_lo = 0.0;
+    double f_hi = 0.0;
+    if (!work_graph_eval_fn_at(job, fn, lo, &f_lo) || !work_graph_eval_fn_at(job, fn, hi, &f_hi)) {
+        return false;
+    }
+
+    if (fabs(f_lo) <= 1e-12) {
+        *x = fabs(lo) <= 1e-9 ? 0.0 : lo;
+        *y = 0.0;
+        return true;
+    }
+    if (fabs(f_hi) <= 1e-12) {
+        *x = fabs(hi) <= 1e-9 ? 0.0 : hi;
+        *y = 0.0;
+        return true;
+    }
+
+    for (int i = 0; i < 28; i++) {
+        double mid = (lo + hi) * 0.5;
+        double f_mid = 0.0;
+        if (!work_graph_eval_fn_at(job, fn, mid, &f_mid)) {
+            return false;
+        }
+        if (fabs(f_mid) <= 1e-12) {
+            *x = fabs(mid) <= 1e-9 ? 0.0 : mid;
+            *y = 0.0;
+            return true;
+        }
+        if ((f_lo <= 0.0 && f_mid >= 0.0) || (f_lo >= 0.0 && f_mid <= 0.0)) {
+            hi = mid;
+            f_hi = f_mid;
+        } else {
+            lo = mid;
+            f_lo = f_mid;
+        }
+        (void)f_hi;
+    }
+
+    *x = (lo + hi) * 0.5;
+    if (!work_graph_eval_fn_at(job, fn, *x, y)) {
+        return false;
+    }
+    if (fabs(*x) <= 1e-9) *x = 0.0;
+    if (fabs(*y) <= 1e-9) *y = 0.0;
+    return true;
+}
+
+static bool work_graph_refine_intersection(const ui_work_job_t *job, int fn_a, int fn_b, double lo, double hi, double *x, double *y)
+{
+    double a = 0.0;
+    double b = 0.0;
+    double c = 0.0;
+    double d = 0.0;
+    if (!work_graph_eval_fn_at(job, fn_a, lo, &a) || !work_graph_eval_fn_at(job, fn_b, lo, &b) ||
+        !work_graph_eval_fn_at(job, fn_a, hi, &c) || !work_graph_eval_fn_at(job, fn_b, hi, &d)) {
+        return false;
+    }
+
+    double f_lo = a - b;
+    for (int i = 0; i < 28; i++) {
+        double mid = (lo + hi) * 0.5;
+        double y_a = 0.0;
+        double y_b = 0.0;
+        if (!work_graph_eval_fn_at(job, fn_a, mid, &y_a) || !work_graph_eval_fn_at(job, fn_b, mid, &y_b)) {
+            return false;
+        }
+        double f_mid = y_a - y_b;
+        if ((f_lo <= 0.0 && f_mid >= 0.0) || (f_lo >= 0.0 && f_mid <= 0.0)) {
+            hi = mid;
+        } else {
+            lo = mid;
+            f_lo = f_mid;
+        }
+    }
+
+    *x = (lo + hi) * 0.5;
+    return work_graph_eval_fn_at(job, fn_a, *x, y);
+}
+
+static void work_graph_add_poi(graph_poi_t *pois, int *count, graph_poi_type_t type, int fn, int other_fn, double x, double y)
+{
+    if (*count >= GRAPH_POI_LIMIT || !isfinite(x) || !isfinite(y)) {
+        return;
+    }
+    for (int i = 0; i < *count; i++) {
+        if (pois[i].type == type && pois[i].fn == fn && pois[i].other_fn == other_fn &&
+            fabs(pois[i].x - x) < 0.05 && fabs(pois[i].y - y) < 0.05) {
+            return;
+        }
+    }
+    pois[*count] = (graph_poi_t){.x = x, .y = y, .fn = fn, .other_fn = other_fn, .type = type};
+    (*count)++;
+}
+
+static int work_graph_collect_pois(const ui_work_job_t *job, graph_poi_t *pois, int max_count)
+{
+    int count = 0;
+    int enabled[10];
+    int enabled_count = 0;
+    double step = (job->graph.xmax - job->graph.xmin) / 96.0;
+    if (step <= 0.0) {
+        return 0;
+    }
+
+    for (int fn = 0; fn < 10; fn++) {
+        if (!job->graph.enabled[fn] || job->graph.exprs[fn][0] == '\0') {
+            continue;
+        }
+        enabled[enabled_count++] = fn;
+
+        double y0 = 0.0;
+        if (job->graph.xmin <= 0.0 && job->graph.xmax >= 0.0 && work_graph_eval_fn_at(job, fn, 0.0, &y0)) {
+            work_graph_add_poi(pois, &count, GRAPH_POI_Y_INTERCEPT, fn, -1, 0.0, y0);
+        }
+
+        double x_prev2 = job->graph.xmin;
+        double y_prev2 = 0.0;
+        double x_prev = job->graph.xmin + step;
+        double y_prev = 0.0;
+        bool have_prev2 = work_graph_eval_fn_at(job, fn, x_prev2, &y_prev2);
+        bool have_prev = work_graph_eval_fn_at(job, fn, x_prev, &y_prev);
+        for (int i = 2; i <= 96 && count < max_count; i++) {
+            double x = job->graph.xmin + step * (double)i;
+            double y = 0.0;
+            bool have = work_graph_eval_fn_at(job, fn, x, &y);
+
+            if (have_prev && have &&
+                ((y_prev <= 0.0 && y >= 0.0) || (y_prev >= 0.0 && y <= 0.0))) {
+                double zx = 0.0;
+                double zy = 0.0;
+                if (work_graph_refine_zero(job, fn, x_prev, x, &zx, &zy)) {
+                    work_graph_add_poi(pois, &count, GRAPH_POI_ZERO, fn, -1, zx, zy);
+                }
+            }
+
+            if (have_prev2 && have_prev && have) {
+                if (y_prev < y_prev2 && y_prev < y) {
+                    work_graph_add_poi(pois, &count, GRAPH_POI_MIN, fn, -1, x_prev, y_prev);
+                } else if (y_prev > y_prev2 && y_prev > y) {
+                    work_graph_add_poi(pois, &count, GRAPH_POI_LOCAL_MAX, fn, -1, x_prev, y_prev);
+                }
+            }
+
+            x_prev2 = x_prev;
+            y_prev2 = y_prev;
+            have_prev2 = have_prev;
+            x_prev = x;
+            y_prev = y;
+            have_prev = have;
+        }
+    }
+
+    for (int a = 0; a < enabled_count; a++) {
+        for (int b = a + 1; b < enabled_count; b++) {
+            int fn_a = enabled[a];
+            int fn_b = enabled[b];
+            double prev_x = job->graph.xmin;
+            double ya = 0.0;
+            double yb = 0.0;
+            bool have_prev = work_graph_eval_fn_at(job, fn_a, prev_x, &ya) &&
+                work_graph_eval_fn_at(job, fn_b, prev_x, &yb);
+            double prev_diff = ya - yb;
+            for (int i = 1; i <= 96 && count < max_count; i++) {
+                double x = job->graph.xmin + step * (double)i;
+                bool have = work_graph_eval_fn_at(job, fn_a, x, &ya) &&
+                    work_graph_eval_fn_at(job, fn_b, x, &yb);
+                double diff = ya - yb;
+                if (have_prev && have &&
+                    ((prev_diff <= 0.0 && diff >= 0.0) || (prev_diff >= 0.0 && diff <= 0.0))) {
+                    double ix = 0.0;
+                    double iy = 0.0;
+                    if (work_graph_refine_intersection(job, fn_a, fn_b, prev_x, x, &ix, &iy)) {
+                        work_graph_add_poi(pois, &count, GRAPH_POI_INTERSECTION, fn_a, fn_b, ix, iy);
+                    }
+                }
+                prev_x = x;
+                prev_diff = diff;
+                have_prev = have;
+            }
+        }
+    }
+
+    return count;
+}
+
+static bool work_graph_first_enabled_fn(const ui_work_job_t *job, int *fn)
+{
+    for (int i = 0; i < 10; i++) {
+        if (job->graph.enabled[i] && job->graph.exprs[i][0] != '\0') {
+            *fn = i;
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool work_graph_ensure_trace(const ui_work_job_t *job, bool *trace, double *trace_x, int *trace_fn)
+{
+    if (*trace) {
+        return true;
+    }
+    int fn = 0;
+    if (!work_graph_first_enabled_fn(job, &fn)) {
+        return false;
+    }
+    *trace = true;
+    *trace_fn = fn;
+    *trace_x = (job->graph.xmin + job->graph.xmax) * 0.5;
+    return true;
+}
+
+static bool work_graph_jump_to_poi(const ui_work_job_t *job, graph_poi_type_t type, ui_work_result_t *result)
+{
+    graph_poi_t pois[GRAPH_POI_LIMIT];
+    int count = work_graph_collect_pois(job, pois, GRAPH_POI_LIMIT);
+    double target = job->graph.trace ? job->graph.trace_x : (job->graph.xmin + job->graph.xmax) * 0.5;
+    int best = -1;
+    double best_dist = 0.0;
+
+    for (int i = 0; i < count; i++) {
+        if (pois[i].type != type) {
+            continue;
+        }
+        double dist = fabs(pois[i].x - target);
+        if (best < 0 || dist < best_dist) {
+            best = i;
+            best_dist = dist;
+        }
+    }
+    if (best < 0) {
+        return false;
+    }
+
+    double display_x = fabs(pois[best].x) <= 1e-9 ? 0.0 : pois[best].x;
+    double display_y = fabs(pois[best].y) <= 1e-9 ? 0.0 : pois[best].y;
+    result->graph.trace = true;
+    result->graph.trace_x = display_x;
+    result->graph.trace_fn = pois[best].fn;
+    snprintf(result->graph.status, sizeof(result->graph.status), "%s Y%d x %.4g y %.4g",
+             graph_poi_label(type), pois[best].fn + 1, display_x, display_y);
+    return true;
+}
+
+static bool work_graph_calc_value(const ui_work_job_t *job, ui_work_result_t *result)
+{
+    bool trace = job->graph.trace;
+    double trace_x = job->graph.trace_x;
+    int trace_fn = job->graph.trace_fn;
+    if (!work_graph_ensure_trace(job, &trace, &trace_x, &trace_fn)) {
+        return false;
+    }
+
+    double y = 0.0;
+    if (!work_graph_eval_fn_at(job, trace_fn, trace_x, &y)) {
+        return false;
+    }
+    result->graph.trace = trace;
+    result->graph.trace_x = trace_x;
+    result->graph.trace_fn = trace_fn;
+    snprintf(result->graph.status, sizeof(result->graph.status), "value Y%d x %.4g y %.6g",
+             trace_fn + 1, trace_x, y);
+    return true;
+}
+
+static bool work_graph_calc_derivative(const ui_work_job_t *job, ui_work_result_t *result)
+{
+    bool trace = job->graph.trace;
+    double trace_x = job->graph.trace_x;
+    int trace_fn = job->graph.trace_fn;
+    if (!work_graph_ensure_trace(job, &trace, &trace_x, &trace_fn)) {
+        return false;
+    }
+
+    double span = job->graph.xmax - job->graph.xmin;
+    double h = span > 0.0 ? span / 2000.0 : 0.001;
+    if (h < 1e-6) h = 1e-6;
+
+    double y0 = 0.0;
+    double y1 = 0.0;
+    if (!work_graph_eval_fn_at(job, trace_fn, trace_x - h, &y0) ||
+        !work_graph_eval_fn_at(job, trace_fn, trace_x + h, &y1)) {
+        return false;
+    }
+
+    result->graph.trace = trace;
+    result->graph.trace_x = trace_x;
+    result->graph.trace_fn = trace_fn;
+    snprintf(result->graph.status, sizeof(result->graph.status), "dy/dx Y%d x %.4g = %.6g",
+             trace_fn + 1, trace_x, (y1 - y0) / (2.0 * h));
+    return true;
+}
+
+static bool work_graph_calc_integral(const ui_work_job_t *job, ui_work_result_t *result)
+{
+    bool trace = job->graph.trace;
+    double trace_x = job->graph.trace_x;
+    int trace_fn = job->graph.trace_fn;
+    if (!work_graph_ensure_trace(job, &trace, &trace_x, &trace_fn)) {
+        return false;
+    }
+
+    double a = 0.0;
+    double b = trace_x;
+    double sign = 1.0;
+    if (b < a) {
+        double tmp = a;
+        a = b;
+        b = tmp;
+        sign = -1.0;
+    }
+
+    const int steps = 96;
+    double dx = (b - a) / (double)steps;
+    double sum = 0.0;
+    for (int i = 0; i <= steps; i++) {
+        double y = 0.0;
+        double x = a + dx * (double)i;
+        if (!work_graph_eval_fn_at(job, trace_fn, x, &y)) {
+            return false;
+        }
+        sum += y * (i == 0 || i == steps ? 0.5 : 1.0);
+    }
+
+    result->graph.trace = trace;
+    result->graph.trace_x = trace_x;
+    result->graph.trace_fn = trace_fn;
+    snprintf(result->graph.status, sizeof(result->graph.status), "int Y%d 0..%.4g = %.6g",
+             trace_fn + 1, trace_x, sum * dx * sign);
+    return true;
+}
+
+static bool work_graph_calc_run(const ui_work_job_t *job, ui_work_result_t *result)
+{
+    result->graph.trace = job->graph.trace;
+    result->graph.trace_x = job->graph.trace_x;
+    result->graph.trace_fn = job->graph.trace_fn;
+    result->graph.status[0] = '\0';
+
+    switch (job->graph.selection) {
+    case 0: return work_graph_calc_value(job, result);
+    case 1: return work_graph_jump_to_poi(job, GRAPH_POI_ZERO, result);
+    case 2: return work_graph_jump_to_poi(job, GRAPH_POI_MIN, result);
+    case 3: return work_graph_jump_to_poi(job, GRAPH_POI_LOCAL_MAX, result);
+    case 4: return work_graph_jump_to_poi(job, GRAPH_POI_INTERSECTION, result);
+    case 5: return work_graph_jump_to_poi(job, GRAPH_POI_Y_INTERCEPT, result);
+    case 6: return work_graph_calc_derivative(job, result);
+    case 7: return work_graph_calc_integral(job, result);
+    default: return false;
+    }
+}
+
 static void inequality_clear_all(void)
 {
     memset(s_ineqs, 0, sizeof(s_ineqs));
@@ -1913,166 +2363,9 @@ static bool graph_jump_to_nearest_intersection(void)
     return true;
 }
 
-static bool graph_jump_to_nearest_poi(graph_poi_type_t type)
-{
-    graph_poi_t pois[GRAPH_POI_LIMIT];
-    int count = graph_collect_pois(pois, GRAPH_POI_LIMIT);
-    double target = s_graph_trace ? s_graph_trace_x : (s_graph_xmin + s_graph_xmax) * 0.5;
-    int best = -1;
-    double best_dist = 0.0;
-
-    for (int i = 0; i < count; i++) {
-        if (pois[i].type != type) {
-            continue;
-        }
-        double dist = fabs(pois[i].x - target);
-        if (best < 0 || dist < best_dist) {
-            best = i;
-            best_dist = dist;
-        }
-    }
-
-    if (best < 0) {
-        return false;
-    }
-
-    s_graph_trace = true;
-    double display_x = fabs(pois[best].x) <= 1e-9 ? 0.0 : pois[best].x;
-    double display_y = fabs(pois[best].y) <= 1e-9 ? 0.0 : pois[best].y;
-    s_graph_trace_x = display_x;
-    s_graph_trace_fn = pois[best].fn;
-    snprintf(s_graph_status, sizeof(s_graph_status), "%s Y%d x %.4g y %.4g",
-             graph_poi_label(type), pois[best].fn + 1, display_x, display_y);
-    return true;
-}
-
-static bool graph_first_enabled_fn(int *fn)
-{
-    for (int i = 0; i < 10; i++) {
-        if (s_graph_enabled[i] && s_graph_exprs[i][0] != '\0') {
-            *fn = i;
-            return true;
-        }
-    }
-    return false;
-}
-
-static bool graph_ensure_trace(void)
-{
-    if (s_graph_trace) {
-        return true;
-    }
-
-    int fn = 0;
-    if (!graph_first_enabled_fn(&fn)) {
-        return false;
-    }
-
-    s_graph_trace = true;
-    s_graph_trace_fn = fn;
-    s_graph_trace_x = (s_graph_xmin + s_graph_xmax) * 0.5;
-    return true;
-}
-
-static bool graph_calc_derivative(void)
-{
-    if (!graph_ensure_trace()) {
-        return false;
-    }
-
-    double span = s_graph_xmax - s_graph_xmin;
-    double h = span > 0.0 ? span / 2000.0 : 0.001;
-    if (h < 1e-6) {
-        h = 1e-6;
-    }
-
-    double y0 = 0.0;
-    double y1 = 0.0;
-    if (!graph_eval_fn_at(s_graph_trace_fn, s_graph_trace_x - h, &y0) ||
-        !graph_eval_fn_at(s_graph_trace_fn, s_graph_trace_x + h, &y1)) {
-        return false;
-    }
-
-    double slope = (y1 - y0) / (2.0 * h);
-    snprintf(s_graph_status, sizeof(s_graph_status), "dy/dx Y%d x %.4g = %.6g",
-             s_graph_trace_fn + 1, s_graph_trace_x, slope);
-    return true;
-}
-
-static bool graph_calc_integral(void)
-{
-    if (!graph_ensure_trace()) {
-        return false;
-    }
-
-    double a = 0.0;
-    double b = s_graph_trace_x;
-    double sign = 1.0;
-    if (b < a) {
-        double tmp = a;
-        a = b;
-        b = tmp;
-        sign = -1.0;
-    }
-
-    const int steps = 96;
-    double dx = (b - a) / (double)steps;
-    double sum = 0.0;
-    for (int i = 0; i <= steps; i++) {
-        double y = 0.0;
-        double x = a + dx * (double)i;
-        if (!graph_eval_fn_at(s_graph_trace_fn, x, &y)) {
-            return false;
-        }
-        sum += y * (i == 0 || i == steps ? 0.5 : 1.0);
-    }
-
-    double area = sum * dx * sign;
-    snprintf(s_graph_status, sizeof(s_graph_status), "int Y%d 0..%.4g = %.6g",
-             s_graph_trace_fn + 1, s_graph_trace_x, area);
-    return true;
-}
-
-static bool graph_calc_value(void)
-{
-    if (!graph_ensure_trace()) {
-        return false;
-    }
-
-    double y = 0.0;
-    if (!graph_eval_fn_at(s_graph_trace_fn, s_graph_trace_x, &y)) {
-        return false;
-    }
-
-    snprintf(s_graph_status, sizeof(s_graph_status), "value Y%d x %.4g y %.6g",
-             s_graph_trace_fn + 1, s_graph_trace_x, y);
-    return true;
-}
-
 static void graph_calc_run_selected(void)
 {
-    bool ok = false;
-
-    switch (s_graph_calc_selection) {
-    case 0: ok = graph_calc_value(); break;
-    case 1: ok = graph_jump_to_nearest_poi(GRAPH_POI_ZERO); break;
-    case 2: ok = graph_jump_to_nearest_poi(GRAPH_POI_MIN); break;
-    case 3: ok = graph_jump_to_nearest_poi(GRAPH_POI_LOCAL_MAX); break;
-    case 4: ok = graph_jump_to_nearest_poi(GRAPH_POI_INTERSECTION); break;
-    case 5: ok = graph_jump_to_nearest_poi(GRAPH_POI_Y_INTERCEPT); break;
-    case 6: ok = graph_calc_derivative(); break;
-    case 7: ok = graph_calc_integral(); break;
-    default: break;
-    }
-
-    if (!ok) {
-        snprintf(s_graph_status, sizeof(s_graph_status), "graph calc: no result");
-    }
-
-    s_page = PAGE_GRAPH;
-    s_current_app = APP_GRAPH;
-    s_graph_zoom_mode = false;
-    ui_draw_current();
+    submit_graph_calc_job();
 }
 
 static bool graph_trace_cycle_line(void)
@@ -2298,17 +2591,20 @@ static void ui_draw_settings(void)
 {
     char brightness[40];
     char sleep[40];
+    char power_save[40];
     char theme[40];
     char reset[40];
 
     snprintf(brightness, sizeof(brightness), "Brightness %d%%", board_get_backlight_brightness());
     snprintf(sleep, sizeof(sleep), "Auto sleep %s", s_sleep_enabled ? "on" : "off");
+    snprintf(power_save, sizeof(power_save), "Power save %s", s_power_save_enabled ? "on" : "off");
     snprintf(theme, sizeof(theme), "Theme %s", s_light_mode ? "light" : "dark");
     snprintf(reset, sizeof(reset), "Reset to factory");
 
     const char *items[SETTINGS_COUNT] = {
         brightness,
         sleep,
+        power_save,
         theme,
         reset,
     };
@@ -3234,8 +3530,17 @@ static void factory_reset_runtime_state(void)
     s_alpha_active = false;
     s_alpha_locked = false;
     s_sleep_enabled = true;
+    s_power_save_enabled = false;
     s_light_mode = false;
+    s_doom_high_score = 0;
+    s_doom_last_saved_high_score = 0;
+    opencalc_persist_factory_reset();
     board_set_backlight_brightness(80);
+    opencalc_persist_set_u32("brightness", 80);
+    opencalc_persist_set_u32("auto_sleep", 1);
+    opencalc_persist_set_u32("power_save", 0);
+    opencalc_persist_set_u32("light_mode", 0);
+    opencalc_power_set_power_save(false);
     s_page = PAGE_CALCULATOR;
     printf("factory reset runtime state\n");
     ui_draw_current();
@@ -3528,9 +3833,11 @@ static void ui_draw_table(void)
     ui_present();
 }
 
+static void ui_draw_game_menu(void);
+
 static void ui_draw_current(void)
 {
-    if (s_doom_active) {
+    if (s_active_game != GAME_NONE) {
         return;
     }
 
@@ -3548,10 +3855,84 @@ static void ui_draw_current(void)
     case PAGE_LIST_EDITOR: ui_draw_list_editor(); break;
     case PAGE_MODE_MENU: ui_draw_mode_menu(); break;
     case PAGE_PROGRAM_MENU: ui_draw_program_menu(); break;
+    case PAGE_GAME_MENU: ui_draw_game_menu(); break;
     case PAGE_SCRIPT_IO: ui_draw_script_io(); break;
     case PAGE_SCRIPT_EDITOR: ui_draw_script_editor(); break;
     case PAGE_APP: ui_draw_app_page(s_current_app); break;
     }
+}
+
+static const char *game_name(game_id_t game)
+{
+    switch (game) {
+    case GAME_TETRIS: return "Tetris";
+    case GAME_DOOM: return "Doom";
+    case GAME_SNAKE: return "Snake";
+    case GAME_BREAKOUT: return "Breakout";
+    case GAME_MARIO: return "Mario";
+    default: return "";
+    }
+}
+
+static const char *game_key(game_id_t game)
+{
+    switch (game) {
+    case GAME_TETRIS: return "hs_tetris";
+    case GAME_DOOM: return "hs_doom";
+    case GAME_SNAKE: return "hs_snake";
+    case GAME_BREAKOUT: return "hs_breakout";
+    case GAME_MARIO: return "hs_mario";
+    default: return "";
+    }
+}
+
+static game_id_t selected_game_id(void)
+{
+    static const game_id_t games[] = {
+        GAME_TETRIS,
+        GAME_DOOM,
+        GAME_SNAKE,
+        GAME_BREAKOUT,
+        GAME_MARIO,
+    };
+    if (s_game_selection < 0) s_game_selection = 0;
+    if (s_game_selection >= (int)(sizeof(games) / sizeof(games[0]))) {
+        s_game_selection = (int)(sizeof(games) / sizeof(games[0])) - 1;
+    }
+    return games[s_game_selection];
+}
+
+static void ui_draw_game_menu(void)
+{
+    static const game_id_t games[] = {
+        GAME_TETRIS,
+        GAME_DOOM,
+        GAME_SNAKE,
+        GAME_BREAKOUT,
+        GAME_MARIO,
+    };
+
+    ui_clear(THEME_BG);
+    ui_rect(0, 0, UI_W, 22, THEME_HEADER);
+    ui_text(8, 7, "Games", THEME_HEADER_TEXT, 1);
+    ui_text(225, 7, "high score", THEME_HEADER_TEXT, 1);
+
+    for (int i = 0; i < (int)(sizeof(games) / sizeof(games[0])); i++) {
+        int y = 34 + i * 34;
+        uint32_t bg = i == s_game_selection ? THEME_ACCENT_2 : THEME_SURFACE;
+        uint32_t border = i == s_game_selection ? THEME_ACCENT : THEME_BORDER;
+        ui_rect(12, y, 296, 27, bg);
+        ui_border(12, y, 296, 27, border);
+        ui_text(22, y + 9, game_name(games[i]), THEME_TEXT, 1);
+
+        char score[24];
+        snprintf(score, sizeof(score), "%lu",
+                 (unsigned long)opencalc_persist_get_u32(game_key(games[i]), 0));
+        ui_text(236, y + 9, score, THEME_TEXT, 1);
+    }
+
+    ui_text(12, 218, "enter - play  back - home", THEME_MUTED, 1);
+    ui_present();
 }
 
 static void ui_open_selected_app(void)
@@ -3577,40 +3958,108 @@ static void ui_open_selected_app(void)
     ui_draw_current();
 }
 
-static void toggle_doom_mode(void)
+static void save_doom_high_score(void)
 {
+    long score = opencalc_doom_score();
+    if (score <= 0) {
+        return;
+    }
+    if ((uint32_t)score > s_doom_high_score) {
+        s_doom_high_score = (uint32_t)score;
+    }
+    if (s_doom_high_score > s_doom_last_saved_high_score) {
+        opencalc_persist_set_u32("hs_doom", s_doom_high_score);
+        s_doom_last_saved_high_score = s_doom_high_score;
+    }
+}
+
+static void close_active_game_to_menu(void)
+{
+    if (s_active_game == GAME_DOOM) {
+        save_doom_high_score();
+    }
+    if (s_active_game == GAME_TETRIS) opencalc_tetris_press_button_number(46);
+    if (s_active_game == GAME_SNAKE) opencalc_snake_press_button_number(46);
+    if (s_active_game == GAME_BREAKOUT) opencalc_breakout_press_button_number(46);
+    if (s_active_game == GAME_MARIO) opencalc_mario_press_button_number(46);
+
+    s_active_game = GAME_NONE;
+    vTaskDelay(pdMS_TO_TICKS(30));
+    usb_msc_mount_usb();
+    s_page = PAGE_GAME_MENU;
+    ui_draw_current();
+}
+
+static void open_game_menu(void)
+{
+    if (s_active_game != GAME_NONE) {
+        close_active_game_to_menu();
+        return;
+    }
+    s_game_selection = 0;
+    s_page = PAGE_GAME_MENU;
+    ui_draw_current();
+}
+
+static void launch_selected_game(void)
+{
+    game_id_t game = selected_game_id();
+
+    if (game == GAME_TETRIS) {
+        opencalc_tetris_enter();
+        s_active_game = GAME_TETRIS;
+        printf("tetris on\n");
+        return;
+    }
+    if (game == GAME_SNAKE) {
+        opencalc_snake_enter();
+        s_active_game = GAME_SNAKE;
+        printf("snake on\n");
+        return;
+    }
+    if (game == GAME_BREAKOUT) {
+        opencalc_breakout_enter();
+        s_active_game = GAME_BREAKOUT;
+        printf("breakout on\n");
+        return;
+    }
+
+    if (game == GAME_DOOM) {
 #if OPENCALC_ENABLE_DOOM
-    if (s_doom_active) {
-        s_doom_active = false;
-        printf("doom off\n");
-        vTaskDelay(pdMS_TO_TICKS(50));
+        usb_msc_mount_app();
+        if (!opencalc_doom_wad_available()) {
+            printf("Doom WAD missing: copy doom1.wad to the USB drive root\n");
+            s_page = PAGE_GAME_MENU;
+            ui_draw_current();
+            usb_msc_mount_usb();
+            return;
+        }
+        if (opencalc_doom_start()) {
+            s_active_game = GAME_DOOM;
+            printf("doom on\n");
+            return;
+        }
         usb_msc_mount_usb();
-        s_home_selection = APP_CALCULATOR;
-        s_page = PAGE_HOME;
-        ui_draw_current();
-        return;
-    }
-
-    usb_msc_mount_app();
-
-    if (!opencalc_doom_wad_available()) {
-        printf("Doom WAD missing: copy doom1.wad to the USB drive root\n");
-        s_home_selection = APP_CALCULATOR;
-        s_page = PAGE_HOME;
-        ui_draw_current();
-        usb_msc_mount_usb();
-        return;
-    }
-
-    if (opencalc_doom_start()) {
-        s_doom_active = true;
-        printf("doom on\n");
-    } else {
-        usb_msc_mount_usb();
-    }
 #else
-    printf("doom disabled\n");
+        printf("doom disabled\n");
 #endif
+        return;
+    }
+
+    if (game == GAME_MARIO) {
+        usb_msc_mount_app();
+        if (!opencalc_mario_rom_available()) {
+            printf("Mario ROM missing: copy mario.nes to the USB drive root\n");
+            s_page = PAGE_GAME_MENU;
+            ui_draw_current();
+            usb_msc_mount_usb();
+            return;
+        }
+        opencalc_mario_enter();
+        s_active_game = GAME_MARIO;
+        printf("mario on\n");
+        return;
+    }
 }
 
 static void power_off_calculator(void)
@@ -3619,10 +4068,41 @@ static void power_off_calculator(void)
     board_enter_deep_sleep();
 }
 
+static void apply_power_save_mode(bool enabled)
+{
+    if (enabled == s_power_save_enabled && opencalc_power_get_power_save() == enabled) {
+        return;
+    }
+
+    if (enabled) {
+        s_power_save_saved_brightness = board_get_backlight_brightness();
+        if (s_power_save_saved_brightness <= 0) {
+            s_power_save_saved_brightness = (int)opencalc_persist_get_u32("brightness", 80);
+        }
+        if (board_get_backlight_brightness() > OPENCALC_POWER_SAVE_BRIGHTNESS_CAP_PERCENT) {
+            board_set_backlight_brightness(OPENCALC_POWER_SAVE_BRIGHTNESS_CAP_PERCENT);
+        }
+    } else {
+        board_set_backlight_brightness(s_power_save_saved_brightness);
+        opencalc_persist_set_u32("brightness", (uint32_t)board_get_backlight_brightness());
+    }
+
+    s_power_save_enabled = enabled;
+    opencalc_power_set_power_save(enabled);
+    opencalc_persist_set_u32("power_save", enabled ? 1 : 0);
+}
+
 static void adjust_brightness(int delta)
 {
     int next = board_get_backlight_brightness() + delta;
     board_set_backlight_brightness(next);
+    if (s_power_save_enabled && board_get_backlight_brightness() > OPENCALC_POWER_SAVE_BRIGHTNESS_CAP_PERCENT) {
+        board_set_backlight_brightness(OPENCALC_POWER_SAVE_BRIGHTNESS_CAP_PERCENT);
+    }
+    if (s_power_save_enabled) {
+        s_power_save_saved_brightness = board_get_backlight_brightness();
+    }
+    opencalc_persist_set_u32("brightness", (uint32_t)board_get_backlight_brightness());
     printf("brightness %d%%\n", board_get_backlight_brightness());
     ui_draw_current();
 }
@@ -4015,135 +4495,6 @@ static void matrix_set_identity(void)
     for (int i = 0; i < 3; i++) {
         s_matrix_a[i][i] = 1.0;
     }
-}
-
-static bool solver_eval_difference(double x, double *out)
-{
-    double left = 0.0;
-    double right = 0.0;
-    if (!graph_eval_expression(s_solver_e1, x, &left) ||
-        !graph_eval_expression(s_solver_e2, x, &right)) {
-        return false;
-    }
-    *out = left - right;
-    return isfinite(*out);
-}
-
-static bool solver_solve_near_guess(double guess, double *root)
-{
-    double f_guess = 0.0;
-    if (!solver_eval_difference(guess, &f_guess)) {
-        return false;
-    }
-    if (fabs(f_guess) < 1e-10) {
-        *root = guess;
-        return true;
-    }
-
-    double best_x = guess;
-    double best_abs = fabs(f_guess);
-    double lo = guess;
-    double hi = guess;
-    double f_lo = f_guess;
-    double f_hi = f_guess;
-    bool bracketed = false;
-
-    double step = fmax(0.25, fabs(guess) * 0.1);
-    for (int i = 0; i < 48 && !bracketed; i++) {
-        double left_x = guess - step;
-        double right_x = guess + step;
-        double f_left = 0.0;
-        double f_right = 0.0;
-        bool left_ok = solver_eval_difference(left_x, &f_left);
-        bool right_ok = solver_eval_difference(right_x, &f_right);
-
-        if (left_ok && fabs(f_left) < best_abs) {
-            best_abs = fabs(f_left);
-            best_x = left_x;
-        }
-        if (right_ok && fabs(f_right) < best_abs) {
-            best_abs = fabs(f_right);
-            best_x = right_x;
-        }
-
-        if (left_ok && ((f_left <= 0.0 && f_guess >= 0.0) || (f_left >= 0.0 && f_guess <= 0.0))) {
-            lo = left_x;
-            hi = guess;
-            f_lo = f_left;
-            f_hi = f_guess;
-            bracketed = true;
-        } else if (right_ok && ((f_guess <= 0.0 && f_right >= 0.0) || (f_guess >= 0.0 && f_right <= 0.0))) {
-            lo = guess;
-            hi = right_x;
-            f_lo = f_guess;
-            f_hi = f_right;
-            bracketed = true;
-        } else if (left_ok && right_ok && ((f_left <= 0.0 && f_right >= 0.0) || (f_left >= 0.0 && f_right <= 0.0))) {
-            lo = left_x;
-            hi = right_x;
-            f_lo = f_left;
-            f_hi = f_right;
-            bracketed = true;
-        }
-        step *= 1.6;
-    }
-
-    if (bracketed) {
-        for (int i = 0; i < 64; i++) {
-            double mid = (lo + hi) * 0.5;
-            double f_mid = 0.0;
-            if (!solver_eval_difference(mid, &f_mid)) {
-                break;
-            }
-            if (fabs(f_mid) < 1e-10) {
-                *root = mid;
-                return true;
-            }
-            if ((f_lo <= 0.0 && f_mid >= 0.0) || (f_lo >= 0.0 && f_mid <= 0.0)) {
-                hi = mid;
-                f_hi = f_mid;
-            } else {
-                lo = mid;
-                f_lo = f_mid;
-            }
-            (void)f_hi;
-        }
-        *root = (lo + hi) * 0.5;
-        return true;
-    }
-
-    double x = best_x;
-    for (int i = 0; i < 24; i++) {
-        double fx = 0.0;
-        if (!solver_eval_difference(x, &fx)) {
-            return false;
-        }
-        if (fabs(fx) < 1e-9) {
-            *root = x;
-            return true;
-        }
-        double h = fmax(1e-5, fabs(x) * 1e-5);
-        double fp = 0.0;
-        double fm = 0.0;
-        if (!solver_eval_difference(x + h, &fp) || !solver_eval_difference(x - h, &fm)) {
-            return false;
-        }
-        double slope = (fp - fm) / (2.0 * h);
-        if (fabs(slope) < 1e-12) {
-            break;
-        }
-        x -= fx / slope;
-        if (!isfinite(x)) {
-            return false;
-        }
-    }
-
-    double final_f = 0.0;
-    if (solver_eval_difference(x, &final_f) && fabs(final_f) < 1e-6) {
-        *root = x;
-        return true;
-    }
-    return false;
 }
 
 static bool solver_set_guess_from_calc(void)
@@ -4951,7 +5302,6 @@ static void store_answer(void)
 static void run_home_app_tool(void)
 {
     char line[96];
-    double root = 0.0;
 
     switch (s_current_app) {
     case APP_STATS:
@@ -5154,16 +5504,7 @@ static void run_home_app_tool(void)
                 app_output("guess must be number");
             }
         } else if (s_app_selection == 3) {
-            if (solver_solve_near_guess(s_solver_guess, &root)) {
-                s_solver_result = root;
-                s_solver_guess = root;
-                s_solver_has_result = true;
-                snprintf(line, sizeof(line), "x=%.10g", root);
-                app_output(line);
-            } else {
-                s_solver_has_result = false;
-                app_output("no solution near guess");
-            }
+            submit_solver_solve_job();
         } else if (s_app_selection == 4) {
             if (s_solver_has_result && calc_format_fraction_value(s_solver_result, line, sizeof(line))) {
                 char out[96];
@@ -5354,7 +5695,7 @@ static bool calc_take_wrapped_expression(const char *input, const char *name, ch
     return true;
 }
 
-static void calc_expand_ans(const char *input, char *out, size_t out_size)
+static void calc_expand_ans_value(const char *input, const char *ans, char *out, size_t out_size)
 {
     size_t out_len = 0;
     if (out_size == 0) {
@@ -5365,11 +5706,11 @@ static void calc_expand_ans(const char *input, char *out, size_t out_size)
         if ((input[i] == 'A' || input[i] == 'a') &&
             (input[i + 1] == 'N' || input[i + 1] == 'n') &&
             (input[i + 2] == 'S' || input[i + 2] == 's')) {
-            size_t ans_len = strlen(s_calc_ans);
+            size_t ans_len = strlen(ans);
             if (out_len + ans_len >= out_size) {
                 break;
             }
-            memcpy(out + out_len, s_calc_ans, ans_len);
+            memcpy(out + out_len, ans, ans_len);
             out_len += ans_len;
             i += 3;
         } else {
@@ -5377,6 +5718,11 @@ static void calc_expand_ans(const char *input, char *out, size_t out_size)
         }
     }
     out[out_len] = '\0';
+}
+
+static void calc_expand_ans(const char *input, char *out, size_t out_size)
+{
+    calc_expand_ans_value(input, s_calc_ans, out, out_size);
 }
 
 static bool calc_format_fraction_value(double value, char *out, size_t out_size)
@@ -5432,47 +5778,378 @@ static bool calc_format_fraction_value(double value, char *out, size_t out_size)
     return true;
 }
 
-static void calc_eval(void)
+static bool work_solver_eval_difference(const ui_work_job_t *job, double x, double *out)
+{
+    double left = 0.0;
+    double right = 0.0;
+    if (!graph_eval_expression(job->solver.e1, x, &left) ||
+        !graph_eval_expression(job->solver.e2, x, &right)) {
+        return false;
+    }
+    *out = left - right;
+    return isfinite(*out);
+}
+
+static bool work_solver_solve_near_guess(const ui_work_job_t *job, double *root)
+{
+    double guess = job->solver.guess;
+    double f_guess = 0.0;
+    if (!work_solver_eval_difference(job, guess, &f_guess)) {
+        return false;
+    }
+    if (fabs(f_guess) < 1e-10) {
+        *root = guess;
+        return true;
+    }
+
+    double best_x = guess;
+    double best_abs = fabs(f_guess);
+    double lo = guess;
+    double hi = guess;
+    double f_lo = f_guess;
+    double f_hi = f_guess;
+    bool bracketed = false;
+
+    double step = fmax(0.25, fabs(guess) * 0.1);
+    for (int i = 0; i < 48 && !bracketed; i++) {
+        double left_x = guess - step;
+        double right_x = guess + step;
+        double f_left = 0.0;
+        double f_right = 0.0;
+        bool left_ok = work_solver_eval_difference(job, left_x, &f_left);
+        bool right_ok = work_solver_eval_difference(job, right_x, &f_right);
+
+        if (left_ok && fabs(f_left) < best_abs) {
+            best_abs = fabs(f_left);
+            best_x = left_x;
+        }
+        if (right_ok && fabs(f_right) < best_abs) {
+            best_abs = fabs(f_right);
+            best_x = right_x;
+        }
+
+        if (left_ok && ((f_left <= 0.0 && f_guess >= 0.0) || (f_left >= 0.0 && f_guess <= 0.0))) {
+            lo = left_x;
+            hi = guess;
+            f_lo = f_left;
+            f_hi = f_guess;
+            bracketed = true;
+        } else if (right_ok && ((f_guess <= 0.0 && f_right >= 0.0) || (f_guess >= 0.0 && f_right <= 0.0))) {
+            lo = guess;
+            hi = right_x;
+            f_lo = f_guess;
+            f_hi = f_right;
+            bracketed = true;
+        } else if (left_ok && right_ok && ((f_left <= 0.0 && f_right >= 0.0) || (f_left >= 0.0 && f_right <= 0.0))) {
+            lo = left_x;
+            hi = right_x;
+            f_lo = f_left;
+            f_hi = f_right;
+            bracketed = true;
+        }
+        step *= 1.6;
+    }
+
+    if (bracketed) {
+        for (int i = 0; i < 64; i++) {
+            double mid = (lo + hi) * 0.5;
+            double f_mid = 0.0;
+            if (!work_solver_eval_difference(job, mid, &f_mid)) {
+                break;
+            }
+            if (fabs(f_mid) < 1e-10) {
+                *root = mid;
+                return true;
+            }
+            if ((f_lo <= 0.0 && f_mid >= 0.0) || (f_lo >= 0.0 && f_mid <= 0.0)) {
+                hi = mid;
+                f_hi = f_mid;
+            } else {
+                lo = mid;
+                f_lo = f_mid;
+            }
+            (void)f_hi;
+        }
+        *root = (lo + hi) * 0.5;
+        return true;
+    }
+
+    double x = best_x;
+    for (int i = 0; i < 24; i++) {
+        double fx = 0.0;
+        if (!work_solver_eval_difference(job, x, &fx)) {
+            return false;
+        }
+        if (fabs(fx) < 1e-9) {
+            *root = x;
+            return true;
+        }
+        double h = fmax(1e-5, fabs(x) * 1e-5);
+        double fp = 0.0;
+        double fm = 0.0;
+        if (!work_solver_eval_difference(job, x + h, &fp) ||
+            !work_solver_eval_difference(job, x - h, &fm)) {
+            return false;
+        }
+        double slope = (fp - fm) / (2.0 * h);
+        if (fabs(slope) < 1e-12) {
+            break;
+        }
+        x -= fx / slope;
+        if (!isfinite(x)) {
+            return false;
+        }
+    }
+
+    double final_f = 0.0;
+    if (work_solver_eval_difference(job, x, &final_f) && fabs(final_f) < 1e-6) {
+        *root = x;
+        return true;
+    }
+    return false;
+}
+
+static void work_calc_eval(const ui_work_job_t *job, ui_work_result_t *result)
 {
     char inner[96];
-    char expr[96];
     char eval_expr[128];
+    result->ok = true;
+    snprintf(result->calc.expr, sizeof(result->calc.expr), "%s", job->calc.expr);
+    result->calc.update_ans = false;
+
+    if (calc_take_wrapped_expression(job->calc.expr, "deriv", inner, sizeof(inner))) {
+        if (!opencalc_math_derivative_expression(inner, result->calc.output, sizeof(result->calc.output))) {
+            snprintf(result->calc.output, sizeof(result->calc.output), "unsupported deriv");
+        }
+    } else if (calc_take_wrapped_expression(job->calc.expr, "int", inner, sizeof(inner))) {
+        if (!opencalc_math_integral_expression(inner, result->calc.output, sizeof(result->calc.output))) {
+            snprintf(result->calc.output, sizeof(result->calc.output), "unsupported int");
+        }
+    } else {
+        double value = 0.0;
+        calc_expand_ans_value(job->calc.expr, job->calc.ans, eval_expr, sizeof(eval_expr));
+        bool ok = opencalc_math_eval_expression(eval_expr, &value);
+        if (ok) {
+            if (calc_take_wrapped_expression(job->calc.expr, "frac", inner, sizeof(inner)) ||
+                calc_take_wrapped_expression(job->calc.expr, "Frac", inner, sizeof(inner)) ||
+                calc_take_wrapped_expression(job->calc.expr, "FRAC", inner, sizeof(inner))) {
+                calc_format_fraction_value(value, result->calc.output, sizeof(result->calc.output));
+            } else {
+                snprintf(result->calc.output, sizeof(result->calc.output), "%.10g", value);
+            }
+            result->calc.update_ans = true;
+        } else {
+            snprintf(result->calc.output, sizeof(result->calc.output), "error");
+        }
+    }
+}
+
+static void ui_work_task(void *arg)
+{
+    (void)arg;
+
+    ui_work_job_t job;
+    while (true) {
+        if (xQueueReceive(s_work_queue, &job, portMAX_DELAY) != pdTRUE) {
+            continue;
+        }
+
+        opencalc_math_set_degrees(job.degrees);
+
+        ui_work_result_t result;
+        memset(&result, 0, sizeof(result));
+        result.type = job.type;
+
+        switch (job.type) {
+        case UI_WORK_CALC_EVAL:
+            work_calc_eval(&job, &result);
+            break;
+        case UI_WORK_SOLVER_SOLVE:
+            result.ok = work_solver_solve_near_guess(&job, &result.solver.root);
+            break;
+        case UI_WORK_GRAPH_CALC:
+            result.ok = work_graph_calc_run(&job, &result);
+            if (!result.ok) {
+                snprintf(result.graph.status, sizeof(result.graph.status), "graph calc: no result");
+            }
+            break;
+        default:
+            result.ok = false;
+            break;
+        }
+
+        xQueueSend(s_work_result_queue, &result, portMAX_DELAY);
+    }
+}
+
+static bool ui_work_submit(const ui_work_job_t *job)
+{
+    if (s_work_queue == NULL || job == NULL) {
+        return false;
+    }
+    return xQueueSend(s_work_queue, job, 0) == pdTRUE;
+}
+
+static bool submit_calc_eval_job(void)
+{
+    if (s_calc_eval_pending) {
+        snprintf(s_calc_output, sizeof(s_calc_output), "busy");
+        ui_draw_current();
+        return false;
+    }
+
+    ui_work_job_t job;
+    memset(&job, 0, sizeof(job));
+    job.type = UI_WORK_CALC_EVAL;
+    job.degrees = s_angle_mode == 0;
+    snprintf(job.calc.expr, sizeof(job.calc.expr), "%s", s_calc_input);
+    snprintf(job.calc.ans, sizeof(job.calc.ans), "%s", s_calc_ans);
+
+    if (!ui_work_submit(&job)) {
+        snprintf(s_calc_output, sizeof(s_calc_output), "worker unavailable");
+        ui_draw_current();
+        return false;
+    }
+
+    s_calc_eval_pending = true;
+    snprintf(s_calc_output, sizeof(s_calc_output), "working...");
+    ui_draw_current();
+    return true;
+}
+
+static bool submit_solver_solve_job(void)
+{
+    if (s_solver_solve_pending) {
+        app_output("solver busy");
+        return false;
+    }
+
+    ui_work_job_t job;
+    memset(&job, 0, sizeof(job));
+    job.type = UI_WORK_SOLVER_SOLVE;
+    job.degrees = s_angle_mode == 0;
+    snprintf(job.solver.e1, sizeof(job.solver.e1), "%s", s_solver_e1);
+    snprintf(job.solver.e2, sizeof(job.solver.e2), "%s", s_solver_e2);
+    job.solver.guess = s_solver_guess;
+
+    if (!ui_work_submit(&job)) {
+        app_output("worker unavailable");
+        return false;
+    }
+
+    s_solver_solve_pending = true;
+    app_output("solving...");
+    return true;
+}
+
+static bool submit_graph_calc_job(void)
+{
+    if (s_graph_calc_pending) {
+        snprintf(s_graph_status, sizeof(s_graph_status), "graph calc: busy");
+        ui_draw_current();
+        return false;
+    }
+
+    ui_work_job_t job;
+    memset(&job, 0, sizeof(job));
+    job.type = UI_WORK_GRAPH_CALC;
+    job.degrees = s_angle_mode == 0;
+    job.graph.selection = s_graph_calc_selection;
+    memcpy(job.graph.exprs, s_graph_exprs, sizeof(job.graph.exprs));
+    memcpy(job.graph.enabled, s_graph_enabled, sizeof(job.graph.enabled));
+    job.graph.xmin = s_graph_xmin;
+    job.graph.xmax = s_graph_xmax;
+    job.graph.trace = s_graph_trace;
+    job.graph.trace_x = s_graph_trace_x;
+    job.graph.trace_fn = s_graph_trace_fn;
+
+    if (!ui_work_submit(&job)) {
+        snprintf(s_graph_status, sizeof(s_graph_status), "graph calc: worker unavailable");
+        ui_draw_current();
+        return false;
+    }
+
+    s_graph_calc_pending = true;
+    snprintf(s_graph_status, sizeof(s_graph_status), "graph calc: working...");
+    s_page = PAGE_GRAPH;
+    s_current_app = APP_GRAPH;
+    s_graph_zoom_mode = false;
+    ui_draw_current();
+    return true;
+}
+
+static void ui_work_apply_result(const ui_work_result_t *result)
+{
+    if (result == NULL) {
+        return;
+    }
+
+    switch (result->type) {
+    case UI_WORK_CALC_EVAL:
+        s_calc_eval_pending = false;
+        snprintf(s_calc_output, sizeof(s_calc_output), "%s", result->calc.output);
+        if (result->calc.update_ans) {
+            strncpy(s_calc_ans, result->calc.output, sizeof(s_calc_ans) - 1);
+            s_calc_ans[sizeof(s_calc_ans) - 1] = '\0';
+        }
+        calc_history_push(result->calc.expr, s_calc_output);
+        printf("calc %s => %s\n", result->calc.expr, s_calc_output);
+        s_calc_input[0] = '\0';
+        s_calc_cursor = 0;
+        ui_draw_current();
+        break;
+    case UI_WORK_SOLVER_SOLVE:
+        s_solver_solve_pending = false;
+        if (result->ok) {
+            s_solver_result = result->solver.root;
+            s_solver_guess = result->solver.root;
+            s_solver_has_result = true;
+            char line[96];
+            snprintf(line, sizeof(line), "x=%.10g", result->solver.root);
+            app_output(line);
+        } else {
+            s_solver_has_result = false;
+            app_output("no solution near guess");
+        }
+        break;
+    case UI_WORK_GRAPH_CALC:
+        s_graph_calc_pending = false;
+        snprintf(s_graph_status, sizeof(s_graph_status), "%s", result->graph.status);
+        if (result->ok) {
+            s_graph_trace = result->graph.trace;
+            s_graph_trace_x = result->graph.trace_x;
+            s_graph_trace_fn = result->graph.trace_fn;
+        }
+        s_page = PAGE_GRAPH;
+        s_current_app = APP_GRAPH;
+        s_graph_zoom_mode = false;
+        ui_draw_current();
+        break;
+    default:
+        break;
+    }
+}
+
+static void ui_work_poll_results(void)
+{
+    if (s_work_result_queue == NULL) {
+        return;
+    }
+
+    ui_work_result_t result;
+    while (xQueueReceive(s_work_result_queue, &result, 0) == pdTRUE) {
+        ui_work_apply_result(&result);
+    }
+}
+
+static void calc_eval(void)
+{
+    char expr[96];
     snprintf(expr, sizeof(expr), "%s", s_calc_input);
     if (expr[0] == '\0') {
         return;
     }
-
-    if (calc_take_wrapped_expression(s_calc_input, "deriv", inner, sizeof(inner))) {
-        if (!opencalc_math_derivative_expression(inner, s_calc_output, sizeof(s_calc_output))) {
-            snprintf(s_calc_output, sizeof(s_calc_output), "unsupported deriv");
-        }
-    } else if (calc_take_wrapped_expression(s_calc_input, "int", inner, sizeof(inner))) {
-        if (!opencalc_math_integral_expression(inner, s_calc_output, sizeof(s_calc_output))) {
-            snprintf(s_calc_output, sizeof(s_calc_output), "unsupported int");
-        }
-    } else {
-        double result = 0.0;
-        calc_expand_ans(s_calc_input, eval_expr, sizeof(eval_expr));
-        bool ok = opencalc_math_eval_expression(eval_expr, &result);
-        if (ok) {
-            if (calc_take_wrapped_expression(s_calc_input, "frac", inner, sizeof(inner)) ||
-                calc_take_wrapped_expression(s_calc_input, "Frac", inner, sizeof(inner)) ||
-                calc_take_wrapped_expression(s_calc_input, "FRAC", inner, sizeof(inner))) {
-                calc_format_fraction_value(result, s_calc_output, sizeof(s_calc_output));
-            } else {
-                snprintf(s_calc_output, sizeof(s_calc_output), "%.10g", result);
-            }
-            strncpy(s_calc_ans, s_calc_output, sizeof(s_calc_ans) - 1);
-            s_calc_ans[sizeof(s_calc_ans) - 1] = '\0';
-        } else {
-            snprintf(s_calc_output, sizeof(s_calc_output), "error");
-        }
-    }
-    calc_history_push(expr, s_calc_output);
-    printf("calc %s => %s\n", expr, s_calc_output);
-    s_calc_input[0] = '\0';
-    s_calc_cursor = 0;
-    ui_draw_current();
+    submit_calc_eval_job();
 }
 
 static void math_menu_insert_selected(void)
@@ -5596,8 +6273,8 @@ static bool list_editor_append_char(char c)
 
 static void key_home(void)
 {
-    if (s_doom_active) {
-        toggle_doom_mode();
+    if (s_active_game != GAME_NONE) {
+        close_active_game_to_menu();
         return;
     }
     s_home_selection = APP_CALCULATOR;
@@ -5644,6 +6321,9 @@ static void key_back(void)
     } else if (s_page == PAGE_PROGRAM_MENU) {
         s_page = PAGE_HOME;
         s_current_app = APP_PYTHON;
+    } else if (s_page == PAGE_GAME_MENU) {
+        s_page = PAGE_HOME;
+        s_current_app = APP_CALCULATOR;
     } else if (s_page == PAGE_MODE_MENU) {
         s_page = PAGE_CALCULATOR;
         s_current_app = APP_CALCULATOR;
@@ -5658,6 +6338,8 @@ static void key_enter(void)
 {
     if (s_page == PAGE_HOME) {
         ui_open_selected_app();
+    } else if (s_page == PAGE_GAME_MENU) {
+        launch_selected_game();
     } else if (s_page == PAGE_PROGRAM_MENU) {
         if (s_program_selection == 0) {
             open_scripts_browser_for(SCRIPT_ACTION_RUN);
@@ -5723,11 +6405,16 @@ static void key_enter(void)
             adjust_brightness(10);
         } else if (s_script_selection == 1) {
             s_sleep_enabled = !s_sleep_enabled;
+            opencalc_persist_set_u32("auto_sleep", s_sleep_enabled ? 1 : 0);
             ui_draw_current();
         } else if (s_script_selection == 2) {
-            s_light_mode = !s_light_mode;
+            apply_power_save_mode(!s_power_save_enabled);
             ui_draw_current();
         } else if (s_script_selection == 3) {
+            s_light_mode = !s_light_mode;
+            opencalc_persist_set_u32("light_mode", s_light_mode ? 1 : 0);
+            ui_draw_current();
+        } else if (s_script_selection == 4) {
             factory_reset_runtime_state();
         }
     } else if (s_page == PAGE_APP) {
@@ -6050,6 +6737,8 @@ static void key_up(void)
         s_script_selection--;
     } else if (s_page == PAGE_PROGRAM_MENU && s_program_selection > 0) {
         s_program_selection--;
+    } else if (s_page == PAGE_GAME_MENU && s_game_selection > 0) {
+        s_game_selection--;
     }
     ui_draw_current();
 }
@@ -6104,6 +6793,8 @@ static void key_down(void)
         s_script_selection++;
     } else if (s_page == PAGE_PROGRAM_MENU && s_program_selection + 1 < PROGRAM_MENU_COUNT) {
         s_program_selection++;
+    } else if (s_page == PAGE_GAME_MENU && s_game_selection < 4) {
+        s_game_selection++;
     }
     ui_draw_current();
 }
@@ -6121,7 +6812,7 @@ static void dispatch_key(int row, int col)
         } else if (s_alpha_active) {
             s_second_active = false;
             s_alpha_active = false;
-            toggle_doom_mode();
+            open_game_menu();
         } else {
             s_second_active = !s_second_active;
             s_alpha_active = false;
@@ -6363,6 +7054,27 @@ finish_key:
     }
 }
 
+static bool active_game_press_button_number(int number)
+{
+    if (s_active_game == GAME_NONE) {
+        return false;
+    }
+
+    if (number == 46) {
+        close_active_game_to_menu();
+        return true;
+    }
+
+    switch (s_active_game) {
+    case GAME_TETRIS: return opencalc_tetris_press_button_number(number);
+    case GAME_DOOM: return opencalc_doom_press_button_number(number);
+    case GAME_SNAKE: return opencalc_snake_press_button_number(number);
+    case GAME_BREAKOUT: return opencalc_breakout_press_button_number(number);
+    case GAME_MARIO: return opencalc_mario_press_button_number(number);
+    default: return false;
+    }
+}
+
 bool opencalc_ui_press_button_number(int number)
 {
     if (number < 1 || number > BOARD_KEYPAD_ROWS * BOARD_KEYPAD_COLS) {
@@ -6379,8 +7091,8 @@ bool opencalc_ui_press_button_number(int number)
         return false;
     }
 
-    if (s_doom_active && number != 6 && number != 11 && number != 46) {
-        return opencalc_doom_press_button_number(number);
+    if (s_active_game != GAME_NONE) {
+        return active_game_press_button_number(number);
     }
 
     printf("serial button %d -> r%d c%d %s\n", number, row, col, key->normal);
@@ -6417,6 +7129,26 @@ void opencalc_ui_handle_keypad_interrupt(void)
     static bool was_pressed = false;
     static int last_row = -1;
     static int last_col = -1;
+    static bool game_prev[BOARD_KEYPAD_ROWS][BOARD_KEYPAD_COLS] = {0};
+
+    if (s_active_game != GAME_NONE) {
+        bool matrix[BOARD_KEYPAD_ROWS][BOARD_KEYPAD_COLS];
+        if (!board_keypad_scan_matrix(matrix)) {
+            memset(game_prev, 0, sizeof(game_prev));
+            vTaskDelay(pdMS_TO_TICKS(1));
+            return;
+        }
+        for (int row = 0; row < BOARD_KEYPAD_ROWS; row++) {
+            for (int col = 0; col < BOARD_KEYPAD_COLS; col++) {
+                if (matrix[row][col] && !game_prev[row][col]) {
+                    active_game_press_button_number(row * BOARD_KEYPAD_COLS + col + 1);
+                }
+                game_prev[row][col] = matrix[row][col];
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(1));
+        return;
+    }
 
     if (!board_keypad_take_interrupt()) {
         return;
@@ -6564,11 +7296,36 @@ void opencalc_ui_handle_touch_interrupt(void)
     }
 }
 
+void opencalc_ui_start_worker(void)
+{
+    if (s_work_queue == NULL) {
+        s_work_queue = xQueueCreate(4, sizeof(ui_work_job_t));
+    }
+    if (s_work_result_queue == NULL) {
+        s_work_result_queue = xQueueCreate(4, sizeof(ui_work_result_t));
+    }
+    if (s_work_task == NULL && s_work_queue != NULL && s_work_result_queue != NULL) {
+        xTaskCreatePinnedToCore(ui_work_task, "opencalc_work", 24576, NULL, 5, &s_work_task, OPENCALC_WORKER_CORE);
+    }
+}
+
 void opencalc_ui_init(void)
 {
     if (s_serial_button_queue == NULL) {
         s_serial_button_queue = xQueueCreate(8, sizeof(int));
     }
+    opencalc_ui_start_worker();
+    s_light_mode = opencalc_persist_get_u32("light_mode", 0) != 0;
+    s_sleep_enabled = opencalc_persist_get_u32("auto_sleep", 1) != 0;
+    board_set_backlight_brightness((int)opencalc_persist_get_u32("brightness", 80));
+    s_power_save_saved_brightness = board_get_backlight_brightness();
+    apply_power_save_mode(opencalc_persist_get_u32("power_save", 0) != 0);
+    s_doom_high_score = opencalc_persist_get_u32("hs_doom", 0);
+    s_doom_last_saved_high_score = s_doom_high_score;
+    opencalc_tetris_init();
+    opencalc_snake_init();
+    opencalc_breakout_init();
+    opencalc_mario_init();
 }
 
 void opencalc_ui_draw(void)
@@ -6578,6 +7335,8 @@ void opencalc_ui_draw(void)
 
 void opencalc_ui_tick(void)
 {
+    ui_work_poll_results();
+
     s_cursor_blink_visible = ((esp_timer_get_time() / 450000) % 2) == 0;
     if (s_cursor_blink_visible == s_cursor_blink_last_visible) {
         return;
@@ -6591,10 +7350,33 @@ void opencalc_ui_tick(void)
 
 bool opencalc_ui_doom_active(void)
 {
-    return s_doom_active;
+    return s_active_game != GAME_NONE;
 }
 
 void opencalc_ui_tick_doom(void)
 {
-    opencalc_doom_tick();
+    switch (s_active_game) {
+    case GAME_TETRIS:
+        opencalc_tetris_tick();
+        if (!opencalc_tetris_active()) close_active_game_to_menu();
+        break;
+    case GAME_DOOM:
+        opencalc_doom_tick();
+        save_doom_high_score();
+        break;
+    case GAME_SNAKE:
+        opencalc_snake_tick();
+        if (!opencalc_snake_active()) close_active_game_to_menu();
+        break;
+    case GAME_BREAKOUT:
+        opencalc_breakout_tick();
+        if (!opencalc_breakout_active()) close_active_game_to_menu();
+        break;
+    case GAME_MARIO:
+        opencalc_mario_tick();
+        if (!opencalc_mario_active()) close_active_game_to_menu();
+        break;
+    default:
+        break;
+    }
 }

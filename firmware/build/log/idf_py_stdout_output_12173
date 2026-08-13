@@ -1,0 +1,535 @@
+Command: ninja all
+[0/1] Re-running CMake...
+-- Component directory /Users/corypearl/.espressif/v6.0.1/esp-idf/components/mqtt does not contain a CMakeLists.txt file. No component will be added
+-- Minimal build - OFF
+-- Building ESP-IDF components for target esp32s3
+NOTICE: 
+Following dependencies have new versions available:
+Dependency "espressif/esp_tinyusb": "2.2.0" -> "2.2.1"
+Dependency "espressif/tinyusb": "0.19.0~3" -> "0.21.0~1"
+Consider running "idf.py update-dependencies" to update your lock file.
+NOTICE: Processing 5 dependencies:
+NOTICE: [1/5] espressif/cmake_utilities (0.5.3)
+NOTICE: [2/5] espressif/esp_lcd_ili9341 (2.0.2)
+NOTICE: [3/5] espressif/esp_tinyusb (2.2.0)
+NOTICE: [4/5] espressif/tinyusb (0.19.0~3)
+NOTICE: [5/5] idf (6.0.1)
+-- ESP-TEE is currently supported only on the esp32c6;esp32h2;esp32c5;esp32c61 SoCs
+-- KCONFIG_REPORT_VERBOSITY not set, using default
+-- Project sdkconfig file /Users/corypearl/Desktop/opencalc/firmware/sdkconfig
+-- Compiler supported targets: xtensa-esp-elf
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- App "opencalc" version: 8196f5e-dirty
+-- Setting up mbedtls configuration
+-- Linkage type is PUBLIC
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_wdt/esp32s3/rom.wdt.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_system/ld/esp32s3/memory.ld.in
+--   -> Preprocessing .in script: /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_system/ld/esp32s3/memory.ld.in
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_system/ld/esp32s3/sections.ld.in
+--   -> Preprocessing .in script: /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_system/ld/esp32s3/sections.ld.in
+--   -> Applying ldgen processing: /Users/corypearl/Desktop/opencalc/firmware/build/esp-idf/esp_system/ld/sections.ld.in
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.api.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.bt_funcs.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.libgcc.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.version.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.ble_master.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.ble_50.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.ble_smp.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.ble_dtm.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.ble_test.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.ble_scan.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.libc.ld
+-- Adding linker script /Users/corypearl/.espressif/v6.0.1/esp-idf/components/soc/esp32s3/ld/esp32s3.peripherals.ld
+-- ESP_LCD_ILI9341: 2.0.2
+-- Component idf::esp_trace will be linked with -Wl,--whole-archive
+-- Components: app_trace app_update bootloader bootloader_support bt cmock console cxx driver efuse esp-tls esp_adc esp_app_format esp_blockdev esp_blockdev_util esp_bootloader_format esp_coex esp_common esp_driver_ana_cmpr esp_driver_bitscrambler esp_driver_cam esp_driver_dac esp_driver_dma esp_driver_gpio esp_driver_gptimer esp_driver_i2c esp_driver_i2s esp_driver_i3c esp_driver_isp esp_driver_jpeg esp_driver_ledc esp_driver_mcpwm esp_driver_parlio esp_driver_pcnt esp_driver_ppa esp_driver_rmt esp_driver_sd_intf esp_driver_sdio esp_driver_sdm esp_driver_sdmmc esp_driver_sdspi esp_driver_spi esp_driver_touch_sens esp_driver_tsens esp_driver_twai esp_driver_uart esp_driver_usb_serial_jtag esp_eth esp_event esp_gdbstub esp_hal_ana_cmpr esp_hal_ana_conv esp_hal_cam esp_hal_clock esp_hal_dma esp_hal_gpio esp_hal_gpspi esp_hal_i2c esp_hal_i2s esp_hal_ieee802154 esp_hal_jpeg esp_hal_lcd esp_hal_ledc esp_hal_mcpwm esp_hal_mspi esp_hal_parlio esp_hal_pcnt esp_hal_pmu esp_hal_ppa esp_hal_rmt esp_hal_rtc_timer esp_hal_sd esp_hal_security esp_hal_timg esp_hal_touch_sens esp_hal_twai esp_hal_uart esp_hal_usb esp_hal_wdt esp_hid esp_http_client esp_http_server esp_https_ota esp_https_server esp_hw_support esp_lcd esp_libc esp_local_ctrl esp_mm esp_netif esp_netif_stack esp_partition esp_phy esp_pm esp_psram esp_ringbuf esp_rom esp_security esp_stdio esp_system esp_timer esp_trace esp_usb_cdc_rom_console esp_wifi espcoredump espressif__cmake_utilities espressif__esp_lcd_ili9341 espressif__esp_tinyusb espressif__tinyusb esptool_py fatfs freertos hal heap http_parser idf_test ieee802154 log lwip main mbedtls nvs_flash nvs_sec_provider openthread partition_table perfmon protobuf-c protocomm pthread rt sdmmc soc spi_flash spiffs tcp_transport ulp unity vfs wear_levelling wpa_supplicant xtensa
+-- Component paths: /Users/corypearl/.espressif/v6.0.1/esp-idf/components/app_trace /Users/corypearl/.espressif/v6.0.1/esp-idf/components/app_update /Users/corypearl/.espressif/v6.0.1/esp-idf/components/bootloader /Users/corypearl/.espressif/v6.0.1/esp-idf/components/bootloader_support /Users/corypearl/.espressif/v6.0.1/esp-idf/components/bt /Users/corypearl/.espressif/v6.0.1/esp-idf/components/cmock /Users/corypearl/.espressif/v6.0.1/esp-idf/components/console /Users/corypearl/.espressif/v6.0.1/esp-idf/components/cxx /Users/corypearl/.espressif/v6.0.1/esp-idf/components/driver /Users/corypearl/.espressif/v6.0.1/esp-idf/components/efuse /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp-tls /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_adc /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_app_format /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_blockdev /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_blockdev_util /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_bootloader_format /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_coex /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_common /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_ana_cmpr /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_bitscrambler /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_cam /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_dac /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_dma /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_gpio /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_gptimer /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_i2c /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_i2s /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_i3c /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_isp /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_jpeg /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_ledc /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_mcpwm /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_parlio /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_pcnt /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_ppa /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_rmt /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_sd_intf /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_sdio /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_sdm /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_sdmmc /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_sdspi /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_spi /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_touch_sens /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_tsens /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_twai /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_uart /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_driver_usb_serial_jtag /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_eth /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_event /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_gdbstub /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_ana_cmpr /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_ana_conv /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_cam /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_clock /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_dma /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_gpio /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_gpspi /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_i2c /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_i2s /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_ieee802154 /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_jpeg /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_lcd /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_ledc /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_mcpwm /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_mspi /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_parlio /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_pcnt /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_pmu /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_ppa /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_rmt /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_rtc_timer /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_sd /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_security /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_timg /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_touch_sens /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_twai /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_uart /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_usb /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hal_wdt /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hid /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_http_client /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_http_server /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_https_ota /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_https_server /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_hw_support /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_lcd /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_libc /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_local_ctrl /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_mm /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_netif /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_netif_stack /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_partition /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_phy /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_pm /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_psram /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_ringbuf /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_rom /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_security /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_stdio /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_system /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_timer /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_trace /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_usb_cdc_rom_console /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esp_wifi /Users/corypearl/.espressif/v6.0.1/esp-idf/components/espcoredump /Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__cmake_utilities /Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_lcd_ili9341 /Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb /Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__tinyusb /Users/corypearl/.espressif/v6.0.1/esp-idf/components/esptool_py /Users/corypearl/.espressif/v6.0.1/esp-idf/components/fatfs /Users/corypearl/.espressif/v6.0.1/esp-idf/components/freertos /Users/corypearl/.espressif/v6.0.1/esp-idf/components/hal /Users/corypearl/.espressif/v6.0.1/esp-idf/components/heap /Users/corypearl/.espressif/v6.0.1/esp-idf/components/http_parser /Users/corypearl/.espressif/v6.0.1/esp-idf/components/idf_test /Users/corypearl/.espressif/v6.0.1/esp-idf/components/ieee802154 /Users/corypearl/.espressif/v6.0.1/esp-idf/components/log /Users/corypearl/.espressif/v6.0.1/esp-idf/components/lwip /Users/corypearl/Desktop/opencalc/firmware/main /Users/corypearl/.espressif/v6.0.1/esp-idf/components/mbedtls /Users/corypearl/.espressif/v6.0.1/esp-idf/components/nvs_flash /Users/corypearl/.espressif/v6.0.1/esp-idf/components/nvs_sec_provider /Users/corypearl/.espressif/v6.0.1/esp-idf/components/openthread /Users/corypearl/.espressif/v6.0.1/esp-idf/components/partition_table /Users/corypearl/.espressif/v6.0.1/esp-idf/components/perfmon /Users/corypearl/.espressif/v6.0.1/esp-idf/components/protobuf-c /Users/corypearl/.espressif/v6.0.1/esp-idf/components/protocomm /Users/corypearl/.espressif/v6.0.1/esp-idf/components/pthread /Users/corypearl/.espressif/v6.0.1/esp-idf/components/rt /Users/corypearl/.espressif/v6.0.1/esp-idf/components/sdmmc /Users/corypearl/.espressif/v6.0.1/esp-idf/components/soc /Users/corypearl/.espressif/v6.0.1/esp-idf/components/spi_flash /Users/corypearl/.espressif/v6.0.1/esp-idf/components/spiffs /Users/corypearl/.espressif/v6.0.1/esp-idf/components/tcp_transport /Users/corypearl/.espressif/v6.0.1/esp-idf/components/ulp /Users/corypearl/.espressif/v6.0.1/esp-idf/components/unity /Users/corypearl/.espressif/v6.0.1/esp-idf/components/vfs /Users/corypearl/.espressif/v6.0.1/esp-idf/components/wear_levelling /Users/corypearl/.espressif/v6.0.1/esp-idf/components/wpa_supplicant /Users/corypearl/.espressif/v6.0.1/esp-idf/components/xtensa
+-- OpenCalc storage image: flashing /Users/corypearl/Desktop/opencalc/firmware/storage_image into the storage partition
+-- Configuring done (5.2s)
+-- Generating done (0.4s)
+-- Build files have been written to: /Users/corypearl/Desktop/opencalc/firmware/build
+[1/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/opencalc_power.c.obj
+[2/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/opencalc_persist.c.obj
+[3/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/main.c.obj
+[4/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/opencalc_mario.c.obj
+[5/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/opencalc_snake.c.obj
+[6/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/opencalc_doom.c.obj
+[7/105] Generating ../../partition_table/partition-table.bin
+Partition table binary generated. Contents:
+*******************************************************************************
+# ESP-IDF Partition Table
+# Name, Type, SubType, Offset, Size, Flags
+nvs,data,nvs,0x9000,20K,
+phy_init,data,phy,0xe000,4K,
+factory,app,factory,0x10000,4M,
+storage,data,fat,0x410000,8M,
+*******************************************************************************
+[8/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/opencalc_breakout.c.obj
+[9/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/opencalc_tetris.c.obj
+[10/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/storage.c.obj
+[11/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/board_init.c.obj
+[12/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/doomdef.c.obj
+[13/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/doomgeneric.c.obj
+[14/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/opencalc_math.c.obj
+[15/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/dstrings.c.obj
+[16/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/d_event.c.obj
+[17/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/usb_msc.c.obj
+[18/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/doomstat.c.obj
+[19/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/d_items.c.obj
+[20/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/d_iwad.c.obj
+[21/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/am_map.c.obj
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/am_map.c: In function 'AM_initVariables':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/am_map.c:427:5: warning: missing initializer for field 'data4' of 'event_t' [-Wmissing-field-initializers]
+  427 |     static event_t st_notify = { ev_keyup, AM_MSGENTERED, 0, 0 };
+      |     ^~~~~~
+In file included from /Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/st_stuff.h:25,
+                 from /Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/am_map.c:27:
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/d_event.h:67:30: note: 'data4' declared here
+   67 |     int data1, data2, data3, data4;
+      |                              ^~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/am_map.c: In function 'AM_Stop':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/am_map.c:543:5: warning: missing initializer for field 'data4' of 'event_t' [-Wmissing-field-initializers]
+  543 |     static event_t st_notify = { 0, ev_keyup, AM_MSGEXITED, 0 };
+      |     ^~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/d_event.h:67:30: note: 'data4' declared here
+   67 |     int data1, data2, data3, data4;
+      |                              ^~~~~
+[22/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/dummy.c.obj
+[23/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/d_mode.c.obj
+[24/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/d_loop.c.obj
+[25/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/d_net.c.obj
+[26/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/f_wipe.c.obj
+[27/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/i_endoom.c.obj
+[28/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/i_cdmus.c.obj
+[29/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/hu_lib.c.obj
+[30/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/d_main.c.obj
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/d_main.c: In function 'D_DoomMain':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/d_main.c:1570:49: warning: initializer-string for array of 'char' truncates NUL terminator but destination lacks 'nonstring' attribute (9 chars into 8 available) [-Wunterminated-string-initialization]
+ 1570 |             "dphoof","bfgga0","heada1","cybra1","spida1d1"
+      |                                                 ^~~~~~~~~~
+[31/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/f_finale.c.obj
+[32/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/i_joystick.c.obj
+[33/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/hu_stuff.c.obj
+[34/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/i_input.c.obj
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_input.c: In function 'GetTypedChar':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_input.c:250:17: warning: comparison is always true due to limited range of data type [-Wtype-limits]
+  250 |         if (key >= 0 && key < arrlen(shiftxform))
+      |                 ^~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_input.c: At top level:
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_input.c:51:19: warning: 'at_to_doom' defined but not used [-Wunused-const-variable=]
+   51 | static const char at_to_doom[] =
+      |                   ^~~~~~~~~~
+[35/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/m_bbox.c.obj
+[36/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/i_timer.c.obj
+[37/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/m_argv.c.obj
+[38/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/i_sound.c.obj
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_sound.c: In function 'I_BindSoundVariables':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_sound.c:398:18: warning: unused variable 'libsamplerate_scale' [-Wunused-variable]
+  398 |     extern float libsamplerate_scale;
+      |                  ^~~~~~~~~~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_sound.c:397:16: warning: unused variable 'use_libsamplerate' [-Wunused-variable]
+  397 |     extern int use_libsamplerate;
+      |                ^~~~~~~~~~~~~~~~~
+[39/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/m_cheat.c.obj
+[40/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/info.c.obj
+[41/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/i_system.c.obj
+[42/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/i_video.c.obj
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_video.c: In function 'I_InitGraphics':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_video.c:267:50: warning: format '%d' expects argument of type 'int', but argument 2 has type 'uint32_t' {aka 'long unsigned int'} [-Wformat=]
+  267 |     printf("I_InitGraphics: framebuffer: x_res: %d, y_res: %d, x_virtual: %d, y_virtual: %d, bpp: %d\n",
+      |                                                 ~^
+      |                                                  |
+      |                                                  int
+      |                                                 %ld
+  268 |             s_Fb.xres, s_Fb.yres, s_Fb.xres_virtual, s_Fb.yres_virtual, s_Fb.bits_per_pixel);
+      |             ~~~~~~~~~                             
+      |                 |
+      |                 uint32_t {aka long unsigned int}
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_video.c:267:61: warning: format '%d' expects argument of type 'int', but argument 3 has type 'uint32_t' {aka 'long unsigned int'} [-Wformat=]
+  267 |     printf("I_InitGraphics: framebuffer: x_res: %d, y_res: %d, x_virtual: %d, y_virtual: %d, bpp: %d\n",
+      |                                                            ~^
+      |                                                             |
+      |                                                             int
+      |                                                            %ld
+  268 |             s_Fb.xres, s_Fb.yres, s_Fb.xres_virtual, s_Fb.yres_virtual, s_Fb.bits_per_pixel);
+      |                        ~~~~~~~~~                             
+      |                            |
+      |                            uint32_t {aka long unsigned int}
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_video.c:267:76: warning: format '%d' expects argument of type 'int', but argument 4 has type 'uint32_t' {aka 'long unsigned int'} [-Wformat=]
+  267 |     printf("I_InitGraphics: framebuffer: x_res: %d, y_res: %d, x_virtual: %d, y_virtual: %d, bpp: %d\n",
+      |                                                                           ~^
+      |                                                                            |
+      |                                                                            int
+      |                                                                           %ld
+  268 |             s_Fb.xres, s_Fb.yres, s_Fb.xres_virtual, s_Fb.yres_virtual, s_Fb.bits_per_pixel);
+      |                                   ~~~~~~~~~~~~~~~~~                         
+      |                                       |
+      |                                       uint32_t {aka long unsigned int}
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_video.c:267:91: warning: format '%d' expects argument of type 'int', but argument 5 has type 'uint32_t' {aka 'long unsigned int'} [-Wformat=]
+  267 |     printf("I_InitGraphics: framebuffer: x_res: %d, y_res: %d, x_virtual: %d, y_virtual: %d, bpp: %d\n",
+      |                                                                                          ~^
+      |                                                                                           |
+      |                                                                                           int
+      |                                                                                          %ld
+  268 |             s_Fb.xres, s_Fb.yres, s_Fb.xres_virtual, s_Fb.yres_virtual, s_Fb.bits_per_pixel);
+      |                                                      ~~~~~~~~~~~~~~~~~                     
+      |                                                          |
+      |                                                          uint32_t {aka long unsigned int}
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_video.c:267:100: warning: format '%d' expects argument of type 'int', but argument 6 has type 'uint32_t' {aka 'long unsigned int'} [-Wformat=]
+  267 |     printf("I_InitGraphics: framebuffer: x_res: %d, y_res: %d, x_virtual: %d, y_virtual: %d, bpp: %d\n",
+      |                                                                                                   ~^
+      |                                                                                                    |
+      |                                                                                                    int
+      |                                                                                                   %ld
+  268 |             s_Fb.xres, s_Fb.yres, s_Fb.xres_virtual, s_Fb.yres_virtual, s_Fb.bits_per_pixel);
+      |                                                                         ~~~~~~~~~~~~~~~~~~~         
+      |                                                                             |
+      |                                                                             uint32_t {aka long unsigned int}
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_video.c:270:49: warning: format '%d' expects argument of type 'int', but argument 2 has type 'uint32_t' {aka 'long unsigned int'} [-Wformat=]
+  270 |     printf("I_InitGraphics: framebuffer: RGBA: %d%d%d%d, red_off: %d, green_off: %d, blue_off: %d, transp_off: %d\n",
+      |                                                ~^
+      |                                                 |
+      |                                                 int
+      |                                                %ld
+  271 |             s_Fb.red.length, s_Fb.green.length, s_Fb.blue.length, s_Fb.transp.length, s_Fb.red.offset, s_Fb.green.offset, s_Fb.blue.offset, s_Fb.transp.offset);
+      |             ~~~~~~~~~~~~~~~                      
+      |                     |
+      |                     uint32_t {aka long unsigned int}
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_video.c:270:51: warning: format '%d' expects argument of type 'int', but argument 3 has type 'uint32_t' {aka 'long unsigned int'} [-Wformat=]
+  270 |     printf("I_InitGraphics: framebuffer: RGBA: %d%d%d%d, red_off: %d, green_off: %d, blue_off: %d, transp_off: %d\n",
+      |                                                  ~^
+      |                                                   |
+      |                                                   int
+      |                                                  %ld
+  271 |             s_Fb.red.length, s_Fb.green.length, s_Fb.blue.length, s_Fb.transp.length, s_Fb.red.offset, s_Fb.green.offset, s_Fb.blue.offset, s_Fb.transp.offset);
+      |                              ~~~~~~~~~~~~~~~~~     
+      |                                        |
+      |                                        uint32_t {aka long unsigned int}
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_video.c:270:53: warning: format '%d' expects argument of type 'int', but argument 4 has type 'uint32_t' {aka 'long unsigned int'} [-Wformat=]
+  270 |     printf("I_InitGraphics: framebuffer: RGBA: %d%d%d%d, red_off: %d, green_off: %d, blue_off: %d, transp_off: %d\n",
+      |                                                    ~^
+      |                                                     |
+      |                                                     int
+      |                                                    %ld
+  271 |             s_Fb.red.length, s_Fb.green.length, s_Fb.blue.length, s_Fb.transp.length, s_Fb.red.offset, s_Fb.green.offset, s_Fb.blue.offset, s_Fb.transp.offset);
+      |                                                 ~~~~~~~~~~~~~~~~
+      |                                                          |
+      |                                                          uint32_t {aka long unsigned int}
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_video.c:270:55: warning: format '%d' expects argument of type 'int', but argument 5 has type 'uint32_t' {aka 'long unsigned int'} [-Wformat=]
+  270 |     printf("I_InitGraphics: framebuffer: RGBA: %d%d%d%d, red_off: %d, green_off: %d, blue_off: %d, transp_off: %d\n",
+      |                                                      ~^
+      |                                                       |
+      |                                                       int
+      |                                                      %ld
+  271 |             s_Fb.red.length, s_Fb.green.length, s_Fb.blue.length, s_Fb.transp.length, s_Fb.red.offset, s_Fb.green.offset, s_Fb.blue.offset, s_Fb.transp.offset);
+      |                                                                   ~~~~~~~~~~~~~~~~~~
+      |                                                                              |
+      |                                                                              uint32_t {aka long unsigned int}
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_video.c:270:68: warning: format '%d' expects argument of type 'int', but argument 6 has type 'uint32_t' {aka 'long unsigned int'} [-Wformat=]
+  270 |     printf("I_InitGraphics: framebuffer: RGBA: %d%d%d%d, red_off: %d, green_off: %d, blue_off: %d, transp_off: %d\n",
+      |                                                                   ~^
+      |                                                                    |
+      |                                                                    int
+      |                                                                   %ld
+  271 |             s_Fb.red.length, s_Fb.green.length, s_Fb.blue.length, s_Fb.transp.length, s_Fb.red.offset, s_Fb.green.offset, s_Fb.blue.offset, s_Fb.transp.offset);
+      |                                                                                       ~~~~~~~~~~~~~~~
+      |                                                                                               |
+      |                                                                                               uint32_t {aka long unsigned int}
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_video.c:270:83: warning: format '%d' expects argument of type 'int', but argument 7 has type 'uint32_t' {aka 'long unsigned int'} [-Wformat=]
+  270 |     printf("I_InitGraphics: framebuffer: RGBA: %d%d%d%d, red_off: %d, green_off: %d, blue_off: %d, transp_off: %d\n",
+      |                                                                                  ~^
+      |                                                                                   |
+      |                                                                                   int
+      |                                                                                  %ld
+  271 |             s_Fb.red.length, s_Fb.green.length, s_Fb.blue.length, s_Fb.transp.length, s_Fb.red.offset, s_Fb.green.offset, s_Fb.blue.offset, s_Fb.transp.offset);
+      |                                                                                                        ~~~~~~~~~~~~~~~~~
+      |                                                                                                                  |
+      |                                                                                                                  uint32_t {aka long unsigned int}
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_video.c:270:97: warning: format '%d' expects argument of type 'int', but argument 8 has type 'uint32_t' {aka 'long unsigned int'} [-Wformat=]
+  270 |     printf("I_InitGraphics: framebuffer: RGBA: %d%d%d%d, red_off: %d, green_off: %d, blue_off: %d, transp_off: %d\n",
+      |                                                                                                ~^
+      |                                                                                                 |
+      |                                                                                                 int
+      |                                                                                                %ld
+  271 |             s_Fb.red.length, s_Fb.green.length, s_Fb.blue.length, s_Fb.transp.length, s_Fb.red.offset, s_Fb.green.offset, s_Fb.blue.offset, s_Fb.transp.offset);
+      |                                                                                                                           ~~~~~~~~~~~~~~~~
+      |                                                                                                                                    |
+      |                                                                                                                                    uint32_t {aka long unsigned int}
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_video.c:270:113: warning: format '%d' expects argument of type 'int', but argument 9 has type 'uint32_t' {aka 'long unsigned int'} [-Wformat=]
+  270 |     printf("I_InitGraphics: framebuffer: RGBA: %d%d%d%d, red_off: %d, green_off: %d, blue_off: %d, transp_off: %d\n",
+      |                                                                                                                ~^
+      |                                                                                                                 |
+      |                                                                                                                 int
+      |                                                                                                                %ld
+  271 |             s_Fb.red.length, s_Fb.green.length, s_Fb.blue.length, s_Fb.transp.length, s_Fb.red.offset, s_Fb.green.offset, s_Fb.blue.offset, s_Fb.transp.offset);
+      |                                                                                                                                             ~~~~~~~~~~~~~~~~~~
+      |                                                                                                                                                        |
+      |                                                                                                                                                        uint32_t {aka long unsigned int}
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_video.c: In function 'I_FinishUpdate':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_video.c:324:19: warning: variable 'y_offset' set but not used [-Wunused-but-set-variable]
+  324 |     int x_offset, y_offset, x_offset_end;
+      |                   ^~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_video.c: At top level:
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/i_video.c:26:1: warning: 'rcsid' defined but not used [-Wunused-const-variable=]
+   26 | rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
+      | ^~~~~
+[43/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/m_random.c.obj
+[44/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/m_fixed.c.obj
+[45/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/m_controls.c.obj
+[46/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/m_config.c.obj
+[47/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/i_scale.c.obj
+[48/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/memio.c.obj
+[49/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/g_game.c.obj
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/g_game.c: In function 'G_WorldDone':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/g_game.c:1507:16: warning: this statement may fall through [-Wimplicit-fallthrough=]
+ 1507 |             if (!secretexit)
+      |                ^
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/g_game.c:1509:11: note: here
+ 1509 |           case 6:
+      |           ^~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/g_game.c: In function 'G_VanillaVersionCode':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/g_game.c:2045:13: warning: this statement may fall through [-Wimplicit-fallthrough=]
+ 2045 |             I_Error("Doom 1.2 does not have a version code!");
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/g_game.c:2046:9: note: here
+ 2046 |         case exe_doom_1_666:
+      |         ^~~~
+[50/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/p_ceilng.c.obj
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/p_ceilng.c: In function 'T_MoveCeiling':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/p_ceilng.c:83:17: warning: this statement may fall through [-Wimplicit-fallthrough=]
+   83 |                 S_StartSound(&ceiling->sector->soundorg, sfx_pstop);
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/p_ceilng.c:84:15: note: here
+   84 |               case fastCrushAndRaise:
+      |               ^~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/p_ceilng.c:118:17: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  118 |                 S_StartSound(&ceiling->sector->soundorg, sfx_pstop);
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/p_ceilng.c:119:15: note: here
+  119 |               case crushAndRaise:
+      |               ^~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/p_ceilng.c:120:32: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  120 |                 ceiling->speed = CEILSPEED;
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/p_ceilng.c:121:15: note: here
+  121 |               case fastCrushAndRaise:
+      |               ^~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/p_ceilng.c: In function 'EV_DoCeiling':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/p_ceilng.c:212:32: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  212 |             ceiling->topheight = sec->ceilingheight;
+      |             ~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/p_ceilng.c:213:11: note: here
+  213 |           case lowerAndCrush:
+      |           ^~~~
+[51/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/m_misc.c.obj
+[52/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/p_doors.c.obj
+[53/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/p_lights.c.obj
+[54/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/p_floor.c.obj
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/p_floor.c: In function 'EV_DoFloor':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/p_floor.c:309:26: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  309 |             floor->crush = true;
+      |             ~~~~~~~~~~~~~^~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/p_floor.c:310:11: note: here
+  310 |           case raiseFloor:
+      |           ^~~~
+[55/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/p_plats.c.obj
+[56/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/p_inter.c.obj
+[57/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/p_maputl.c.obj
+[58/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/p_mobj.c.obj
+[59/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/p_map.c.obj
+[60/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/p_sight.c.obj
+[61/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/p_pspr.c.obj
+[62/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/p_telept.c.obj
+[63/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/p_setup.c.obj
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/p_setup.c: In function 'P_SetupLevel':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/p_setup.c:780:43: warning: '%i' directive output may be truncated writing between 2 and 10 bytes into a region of size 6 [-Wformat-truncation=]
+  780 |             DEH_snprintf(lumpname, 9, "map%i", map);
+      |                                           ^~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/p_setup.c:780:39: note: directive argument in the range [10, 2147483647]
+  780 |             DEH_snprintf(lumpname, 9, "map%i", map);
+      |                                       ^~~~~~~
+In file included from /Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/deh_main.h:23,
+                 from /Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/p_setup.c:26:
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/deh_str.h:41:22: note: 'snprintf' output between 6 and 14 bytes into a destination of size 9
+   41 | #define DEH_snprintf snprintf
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/p_setup.c:780:13: note: in expansion of macro 'DEH_snprintf'
+  780 |             DEH_snprintf(lumpname, 9, "map%i", map);
+      |             ^~~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/p_setup.c:778:44: warning: '%i' directive output may be truncated writing between 1 and 11 bytes into a region of size 5 [-Wformat-truncation=]
+  778 |             DEH_snprintf(lumpname, 9, "map0%i", map);
+      |                                            ^~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/p_setup.c:778:39: note: directive argument in the range [-2147483648, 9]
+  778 |             DEH_snprintf(lumpname, 9, "map0%i", map);
+      |                                       ^~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/deh_str.h:41:22: note: 'snprintf' output between 6 and 16 bytes into a destination of size 9
+   41 | #define DEH_snprintf snprintf
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/p_setup.c:778:13: note: in expansion of macro 'DEH_snprintf'
+  778 |             DEH_snprintf(lumpname, 9, "map0%i", map);
+      |             ^~~~~~~~~~~~
+[64/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/p_switch.c.obj
+[65/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/m_menu.c.obj
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/m_menu.c: In function 'M_ChangeMessages':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/m_menu.c:1017:27: warning: parameter 'choice' set but not used [-Wunused-but-set-parameter]
+ 1017 | void M_ChangeMessages(int choice)
+      |                       ~~~~^~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/m_menu.c: In function 'M_EndGame':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/m_menu.c:1045:20: warning: parameter 'choice' set but not used [-Wunused-but-set-parameter]
+ 1045 | void M_EndGame(int choice)
+      |                ~~~~^~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/m_menu.c: In function 'M_ReadThis':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/m_menu.c:1069:21: warning: parameter 'choice' set but not used [-Wunused-but-set-parameter]
+ 1069 | void M_ReadThis(int choice)
+      |                 ~~~~^~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/m_menu.c: In function 'M_ReadThis2':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/m_menu.c:1075:22: warning: parameter 'choice' set but not used [-Wunused-but-set-parameter]
+ 1075 | void M_ReadThis2(int choice)
+      |                  ~~~~^~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/m_menu.c: In function 'M_FinishReadThis':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/m_menu.c:1093:27: warning: parameter 'choice' set but not used [-Wunused-but-set-parameter]
+ 1093 | void M_FinishReadThis(int choice)
+      |                       ~~~~^~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/m_menu.c: In function 'M_ChangeDetail':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/m_menu.c:1197:25: warning: parameter 'choice' set but not used [-Wunused-but-set-parameter]
+ 1197 | void M_ChangeDetail(int choice)
+      |                     ~~~~^~~~~~
+In file included from /Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/dstrings.h:27,
+                 from /Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/m_menu.c:27:
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/m_menu.c: In function 'M_QuickLoad':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/d_englsh.h:44:25: warning: ''?
+
+press y or n.' directive output may be truncated writing 17 bytes into a region of size between 15 and 38 [-Wformat-truncation=]
+   44 | #define QLPROMPT        "do you want to quickload the game named\n\n'%s'?\n\n"PRESSYN
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/m_menu.c:732:34: note: in expansion of macro 'QLPROMPT'
+  732 |     DEH_snprintf(tempstring, 80, QLPROMPT, savegamestrings[quickSaveSlot]);
+      |                                  ^~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/d_englsh.h:44:72: note: format string is defined here
+   44 | #define QLPROMPT        "do you want to quickload the game named\n\n'%s'?\n\n"PRESSYN
+      |                                                                        ^
+In file included from /Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/deh_main.h:23,
+                 from /Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/m_menu.c:30:
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/deh_str.h:41:22: note: 'snprintf' output between 60 and 83 bytes into a destination of size 80
+   41 | #define DEH_snprintf snprintf
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/m_menu.c:732:5: note: in expansion of macro 'DEH_snprintf'
+  732 |     DEH_snprintf(tempstring, 80, QLPROMPT, savegamestrings[quickSaveSlot]);
+      |     ^~~~~~~~~~~~
+[66/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/p_saveg.c.obj
+[67/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/p_spec.c.obj
+[68/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/p_tick.c.obj
+[69/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/tiny-python.c.obj
+[70/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/p_user.c.obj
+[71/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/r_bsp.c.obj
+[72/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/r_plane.c.obj
+[73/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/r_sky.c.obj
+[74/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/sounds.c.obj
+[75/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/r_data.c.obj
+[76/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/r_draw.c.obj
+[77/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/r_segs.c.obj
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/r_segs.c: In function 'R_StoreWallRange':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/r_segs.c:399:19: warning: taking the absolute value of unsigned type 'angle_t' {aka 'unsigned int'} has no effect [-Wabsolute-value]
+  399 |     offsetangle = abs(rw_normalangle-rw_angle1);
+      |                   ^~~
+[78/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/r_main.c.obj
+[79/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/s_sound.c.obj
+[80/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/sha1.c.obj
+[81/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/statdump.c.obj
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/statdump.c:39:18: warning: 'doom2_par_times' defined but not used [-Wunused-const-variable=]
+   39 | static const int doom2_par_times[] =
+      |                  ^~~~~~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/statdump.c:33:18: warning: 'doom1_par_times' defined but not used [-Wunused-const-variable=]
+   33 | static const int doom1_par_times[] =
+      |                  ^~~~~~~~~~~~~~~
+[82/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/p_enemy.c.obj
+[83/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/st_lib.c.obj
+[84/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/r_things.c.obj
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/r_things.c: In function 'R_SortVisSprites':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/r_things.c:804:27: warning: storing the address of local variable 'unsorted' in '*<unknown>.next' [-Wdangling-pointer=]
+  804 |     (vissprite_p-1)->next = &unsorted;
+      |     ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/r_things.c:786:25: note: 'unsorted' declared here
+  786 |     vissprite_t         unsorted;
+      |                         ^~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/r_things.c:283:17: note: 'vissprite_p' declared here
+  283 | vissprite_t*    vissprite_p;
+      |                 ^~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/r_things.c:802:24: warning: storing the address of local variable 'unsorted' in 'vissprites[0].prev' [-Wdangling-pointer=]
+  802 |     vissprites[0].prev = &unsorted;
+      |     ~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/r_things.c:786:25: note: 'unsorted' declared here
+  786 |     vissprite_t         unsorted;
+      |                         ^~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/r_things.c:282:33: note: 'vissprites' declared here
+  282 | EXT_RAM_BSS_ATTR vissprite_t    vissprites[MAXVISSPRITES];
+      |                                 ^~~~~~~~~~
+[85/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/w_file.c.obj
+[86/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/tables.c.obj
+[87/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/w_main.c.obj
+[88/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/w_checksum.c.obj
+[89/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/w_file_stdc.c.obj
+[90/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/w_wad.c.obj
+[91/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/st_stuff.c.obj
+[92/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/v_video.c.obj
+[93/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/z_zone.c.obj
+[94/105] Performing build step for 'bootloader'
+[1/1] cd /Users/corypearl/Desktop/opencalc/firmware/build/bootloader && /Users/corypearl/.espressif/python_env/idf6.0_py3.13_env/bin/python /Users/corypearl/.espressif/v6.0.1/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x0 /Users/corypearl/Desktop/opencalc/firmware/build/bootloader/bootloader.bin
+Bootloader binary size 0x5240 bytes. 0x2dc0 bytes (36%) free.
+[95/105] No install step for 'bootloader'
+[96/105] Completed 'bootloader'
+[97/105] cd /Users/corypearl/Desktop/opencalc/firmware/build && /Users/corypearl/.espressif/python_env/idf6.0_py3.13_env/bin/python /Users/corypearl/.espressif/v6.0.1/esp-idf/components/fatfs/wl_fatfsgen.py /Users/corypearl/Desktop/opencalc/firmware/storage_image --long_name_support --use_default_datetime --partition_size 0x800000 --output_file /Users/corypearl/Desktop/opencalc/firmware/build/storage.bin --sector_size 4096
+[98/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/doomgeneric/wi_stuff.c.obj
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/wi_stuff.c: In function 'WI_loadUnloadData':
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/wi_stuff.c:1596:53: warning: '%.2d' directive output may be truncated writing between 2 and 10 bytes into a region of size between 0 and 5 [-Wformat-truncation=]
+ 1596 |                         DEH_snprintf(name, 9, "WIA%d%.2d%.2d", wbs->epsd, j, i);
+      |                                                     ^~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/wi_stuff.c:1596:47: note: directive argument in the range [0, 2147483646]
+ 1596 |                         DEH_snprintf(name, 9, "WIA%d%.2d%.2d", wbs->epsd, j, i);
+      |                                               ^~~~~~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/wi_stuff.c:1596:47: note: directive argument in the range [0, 2147483646]
+In file included from /Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/deh_main.h:23,
+                 from /Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/wi_stuff.c:27:
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/deh_str.h:41:22: note: 'snprintf' output between 9 and 35 bytes into a destination of size 9
+   41 | #define DEH_snprintf snprintf
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/wi_stuff.c:1596:25: note: in expansion of macro 'DEH_snprintf'
+ 1596 |                         DEH_snprintf(name, 9, "WIA%d%.2d%.2d", wbs->epsd, j, i);
+      |                         ^~~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/wi_stuff.c:1564:41: warning: '%2.2d' directive output may be truncated writing between 2 and 10 bytes into a region of size 4 [-Wformat-truncation=]
+ 1564 |             DEH_snprintf(name, 9, "CWILV%2.2d", i);
+      |                                         ^~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/wi_stuff.c:1564:35: note: directive argument in the range [0, 2147483646]
+ 1564 |             DEH_snprintf(name, 9, "CWILV%2.2d", i);
+      |                                   ^~~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/deh_str.h:41:22: note: 'snprintf' output between 8 and 16 bytes into a destination of size 9
+   41 | #define DEH_snprintf snprintf
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/wi_stuff.c:1564:13: note: in expansion of macro 'DEH_snprintf'
+ 1564 |             DEH_snprintf(name, 9, "CWILV%2.2d", i);
+      |             ^~~~~~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/wi_stuff.c:1680:36: warning: '%d' directive output may be truncated writing between 1 and 11 bytes into a region of size 5 [-Wformat-truncation=]
+ 1680 |         DEH_snprintf(name, 9, "WIBP%d", i+1);
+      |                                    ^~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/wi_stuff.c:1680:31: note: directive argument in the range [-2147483647, 4]
+ 1680 |         DEH_snprintf(name, 9, "WIBP%d", i+1);
+      |                               ^~~~~~~~
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/deh_str.h:41:22: note: 'snprintf' output between 6 and 16 bytes into a destination of size 9
+   41 | #define DEH_snprintf snprintf
+/Users/corypearl/Desktop/opencalc/firmware/main/components/doomgeneric/wi_stuff.c:1680:9: note: in expansion of macro 'DEH_snprintf'
+ 1680 |         DEH_snprintf(name, 9, "WIBP%d", i+1);
+      |         ^~~~~~~~~~~~
+[99/105] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/components/opencalc_ui.c.obj
+[100/105] Linking C static library esp-idf/main/libmain.a
+[101/105] Generating esp-idf/esp_system/ld/sections.ld
+[102/105] Linking CXX executable opencalc.elf
+[103/105] Generating binary image from built executable
+esptool v5.3.0
+Creating ESP32-S3 image...
+Merged 4 ELF sections.
+Successfully created ESP32-S3 image.
+Generated /Users/corypearl/Desktop/opencalc/firmware/build/opencalc.bin
+[104/105] cd /Users/corypearl/Desktop/opencalc/firmware/build && /Users/corypearl/.espressif/python_env/idf6.0_py3.13_env/bin/python /Users/corypearl/.espressif/v6.0.1/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /Users/corypearl/Desktop/opencalc/firmware/build/partition_table/partition-table.bin /Users/corypearl/Desktop/opencalc/firmware/build/opencalc.bin
+opencalc.bin binary size 0xdaaa0 bytes. Smallest app partition is 0x400000 bytes. 0x325560 bytes (79%) free.

@@ -52,6 +52,7 @@ $<TARGET_FILE:idf::mbedtls>
 $<TARGET_FILE:idf::esp_driver_dma>
 $<TARGET_FILE:__idf_esp_psram>
 $<TARGET_FILE:idf::efuse>
+$<TARGET_FILE:idf::esp_pm>
 $<TARGET_FILE:__idf_esp_hal_wdt>
 $<TARGET_FILE:__idf_esp_hal_ana_conv>
 $<TARGET_FILE:__idf_esp_ringbuf>
@@ -97,7 +98,6 @@ $<TARGET_FILE:idf::app_update>
 $<TARGET_FILE:idf::esp_partition>
 $<TARGET_FILE:idf::esp_driver_gpio>
 $<TARGET_FILE:idf::esp_hal_uart>
-$<TARGET_FILE:idf::esp_pm>
 $<TARGET_FILE:idf::esp_hal_timg>
 $<TARGET_FILE:idf::esp_hal_wdt>
 $<TARGET_FILE:idf::esp_hal_ana_conv>

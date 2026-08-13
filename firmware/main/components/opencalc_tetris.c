@@ -32,6 +32,7 @@
 #include <string.h>
 
 #include "board_init.h"
+#include "opencalc_persist.h"
 #include "opencalc_tetris.h"
 #include "tetris_core.h"
 
@@ -196,7 +197,26 @@ static void draw_ghost(int x, int y, int size)
 static tetris_t s_game;
 static bool s_active = false;
 static int64_t s_last_us = 0;
+static int64_t s_down_repeat_us = 0;
 static long s_high_score = 0;
+static bool s_high_score_dirty = false;
+
+static void tetris_note_score(void)
+{
+    if (s_game.score > s_high_score) {
+        s_high_score = s_game.score;
+        s_high_score_dirty = true;
+    }
+}
+
+static void tetris_save_high_score(void)
+{
+    if (!s_high_score_dirty) {
+        return;
+    }
+    opencalc_persist_set_u32("hs_tetris", (uint32_t)s_high_score);
+    s_high_score_dirty = false;
+}
 
 /* ---- rendering ---- */
 
@@ -240,7 +260,7 @@ static void draw_tetris_frame(void)
     rect(0, 0, UI_W, UI_H, T_BG);
 
     /* --- board --- */
-    border(BOARD_X - 2, BOARD_Y - 2, BOARD_W_PX + 4, BOARD_H_PX + 4, T_BORDER);
+    border(BOARD_X - 1, BOARD_Y - 1, BOARD_W_PX + 2, BOARD_H_PX + 2, T_BORDER);
     rect(BOARD_X, BOARD_Y, BOARD_W_PX, BOARD_H_PX, T_SURFACE);
     for (int c = 1; c < T_BOARD_W; c++) {
         rect(BOARD_X + c * CELL, BOARD_Y, 1, BOARD_H_PX, T_GRID);
@@ -371,7 +391,8 @@ void opencalc_tetris_init(void)
 {
     memset(&s_game, 0, sizeof(s_game));
     s_active = false;
-    s_high_score = 0;
+    s_high_score = (long)opencalc_persist_get_u32("hs_tetris", 0);
+    s_high_score_dirty = false;
 }
 
 void opencalc_tetris_enter(void)
@@ -380,6 +401,7 @@ void opencalc_tetris_enter(void)
     tetris_init(&s_game, seed);
     s_active = true;
     s_last_us = esp_timer_get_time();
+    s_down_repeat_us = 0;
     draw_tetris_frame();
 }
 
@@ -400,9 +422,21 @@ void opencalc_tetris_tick(void)
         dt_ms = 200.0f; /* clamp huge gaps (e.g. first frame) */
     }
 
-    tetris_step(&s_game, dt_ms, false);
-    if (s_game.score > s_high_score) {
-        s_high_score = s_game.score;
+    bool matrix[BOARD_KEYPAD_ROWS][BOARD_KEYPAD_COLS];
+    bool soft_drop = false;
+    if (!s_game.game_over && board_keypad_scan_matrix(matrix) && matrix[2][3]) {
+        if (s_down_repeat_us == 0 || now >= s_down_repeat_us) {
+            soft_drop = true;
+            s_down_repeat_us = now + 140000;
+        }
+    } else {
+        s_down_repeat_us = 0;
+    }
+
+    tetris_step(&s_game, dt_ms, soft_drop);
+    tetris_note_score();
+    if (s_game.game_over) {
+        tetris_save_high_score();
     }
     draw_tetris_frame();
 }
@@ -415,6 +449,7 @@ bool opencalc_tetris_press_button_number(int number)
 
     switch (number) {
     case 46: /* on/home/off -> leave Tetris */
+        tetris_save_high_score();
         s_active = false;
         return true;
     case 13: /* back -> pause/resume */
@@ -431,6 +466,7 @@ bool opencalc_tetris_press_button_number(int number)
         if (!s_game.game_over) {
             s_game.score += 1;
         }
+        s_down_repeat_us = esp_timer_get_time() + 180000;
         break;
     case 10: /* up -> rotate clockwise */
         tetris_try_rotate(&s_game, 1);
@@ -452,8 +488,9 @@ bool opencalc_tetris_press_button_number(int number)
         return true; /* swallow all other keys while Tetris owns the screen */
     }
 
-    if (s_game.score > s_high_score) {
-        s_high_score = s_game.score;
+    tetris_note_score();
+    if (s_game.game_over) {
+        tetris_save_high_score();
     }
     draw_tetris_frame();
     return true;

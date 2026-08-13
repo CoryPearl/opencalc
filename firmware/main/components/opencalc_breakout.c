@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include "board_init.h"
+#include "opencalc_persist.h"
 #include "opencalc_breakout.h"
 #include "breakout_core.h"
 
@@ -182,6 +183,22 @@ static breakout_t s_game;
 static bool s_active = false;
 static int64_t s_last_us = 0;
 static long s_high_score = 0;
+static bool s_high_score_dirty = false;
+
+static void breakout_note_score(void)
+{
+    if (s_game.score > s_high_score) {
+        s_high_score = s_game.score;
+        s_high_score_dirty = true;
+    }
+}
+
+static void breakout_save_high_score(void)
+{
+    if (!s_high_score_dirty) return;
+    opencalc_persist_set_u32("hs_breakout", (uint32_t)s_high_score);
+    s_high_score_dirty = false;
+}
 
 static int draw_panel_box(int x, int y, int w, int h, const char *title)
 {
@@ -297,7 +314,8 @@ void opencalc_breakout_init(void)
 {
     memset(&s_game, 0, sizeof(s_game));
     s_active = false;
-    s_high_score = 0;
+    s_high_score = (long)opencalc_persist_get_u32("hs_breakout", 0);
+    s_high_score_dirty = false;
 }
 
 void opencalc_breakout_enter(void)
@@ -319,7 +337,8 @@ void opencalc_breakout_tick(void)
     if (dt_ms > 200.0f) dt_ms = 200.0f;
 
     breakout_step(&s_game, dt_ms);
-    if (s_game.score > s_high_score) s_high_score = s_game.score;
+    breakout_note_score();
+    if (s_game.game_over) breakout_save_high_score();
     draw_frame();
 }
 
@@ -328,7 +347,7 @@ bool opencalc_breakout_press_button_number(int number)
     if (!s_active) return false;
 
     switch (number) {
-    case 46: s_active = false; return true;
+    case 46: breakout_save_high_score(); s_active = false; return true;
     case 13: breakout_toggle_pause(&s_game); break;
     case 9:  breakout_move_paddle(&s_game, -BRK_PADDLE_STEP); break; /* left */
     case 15: breakout_move_paddle(&s_game, BRK_PADDLE_STEP); break;  /* right */
@@ -343,7 +362,8 @@ bool opencalc_breakout_press_button_number(int number)
         return true;
     }
 
-    if (s_game.score > s_high_score) s_high_score = s_game.score;
+    breakout_note_score();
+    if (s_game.game_over) breakout_save_high_score();
     draw_frame();
     return true;
 }

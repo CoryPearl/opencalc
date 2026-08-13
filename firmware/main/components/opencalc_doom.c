@@ -300,6 +300,20 @@ bool opencalc_doom_press_button_number(int number)
     return true;
 }
 
+long opencalc_doom_score(void)
+{
+    if (!s_doom_started) {
+        return 0;
+    }
+
+    const player_t *player = &players[consoleplayer];
+    long seconds = leveltime / 35;
+    return (long)player->killcount * 100L +
+           (long)player->itemcount * 25L +
+           (long)player->secretcount * 500L +
+           seconds;
+}
+
 void DG_SleepMs(uint32_t ms)
 {
     vTaskDelay(pdMS_TO_TICKS(ms));

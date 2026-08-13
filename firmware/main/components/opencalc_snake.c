@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include "board_init.h"
+#include "opencalc_persist.h"
 #include "opencalc_snake.h"
 #include "snake_core.h"
 
@@ -147,6 +148,22 @@ static snake_t s_game;
 static bool s_active = false;
 static int64_t s_last_us = 0;
 static long s_high_score = 0;
+static bool s_high_score_dirty = false;
+
+static void snake_note_score(void)
+{
+    if (s_game.score > s_high_score) {
+        s_high_score = s_game.score;
+        s_high_score_dirty = true;
+    }
+}
+
+static void snake_save_high_score(void)
+{
+    if (!s_high_score_dirty) return;
+    opencalc_persist_set_u32("hs_snake", (uint32_t)s_high_score);
+    s_high_score_dirty = false;
+}
 
 static int draw_panel_box(int x, int y, int w, int h, const char *title)
 {
@@ -231,7 +248,8 @@ void opencalc_snake_init(void)
 {
     memset(&s_game, 0, sizeof(s_game));
     s_active = false;
-    s_high_score = 0;
+    s_high_score = (long)opencalc_persist_get_u32("hs_snake", 0);
+    s_high_score_dirty = false;
 }
 
 void opencalc_snake_enter(void)
@@ -253,7 +271,8 @@ void opencalc_snake_tick(void)
     if (dt_ms > 200.0f) dt_ms = 200.0f;
 
     snake_step(&s_game, dt_ms);
-    if (s_game.score > s_high_score) s_high_score = s_game.score;
+    snake_note_score();
+    if (s_game.game_over) snake_save_high_score();
     draw_frame();
 }
 
@@ -262,7 +281,7 @@ bool opencalc_snake_press_button_number(int number)
     if (!s_active) return false;
 
     switch (number) {
-    case 46: s_active = false; return true;
+    case 46: snake_save_high_score(); s_active = false; return true;
     case 13: snake_toggle_pause(&s_game); break;
     case 9:  snake_set_direction(&s_game, -1, 0); break;  /* left */
     case 15: snake_set_direction(&s_game, 1, 0); break;   /* right */
@@ -277,7 +296,8 @@ bool opencalc_snake_press_button_number(int number)
         return true;
     }
 
-    if (s_game.score > s_high_score) s_high_score = s_game.score;
+    snake_note_score();
+    if (s_game.game_over) snake_save_high_score();
     draw_frame();
     return true;
 }

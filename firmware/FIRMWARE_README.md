@@ -2,6 +2,26 @@
 
 OpenCalc OS is the open-source ESP-IDF operating environment for the OpenCalc ESP32-S3 graphing calculator. It brings up the ILI9341 LCD, touch controller, button matrix, USB mass storage, script storage, calculator apps, math and graphing engines, serial button simulation, power management, and optional Doom support.
 
+## Current Firmware Status
+
+Current target: ESP32-S3 with 16 MB flash, 8 MB PSRAM, ILI9341 320x240 LCD, 10x5 diode-isolated keypad matrix, one USB-C data/power connection, LiPo battery support, PWM backlight control, battery ADC, and charger-status input.
+
+The firmware is now split across both ESP32-S3 cores:
+
+- UI, LCD drawing, keypad dispatch, and game drawing run on `OPENCALC_UI_CORE`.
+- Serial button simulation and async graph/math jobs run on `OPENCALC_WORKER_CORE`.
+- Calculator evaluation, numeric solver solving, and graph Calc tools are queued as worker jobs so long math work does not directly block or mutate the UI state.
+- Continuous UI/game pacing is capped by `OPENCALC_TARGET_FPS` in `main/config.h`.
+- Power-save mode lowers CPU max frequency and caps brightness using values in `main/config.h`.
+
+Latest verified build status:
+
+- `idf.py build` passes.
+- App binary size: about `0xdbb10`.
+- Factory app partition: `0x400000` bytes.
+- Free app partition space: about `0x3244f0` bytes, roughly 79%.
+- Storage partition: `0x800000` bytes, generated from `storage_image/`.
+
 ## Build and Flash
 
 Clone the repo, install/source ESP-IDF, then build or flash from this directory:
@@ -29,6 +49,20 @@ Local feature toggles live in:
 
 ```text
 main/config.h
+```
+
+Important current toggles:
+
+```c
+#define OPENCALC_ENABLE_BLUETOOTH 0
+#define OPENCALC_ENABLE_WIFI 0
+#define OPENCALC_ENABLE_DOOM 1
+#define OPENCALC_ENABLE_SERIAL_BUTTON_INPUT 0
+#define OPENCALC_FLASH_STORAGE_IMAGE 1
+#define OPENCALC_TARGET_FPS 45
+#define OPENCALC_POWER_SAVE_CPU_MAX_MHZ 160
+#define OPENCALC_POWER_SAVE_BRIGHTNESS_CAP_PERCENT 35
+#define OPENCALC_USE_REAL_PCB 1
 ```
 
 The storage image always comes from `storage_image/`. To test without Doom,
@@ -92,7 +126,7 @@ Important key behavior:
 - `DEL` is Back.
 - `CLEAR` deletes the current character/token.
 - `2nd` + `CLEAR` clears the current input field.
-- `ON (Home)` returns to the home screen, and quits Doom when Doom is active.
+- `ON (Home)` returns to the home screen, and exits the active game when a game is active.
 - `sqrt` inserts `sqrt()`; `2nd` + `sqrt` inserts an editable nth-root box.
 - `^2` inserts square; `2nd` + `^2` inserts an editable exponent box.
 - `[]/[]` inserts a vertical fraction box; `2nd` + `[]/[]` inserts inline division.
@@ -135,7 +169,7 @@ Not complete yet, so not presented as finished:
 
 ## Python Scripts
 
-Python-style scripts live in `storage_image/scripts/` before flashing and `/data/scripts/` at runtime. `PRGM` opens a program menu with Run, Edit, New, and Delete entries. Run/Edit/Delete open the scripts browser; editing and deleting are done over USB for now. New creates a starter `programNN.py` file in `/data/scripts`. `2nd` + `PRGM` jumps directly to the scripts browser. When a script starts, the LCD switches to a Python output/input console screen. Script `print(...)` output appears there.
+Python-style scripts live in `storage_image/scripts/` before flashing and `/data/scripts/` at runtime. `PRGM` opens a program menu with Run, Edit, New, and Delete entries. Run/Edit/Delete open the scripts browser. New creates a starter `programNN.py` file in `/data/scripts`. `2nd` + `PRGM` jumps directly to the scripts browser. When a script starts, the LCD switches to a Python output/input console screen. Script `print(...)` output appears there.
 
 When a script calls `input()`, the console opens a keypad input line. Use number keys, operators, `Alpha` letters, `CLEAR` to delete, `2nd` + `CLEAR` to clear the input, and `Enter` to submit. `DEL/Back` cancels the input. When the script finishes, the screen prompts you to press Enter or Back to return to the script list.
 
@@ -147,7 +181,9 @@ storage_image/scripts/fib.py
 
 If monitor output says the flashed app checksum does not match the built app, rebuild and flash again before debugging script behavior.
 
-## Doom
+## Games
+
+Press `Alpha` then `2nd` to open the game menu. The current menu includes Tetris, Doom, Snake, Breakout, and Mario. High scores are saved in on-chip NVS, so they survive power off and do not depend on USB storage.
 
 Doom is optional and uses the shareware IWAD at:
 
@@ -155,21 +191,40 @@ Doom is optional and uses the shareware IWAD at:
 storage_image/doom1.wad
 ```
 
-After flashing, press `Alpha` then `2nd` to toggle Doom on or off.
-
 Doom controls:
 
-- Direction keys move.
-- `Y=` shoots.
-- `Window` cycles weapons.
-- `Zoom` uses switches and opens doors.
-- `Trace` opens and closes the automap.
-- Number keys `1` through `7` directly select weapon slots.
-- Hold `Mode` while moving to run or sprint.
-- Hold `Del` with Left or Right to strafe.
-- `Enter` selects/uses menus.
-- `Back` is back/escape.
-- `ON (Home)` quits Doom and returns home.
+| Calculator button        | Doom action                    |
+| ------------------------ | ------------------------------ |
+| Up / Down / Left / Right | Move                           |
+| `Y=`                     | Fire                           |
+| `Window`                 | Cycle weapons                  |
+| `Zoom`                   | Use / open doors               |
+| `Trace`                  | Open / close automap           |
+| `1`-`7`                  | Select weapon slot             |
+| Hold `Mode`              | Run / sprint                   |
+| Hold `Del` + Left/Right  | Strafe                         |
+| `Enter`                  | Menu/select                    |
+| `Back`                   | Escape/back                    |
+| `On (Home)`              | Quit Doom and return game menu |
+
+Mario currently checks for the ROM at:
+
+```text
+storage_image/mario.nes
+```
+
+Mario controls are mapped to match Doom-style play:
+
+| Calculator button        | Mario action                     |
+| ------------------------ | -------------------------------- |
+| Up / Down / Left / Right | Move                             |
+| `Y=`                     | B / action                       |
+| `Zoom`                   | A / jump                         |
+| `Enter`                  | Start                            |
+| `Back`                   | Select/back                      |
+| `On (Home)`              | Quit Mario and return game menu  |
+
+The Mario NES emulator core is present in `main/components/mario`, but it still needs an ESP-IDF display/storage/input backend before full emulation is active.
 
 The production 10x5 keypad expects one series diode per key. With columns
 pulled high and rows scanned low, diode anodes face the columns and diode

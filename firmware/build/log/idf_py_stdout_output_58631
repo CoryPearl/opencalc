@@ -1,3 +1,0 @@
-Command: ninja app
-[1/1] cd /Users/corypearl/Desktop/opencalc/firmware/build && /Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python /Users/corypearl/.espressif/v6.0.1/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /Users/corypearl/Desktop/opencalc/firmware/build/partition_table/partition-table.bin /Users/corypearl/Desktop/opencalc/firmware/build/opencalc.bin
-opencalc.bin binary size 0xcb680 bytes. Smallest app partition is 0x400000 bytes. 0x334980 bytes (80%) free.

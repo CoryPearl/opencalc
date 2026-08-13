@@ -28,3 +28,6 @@ CONFIG_FATFS_USE_LABEL=y
 # Keep wireless stacks off unless explicitly added later.
 # CONFIG_ESP_WIFI_ENABLED is not set
 # CONFIG_BT_ENABLED is not set
+
+# Allows firmware to lower CPU frequency in the Settings power-save mode.
+CONFIG_PM_ENABLE=y

@@ -2,8 +2,14 @@ idf_component_register(
     SRCS
         "main.c"
         "components/board_init.c"
+        "components/opencalc_breakout.c"
         "components/opencalc_doom.c"
+        "components/opencalc_mario.c"
         "components/opencalc_math.c"
+        "components/opencalc_persist.c"
+        "components/opencalc_power.c"
+        "components/opencalc_snake.c"
+        "components/opencalc_tetris.c"
         "components/opencalc_ui.c"
         "components/storage.c"
         "components/usb_msc.c"
@@ -97,6 +103,8 @@ idf_component_register(
         esp_adc
         esp_timer
         esp_lcd
+        esp_pm
+        nvs_flash
         fatfs 
         wear_levelling 
         esp_tinyusb
