@@ -35,6 +35,7 @@
 
 // State.
 #include "doomstat.h"
+#include "esp_attr.h"
 
 
 // ?
@@ -60,8 +61,8 @@ int		scaledviewwidth;
 int		viewheight;
 int		viewwindowx;
 int		viewwindowy; 
-byte*		ylookup[MAXHEIGHT]; 
-int		columnofs[MAXWIDTH]; 
+EXT_RAM_BSS_ATTR byte*		ylookup[MAXHEIGHT]; 
+EXT_RAM_BSS_ATTR int		columnofs[MAXWIDTH]; 
 
 // Color tables for different players,
 //  translate a limited part to another

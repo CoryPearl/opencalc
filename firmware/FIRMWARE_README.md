@@ -224,7 +224,7 @@ Mario controls are mapped to match Doom-style play:
 | `Back`                   | Select/back                      |
 | `On (Home)`              | Quit Mario and return game menu  |
 
-The Mario NES emulator core is present in `main/components/mario`, but it still needs an ESP-IDF display/storage/input backend before full emulation is active.
+Mario loads `storage_image/mario.nes` through the real NES path: iNES cartridge loader, mapper 0 cartridge support, 6502 CPU, NES bus, controller state, PPU 2C02 framebuffer, then the ILI9341 display driver. Audio is disabled. For now, use a mapper 0 `.nes` ROM such as the standard Super Mario Bros cartridge format.
 
 The production 10x5 keypad expects one series diode per key. With columns
 pulled high and rows scanned low, diode anodes face the columns and diode

@@ -8,11 +8,6 @@
 #include "../flash_mmap.h"
 #include "mapper.h"
 #include "mappers/mapper000.h"
-#include "mappers/mapper001.h"
-#include "mappers/mapper002.h"
-#include "mappers/mapper003.h"
-#include "mappers/mapper004.h"
-#include "mappers/mapper069.h"
 #include "rom_backends.h"
 
 class Bus;

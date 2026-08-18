@@ -18,13 +18,29 @@ Cartridge::Cartridge(const char* filename, ROMBackend backend)
 
     // Load Cartridge ROM
     rom = SD.open(filename, FILE_READ);
-    if (!rom) return;
+    if (!rom)
+    {
+        is_valid = false;
+        return;
+    }
 
-    rom.read((uint8_t*)&header, sizeof(cartridge_header));
+    if (rom.read((uint8_t*)&header, sizeof(cartridge_header)) != sizeof(cartridge_header)
+        || header.name[0] != 'N' || header.name[1] != 'E'
+        || header.name[2] != 'S' || header.name[3] != 0x1A)
+    {
+        is_valid = false;
+        return;
+    }
     if (header.mapper1 & 0x04) rom.seek(rom.position() + 512);
 
     mapper_ID = (header.mapper2 & 0xF0) | header.mapper1 >> 4;
     hardware_mirror = (header.mapper1 & 0x01) ? VERTICAL : HORIZONTAL;
+    if (mapper_ID != 0)
+    {
+        LOGF("Unsupported NES mapper %i\n", mapper_ID);
+        is_valid = false;
+        return;
+    }
 
     uint8_t number_PRG_banks = 0;
     uint8_t number_CHR_banks = 0;
@@ -55,7 +71,7 @@ Cartridge::Cartridge(const char* filename, ROMBackend backend)
         rom.seek(prg_base);
         while ((len = rom.read(buf, sizeof(buf))) > 0) { CRC32 = crc32(buf, len, CRC32); }
         CRC32 ^= ~0U;
-        LOGF("CRC32: %08lX\n", (unsigned int)CRC32);
+        LOGF("CRC32: %08X\n", (unsigned int)CRC32);
     }
 
     if (backend == ROMBackend::FLASH)
@@ -75,11 +91,6 @@ bool Cartridge::cpuRead(uint16_t addr, uint8_t& data)
     switch (mapper_ID)
     {
     case 0: return mapper000_cpuRead(&mapper, addr, data);
-    case 1: return mapper001_cpuRead(&mapper, addr, data);
-    case 2: return mapper002_cpuRead(&mapper, addr, data);
-    case 3: return mapper003_cpuRead(&mapper, addr, data);
-    case 4: return mapper004_cpuRead(&mapper, addr, data);
-    case 69: return mapper069_cpuRead(&mapper, addr, data);
     default: return false;
     }
 }
@@ -89,11 +100,6 @@ bool Cartridge::cpuWrite(uint16_t addr, uint8_t data)
     switch (mapper_ID)
     {
     case 0: return mapper000_cpuWrite(&mapper, addr, data);
-    case 1: return mapper001_cpuWrite(&mapper, addr, data);
-    case 2: return mapper002_cpuWrite(&mapper, addr, data);
-    case 3: return mapper003_cpuWrite(&mapper, addr, data);
-    case 4: return mapper004_cpuWrite(&mapper, addr, data);
-    case 69: return mapper069_cpuWrite(&mapper, addr, data);
     default: return false;
     }
 }
@@ -103,11 +109,6 @@ bool Cartridge::ppuRead(uint16_t addr, uint8_t& data)
     switch (mapper_ID)
     {
     case 0: return mapper000_ppuRead(&mapper, addr, data);
-    case 1: return mapper001_ppuRead(&mapper, addr, data);
-    case 2: return mapper002_ppuRead(&mapper, addr, data);
-    case 3: return mapper003_ppuRead(&mapper, addr, data);
-    case 4: return mapper004_ppuRead(&mapper, addr, data);
-    case 69: return mapper069_ppuRead(&mapper, addr, data);
     default: return false;
     }
 }
@@ -117,11 +118,6 @@ bool Cartridge::ppuWrite(uint16_t addr, uint8_t data)
     switch (mapper_ID)
     {
     case 0: return mapper000_ppuWrite(&mapper, addr, data);
-    case 1: return mapper001_ppuWrite(&mapper, addr, data);
-    case 2: return mapper002_ppuWrite(&mapper, addr, data);
-    case 3: return mapper003_ppuWrite(&mapper, addr, data);
-    case 4: return mapper004_ppuWrite(&mapper, addr, data);
-    case 69: return mapper069_ppuWrite(&mapper, addr, data);
     default: return false;
     }
 }
@@ -131,31 +127,18 @@ uint8_t* Cartridge::ppuReadPtr(uint16_t addr)
     switch (mapper_ID)
     {
     case 0: return mapper000_ppuReadPtr(&mapper, addr);
-    case 1: return mapper001_ppuReadPtr(&mapper, addr);
-    case 2: return mapper002_ppuReadPtr(&mapper, addr);
-    case 3: return mapper003_ppuReadPtr(&mapper, addr);
-    case 4: return mapper004_ppuReadPtr(&mapper, addr);
-    case 69: return mapper069_ppuReadPtr(&mapper, addr);
     default: return nullptr;
     }
 }
 
 void Cartridge::ppuScanline()
 {
-    switch (mapper_ID)
-    {
-    case 4: return mapper004_scanline(&mapper);
-    default: return;
-    }
+    return;
 }
 
 void Cartridge::cpuCycle(int cycles)
 {
-    switch (mapper_ID)
-    {
-    case 69: return mapper069_cycle(&mapper, cycles);
-    default: return;
-    }
+    return;
 }
 
 void Cartridge::reset()
@@ -163,11 +146,6 @@ void Cartridge::reset()
     switch (mapper_ID)
     {
     case 0: return mapper000_reset(&mapper);
-    case 1: return mapper001_reset(&mapper);
-    case 2: return mapper002_reset(&mapper);
-    case 3: return mapper003_reset(&mapper);
-    case 4: return mapper004_reset(&mapper);
-    case 69: return mapper069_reset(&mapper);
     default: return;
     }
 }
@@ -205,11 +183,6 @@ void Cartridge::dumpState(File& state)
     switch (mapper_ID)
     {
     case 0: return mapper000_dumpState(&mapper, state);
-    case 1: return mapper001_dumpState(&mapper, state);
-    case 2: return mapper002_dumpState(&mapper, state);
-    case 3: return mapper003_dumpState(&mapper, state);
-    case 4: return mapper004_dumpState(&mapper, state);
-    case 69: return mapper069_dumpState(&mapper, state);
     default: return;
     }
 }
@@ -220,11 +193,6 @@ void Cartridge::loadState(File& state)
     switch (mapper_ID)
     {
     case 0: return mapper000_loadState(&mapper, state);
-    case 1: return mapper001_loadState(&mapper, state);
-    case 2: return mapper002_loadState(&mapper, state);
-    case 3: return mapper003_loadState(&mapper, state);
-    case 4: return mapper004_loadState(&mapper, state);
-    case 69: return mapper069_loadState(&mapper, state);
     default: return;
     }
 }
@@ -249,11 +217,6 @@ void Cartridge::createMapper(uint8_t number_PRG_banks, uint8_t number_CHR_banks,
     switch (mapper_ID)
     {
     case 0: mapper = createMapper000(number_PRG_banks, number_CHR_banks, backend, this); break;
-    case 1: mapper = createMapper001(number_PRG_banks, number_CHR_banks, backend, this); break;
-    case 2: mapper = createMapper002(number_PRG_banks, number_CHR_banks, backend, this); break;
-    case 3: mapper = createMapper003(number_PRG_banks, number_CHR_banks, backend, this); break;
-    case 4: mapper = createMapper004(number_PRG_banks, number_CHR_banks, backend, this); break;
-    case 69: mapper = createMapper069(number_PRG_banks, number_CHR_banks, backend, this); break;
     default: is_valid = false; break;
     }
 }

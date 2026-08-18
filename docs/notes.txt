@@ -7,13 +7,16 @@ Finish V5 pcb in kikad
 
 - add directions to flash
 - make sure font looks good for everything
-- test all scripting things
+- test all scripting things - reqursion, input
 - test nderive and nint
 - test sto and get and variable setting
 - check through all apps
 - lower case by default, for alpha charecters, then can turn on caps and caps lock, find a button for it
 - test brigtness
 - make touch screen do stuff
+- test all games
+
+- get another dev board for testing
 
 codex resume 019e5120-6419-79a2-838e-e21c6775bba5
 

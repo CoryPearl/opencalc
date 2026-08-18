@@ -21,10 +21,11 @@
 
 #include <stdlib.h>
 #include "d_event.h"
+#include "esp_attr.h"
 
 #define MAXEVENTS 64
 
-static event_t events[MAXEVENTS];
+EXT_RAM_BSS_ATTR static event_t events[MAXEVENTS];
 static int eventhead;
 static int eventtail;
 
@@ -59,5 +60,4 @@ event_t *D_PopEvent(void)
 
     return result;
 }
-
 

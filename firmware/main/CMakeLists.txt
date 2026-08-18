@@ -2,9 +2,10 @@ idf_component_register(
     SRCS
         "main.c"
         "components/board_init.c"
+        "components/SD.cpp"
         "components/opencalc_breakout.c"
         "components/opencalc_doom.c"
-        "components/opencalc_mario.c"
+        "components/opencalc_mario.cpp"
         "components/opencalc_math.c"
         "components/opencalc_persist.c"
         "components/opencalc_power.c"
@@ -14,6 +15,12 @@ idf_component_register(
         "components/storage.c"
         "components/usb_msc.c"
         "components/tiny-python.c"
+        "components/mario/bus.cpp"
+        "components/mario/cartridge.cpp"
+        "components/mario/cpu6502.cpp"
+        "components/mario/mapper.cpp"
+        "components/mario/ppu2C02.cpp"
+        "components/mario/mappers/mapper000.cpp"
         "components/doomgeneric/am_map.c"
         "components/doomgeneric/doomdef.c"
         "components/doomgeneric/doomgeneric.c"
@@ -112,6 +119,7 @@ idf_component_register(
 
 target_compile_definitions(${COMPONENT_LIB} PRIVATE PY_MAX_TOKENS=128)
 target_compile_definitions(${COMPONENT_LIB} PRIVATE DOOMGENERIC_RESX=320 DOOMGENERIC_RESY=200)
+target_compile_definitions(${COMPONENT_LIB} PRIVATE COMPOSITE_VIDEO=1 FRAMESKIP=1)
 target_compile_options(${COMPONENT_LIB} PRIVATE
     -Wno-error
     -Wno-error=missing-field-initializers

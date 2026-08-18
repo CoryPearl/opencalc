@@ -23,6 +23,8 @@
 
 #include <stdlib.h>
 
+#include "esp_attr.h"
+
 #include "doomdef.h"
 #include "doomstat.h"
 
@@ -126,7 +128,7 @@ animdef_t		animdefs[] =
     {-1,        "",             "",             0},
 };
 
-anim_t		anims[MAXANIMS];
+EXT_RAM_BSS_ATTR anim_t		anims[MAXANIMS];
 anim_t*		lastanim;
 
 

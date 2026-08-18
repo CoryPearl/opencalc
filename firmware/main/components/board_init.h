@@ -10,6 +10,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define BOARD_KEYPAD_ROWS 10
 #define BOARD_KEYPAD_COLS 5
 
@@ -47,3 +51,7 @@ bool board_keypad_scan_matrix(bool pressed[BOARD_KEYPAD_ROWS][BOARD_KEYPAD_COLS]
 bool board_power_button_pressed(void);
 bool board_touch_take_interrupt(void);
 bool board_touch_scan(int *x, int *y);
+
+#ifdef __cplusplus
+}
+#endif
