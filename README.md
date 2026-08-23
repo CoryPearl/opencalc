@@ -8,8 +8,10 @@ OpenCalc is an open source graphing calculator project inspired by the TI-84, bu
 
 The calculator runs **OpenCalc OS**, the project’s open-source ESP32-S3 operating environment. OpenCalc OS includes the calculator interface, math and graphing engines, built-in apps, Python-style scripting runtime, USB file storage, keypad handling, display drivers, and power management.
 
-<img src="hardware/pcb/pcb_asm_front.jpg" alt="PCBFRONT" width="300" height="500">
-<img src="hardware/pcb/pcb_asm_back.jpg" alt="PCBFRONT" width="300" height="500">
+<p align="center">
+    <img src="hardware/pcb/pcb_asm_front.jpg" alt="PCBFRONT" width="300" height="500">
+    <img src="hardware/pcb/pcb_asm_back.jpg" alt="PCBFRONT" width="300" height="500">
+</p>
 
 \*\*First prototype PCB
 
