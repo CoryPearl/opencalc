@@ -12,6 +12,25 @@ class File {
 public:
     File() = default;
     explicit File(FILE *fp) : fp_(fp) {}
+    ~File() { close(); }
+
+    File(const File&) = delete;
+    File& operator=(const File&) = delete;
+
+    File(File&& other) noexcept : fp_(other.fp_)
+    {
+        other.fp_ = nullptr;
+    }
+
+    File& operator=(File&& other) noexcept
+    {
+        if (this != &other) {
+            close();
+            fp_ = other.fp_;
+            other.fp_ = nullptr;
+        }
+        return *this;
+    }
 
     explicit operator bool() const { return fp_ != nullptr; }
 
@@ -81,4 +100,3 @@ public:
 };
 
 extern SDClass SD;
-

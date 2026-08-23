@@ -1,6 +1,17 @@
 #include "mapper.h"
 #include "cartridge.h"
 
+#include "esp_heap_caps.h"
+
+static uint8_t* alloc_rom_bank(uint32_t bank_size)
+{
+    uint8_t* ptr = (uint8_t*)heap_caps_malloc(bank_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (!ptr) {
+        ptr = (uint8_t*)heap_caps_malloc(bank_size, MALLOC_CAP_8BIT);
+    }
+    return ptr;
+}
+
 void bankInit(BankCache* cache, Bank* banks, uint8_t num_banks, uint32_t bank_size, Cartridge* cart)
 {
     cache->banks = banks;
@@ -14,7 +25,7 @@ void bankInit(BankCache* cache, Bank* banks, uint8_t num_banks, uint32_t bank_si
         cache->banks[i].last_used = 0;
         cache->banks[i].size = bank_size;
 
-        uint8_t* ptr = (uint8_t*)malloc(bank_size);
+        uint8_t* ptr = alloc_rom_bank(bank_size);
         if (!ptr) LOGF("%lu KB for bank %d Allocation failed.\n", bank_size / 1024, i);
         else
         {

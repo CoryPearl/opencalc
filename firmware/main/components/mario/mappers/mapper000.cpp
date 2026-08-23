@@ -1,6 +1,19 @@
 #include "mapper000.h"
 #include "../cartridge.h"
 
+#include "esp_heap_caps.h"
+
+#include <new>
+
+static uint8_t* alloc_mapper_buffer(size_t size)
+{
+    uint8_t* ptr = (uint8_t*)heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (!ptr) {
+        ptr = (uint8_t*)heap_caps_malloc(size, MALLOC_CAP_8BIT);
+    }
+    return ptr;
+}
+
 bool mapper000_cpuRead(Mapper* mapper, uint16_t addr, uint8_t& data)
 {
     if (addr < 0x8000) return false;
@@ -64,7 +77,7 @@ void mapper000_reset(Mapper* mapper)
         state->cart->loadPRGBank(state->PRG_banks[0], 16U * 1024U, 0);
         if (state->number_PRG_banks > 1)
             state->cart->loadPRGBank(state->PRG_banks[1], 16U * 1024U, 16U * 1024U);
-        state->cart->loadCHRBank(state->CHR_bank, 16U * 1024U, 0);
+        state->cart->loadCHRBank(state->CHR_bank, 8U * 1024U, 0);
         break;
     case ROMBackend::FLASH:
         state->PRG_banks[0] = (uint8_t*)state->mROM->prg_base;
@@ -93,24 +106,38 @@ void mapper000_loadState(Mapper* mapper, File& state)
 Mapper createMapper000(uint8_t PRG_banks, uint8_t CHR_banks, ROMBackend backend, Cartridge* cart)
 {
     Mapper mapper;
-    Mapper000_state* state = new Mapper000_state;
+    Mapper000_state* state = new (std::nothrow) Mapper000_state;
+    if (!state) {
+        mapper.state = nullptr;
+        return mapper;
+    }
     switch (backend)
     {
     case ROMBackend::LRU:
-        state->PRG_ROM = (uint8_t*)malloc(32 * 1024);
+        state->PRG_ROM = alloc_mapper_buffer(32 * 1024);
         if (state->PRG_ROM)
             LOGF("Allocated 32 KB for PRG ROM, free heap: %u bytes\n",
                  heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
         else LOG("32 KB for PRG ROM Allocation failed.");
 
-        state->CHR_ROM = (uint8_t*)malloc(16U * 1024U);
+        state->CHR_ROM = alloc_mapper_buffer(8U * 1024U);
         if (state->CHR_ROM)
             LOGF("Allocated 8 KB for CHR ROM, free heap: %u bytes\n",
                  heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
         else LOG("8 KB for CHR ROM Allocation failed.");
+        if (!state->PRG_ROM || !state->CHR_ROM) {
+            mapper.state = state;
+            mapper000_destroy(&mapper);
+            return mapper;
+        }
         break;
     case ROMBackend::FLASH:
-        if (CHR_banks == 0) state->CHR_ROM = (uint8_t*)malloc(8U * 1024U);
+        if (CHR_banks == 0) state->CHR_ROM = alloc_mapper_buffer(8U * 1024U);
+        if (CHR_banks == 0 && !state->CHR_ROM) {
+            mapper.state = state;
+            mapper000_destroy(&mapper);
+            return mapper;
+        }
         state->mROM = &cart->mROM;
         break;
     }
@@ -121,4 +148,16 @@ Mapper createMapper000(uint8_t PRG_banks, uint8_t CHR_banks, ROMBackend backend,
     state->backend = backend;
     mapper.state = state;
     return mapper;
+}
+
+void mapper000_destroy(Mapper* mapper)
+{
+    if (!mapper || !mapper->state) {
+        return;
+    }
+    Mapper000_state* state = (Mapper000_state*)mapper->state;
+    free(state->PRG_ROM);
+    free(state->CHR_ROM);
+    delete state;
+    mapper->state = nullptr;
 }

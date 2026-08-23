@@ -1,0 +1,1580 @@
+{
+  "components/Arduino.h": {
+    "mtime": 1786814325.442495,
+    "seen": 1787283249.297765,
+    "ast_hash": "dd1cc357d358199028be5f52c5d5eb2a",
+    "semantic_hash": "dd1cc357d358199028be5f52c5d5eb2a"
+  },
+  "components/SD.cpp": {
+    "mtime": 1786814325.9103835,
+    "seen": 1787283249.2977679,
+    "ast_hash": "d80552bc5449e3a8caaeed6a6898d4b8",
+    "semantic_hash": "d80552bc5449e3a8caaeed6a6898d4b8"
+  },
+  "components/SD.h": {
+    "mtime": 1786814325.8347328,
+    "seen": 1787283249.297769,
+    "ast_hash": "6b945e8347a730bfb76415e7b3707f0c",
+    "semantic_hash": "6b945e8347a730bfb76415e7b3707f0c"
+  },
+  "components/SPI.h": {
+    "mtime": 1786814325.5307665,
+    "seen": 1787283249.29777,
+    "ast_hash": "85f6d69259c472db1ca819cca6c6ad7a",
+    "semantic_hash": "85f6d69259c472db1ca819cca6c6ad7a"
+  },
+  "components/TFT_eSPI.h": {
+    "mtime": 1786814325.605866,
+    "seen": 1787283249.29777,
+    "ast_hash": "c7556a25e58dbd487a2070d174a09e53",
+    "semantic_hash": "c7556a25e58dbd487a2070d174a09e53"
+  },
+  "components/board_init.c": {
+    "mtime": 1785906429.839514,
+    "seen": 1787283249.297771,
+    "ast_hash": "862f0d53fab11bc8db8081f397268dfd",
+    "semantic_hash": "862f0d53fab11bc8db8081f397268dfd"
+  },
+  "components/board_init.h": {
+    "mtime": 1786814420.680949,
+    "seen": 1787283249.297771,
+    "ast_hash": "8cc2b0f127a6a991ccda79a28056517b",
+    "semantic_hash": "8cc2b0f127a6a991ccda79a28056517b"
+  },
+  "components/breakout_core.h": {
+    "mtime": 1786230000.0,
+    "seen": 1787283249.297772,
+    "ast_hash": "542d453d43b492e35ea7be2f81a7e93c",
+    "semantic_hash": "542d453d43b492e35ea7be2f81a7e93c"
+  },
+  "components/config.h": {
+    "mtime": 1786814325.979146,
+    "seen": 1787283249.297772,
+    "ast_hash": "700c78fe1157ad6a3ece4ed1732a3132",
+    "semantic_hash": "700c78fe1157ad6a3ece4ed1732a3132"
+  },
+  "components/debug.h": {
+    "mtime": 1786814325.6829584,
+    "seen": 1787283249.2977731,
+    "ast_hash": "b610578d0a07d518fc8a0eca60f4ad24",
+    "semantic_hash": "b610578d0a07d518fc8a0eca60f4ad24"
+  },
+  "components/doomgeneric/am_map.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2977731,
+    "ast_hash": "b5ed740937db9093394cd1608f75c11b",
+    "semantic_hash": "b5ed740937db9093394cd1608f75c11b"
+  },
+  "components/doomgeneric/am_map.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297774,
+    "ast_hash": "ae93e3babcb3a5634e39dbfa50843b24",
+    "semantic_hash": "ae93e3babcb3a5634e39dbfa50843b24"
+  },
+  "components/doomgeneric/config.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297774,
+    "ast_hash": "51963feb32af883b3f63a00c7bfefa05",
+    "semantic_hash": "51963feb32af883b3f63a00c7bfefa05"
+  },
+  "components/doomgeneric/d_englsh.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297775,
+    "ast_hash": "fb51228b6b3f3b614039b0a3dc93fbc9",
+    "semantic_hash": "fb51228b6b3f3b614039b0a3dc93fbc9"
+  },
+  "components/doomgeneric/d_event.c": {
+    "mtime": 1786814644.4126608,
+    "seen": 1787283249.297775,
+    "ast_hash": "e3342ef990e983f47b36f123220157d5",
+    "semantic_hash": "e3342ef990e983f47b36f123220157d5"
+  },
+  "components/doomgeneric/d_event.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297775,
+    "ast_hash": "0620ada2921febc91752f55f722e9780",
+    "semantic_hash": "0620ada2921febc91752f55f722e9780"
+  },
+  "components/doomgeneric/d_items.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2977762,
+    "ast_hash": "79871b7d4e718f4d7a48f9c6b9fd78e1",
+    "semantic_hash": "79871b7d4e718f4d7a48f9c6b9fd78e1"
+  },
+  "components/doomgeneric/d_items.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2977762,
+    "ast_hash": "af1a28afd9e90d4f76748238aabe4548",
+    "semantic_hash": "af1a28afd9e90d4f76748238aabe4548"
+  },
+  "components/doomgeneric/d_iwad.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297777,
+    "ast_hash": "ddcfb20a9e0b9383fd133cf694fc8a13",
+    "semantic_hash": "ddcfb20a9e0b9383fd133cf694fc8a13"
+  },
+  "components/doomgeneric/d_iwad.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297777,
+    "ast_hash": "5f8c1544828dbaa6061c391fe32ec11e",
+    "semantic_hash": "5f8c1544828dbaa6061c391fe32ec11e"
+  },
+  "components/doomgeneric/d_loop.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297778,
+    "ast_hash": "d25d19a67d7a891e506fa8c63b0d99d3",
+    "semantic_hash": "d25d19a67d7a891e506fa8c63b0d99d3"
+  },
+  "components/doomgeneric/d_loop.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297778,
+    "ast_hash": "cfc5ff7d215a37ef888da1c1d7b746f2",
+    "semantic_hash": "cfc5ff7d215a37ef888da1c1d7b746f2"
+  },
+  "components/doomgeneric/d_main.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2977788,
+    "ast_hash": "ecea56260fe5b128bbf68e53f1af5426",
+    "semantic_hash": "ecea56260fe5b128bbf68e53f1af5426"
+  },
+  "components/doomgeneric/d_main.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2977788,
+    "ast_hash": "d342ecde68566994f258447fa10ec604",
+    "semantic_hash": "d342ecde68566994f258447fa10ec604"
+  },
+  "components/doomgeneric/d_mode.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.29778,
+    "ast_hash": "2c92afddc98dc21287685e9e812d670d",
+    "semantic_hash": "2c92afddc98dc21287685e9e812d670d"
+  },
+  "components/doomgeneric/d_mode.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.29778,
+    "ast_hash": "c8df841e94077dee38b10981c8f30800",
+    "semantic_hash": "c8df841e94077dee38b10981c8f30800"
+  },
+  "components/doomgeneric/d_net.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.29778,
+    "ast_hash": "e552e0bcf47355ba7785623e6af96149",
+    "semantic_hash": "e552e0bcf47355ba7785623e6af96149"
+  },
+  "components/doomgeneric/d_player.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297781,
+    "ast_hash": "eaa46659c8e603c6f9802f6ba32d773d",
+    "semantic_hash": "eaa46659c8e603c6f9802f6ba32d773d"
+  },
+  "components/doomgeneric/d_textur.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297781,
+    "ast_hash": "a36e0857e09723ebce69e7dbdf5a530d",
+    "semantic_hash": "a36e0857e09723ebce69e7dbdf5a530d"
+  },
+  "components/doomgeneric/d_think.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297782,
+    "ast_hash": "a78c859712bfa1538dea4a2b66c926db",
+    "semantic_hash": "a78c859712bfa1538dea4a2b66c926db"
+  },
+  "components/doomgeneric/d_ticcmd.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297782,
+    "ast_hash": "61827feffd1a3f568bc073307011fa2d",
+    "semantic_hash": "61827feffd1a3f568bc073307011fa2d"
+  },
+  "components/doomgeneric/deh_main.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2977831,
+    "ast_hash": "b05be3e13ce54c5ae1e72daa10b8e115",
+    "semantic_hash": "b05be3e13ce54c5ae1e72daa10b8e115"
+  },
+  "components/doomgeneric/deh_misc.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2977831,
+    "ast_hash": "d2d364ce12e41d4fae4ca401d3e8e85d",
+    "semantic_hash": "d2d364ce12e41d4fae4ca401d3e8e85d"
+  },
+  "components/doomgeneric/deh_str.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2977831,
+    "ast_hash": "c85fc4c99b6ff92655288435276c238a",
+    "semantic_hash": "c85fc4c99b6ff92655288435276c238a"
+  },
+  "components/doomgeneric/doom.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297784,
+    "ast_hash": "92a287716d7f7cd77de03fa670db6983",
+    "semantic_hash": "92a287716d7f7cd77de03fa670db6983"
+  },
+  "components/doomgeneric/doomdata.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297784,
+    "ast_hash": "f9b91a6f1924a57383d599a2cfa2189b",
+    "semantic_hash": "f9b91a6f1924a57383d599a2cfa2189b"
+  },
+  "components/doomgeneric/doomdef.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297785,
+    "ast_hash": "468a43585be1907acabe27a88fb6eee6",
+    "semantic_hash": "468a43585be1907acabe27a88fb6eee6"
+  },
+  "components/doomgeneric/doomdef.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297785,
+    "ast_hash": "25caee4e8c31384051ea4d3ea517c712",
+    "semantic_hash": "25caee4e8c31384051ea4d3ea517c712"
+  },
+  "components/doomgeneric/doomfeatures.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297785,
+    "ast_hash": "c58ddc3abea5a342fb4b21d64cf1ae55",
+    "semantic_hash": "c58ddc3abea5a342fb4b21d64cf1ae55"
+  },
+  "components/doomgeneric/doomgeneric.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297786,
+    "ast_hash": "48c7162398af52a24a80fa54c68e1186",
+    "semantic_hash": "48c7162398af52a24a80fa54c68e1186"
+  },
+  "components/doomgeneric/doomgeneric.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297786,
+    "ast_hash": "dd0fda792aa503fe5218fac5d9dab1eb",
+    "semantic_hash": "dd0fda792aa503fe5218fac5d9dab1eb"
+  },
+  "components/doomgeneric/doomgeneric_allegro.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297787,
+    "ast_hash": "1edc4c7b7f7ca27bd86eb42029ba175d",
+    "semantic_hash": "1edc4c7b7f7ca27bd86eb42029ba175d"
+  },
+  "components/doomgeneric/doomgeneric_emscripten.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297787,
+    "ast_hash": "cc1e9e99286cf80e4268c1cbd1e1d825",
+    "semantic_hash": "cc1e9e99286cf80e4268c1cbd1e1d825"
+  },
+  "components/doomgeneric/doomgeneric_linuxvt.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297788,
+    "ast_hash": "f3169c490c5d5ee63167575527238162",
+    "semantic_hash": "f3169c490c5d5ee63167575527238162"
+  },
+  "components/doomgeneric/doomgeneric_sdl.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297788,
+    "ast_hash": "f68c1ba7509117a435f3df59ee8fdedd",
+    "semantic_hash": "f68c1ba7509117a435f3df59ee8fdedd"
+  },
+  "components/doomgeneric/doomgeneric_soso.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2977889,
+    "ast_hash": "243e3bc83dbfdeda01bd8af402110467",
+    "semantic_hash": "243e3bc83dbfdeda01bd8af402110467"
+  },
+  "components/doomgeneric/doomgeneric_sosox.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2977889,
+    "ast_hash": "bf77c3d39d10381ed2a4128c08c27b7e",
+    "semantic_hash": "bf77c3d39d10381ed2a4128c08c27b7e"
+  },
+  "components/doomgeneric/doomgeneric_win.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2977889,
+    "ast_hash": "515a6be6901dbaf995ec1d623cab56d1",
+    "semantic_hash": "515a6be6901dbaf995ec1d623cab56d1"
+  },
+  "components/doomgeneric/doomgeneric_xlib.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.29779,
+    "ast_hash": "4786ef7edcfcc7516d63ca362634e225",
+    "semantic_hash": "4786ef7edcfcc7516d63ca362634e225"
+  },
+  "components/doomgeneric/doomkeys.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.29779,
+    "ast_hash": "8160bcd782874f80e568e96c264f1e89",
+    "semantic_hash": "8160bcd782874f80e568e96c264f1e89"
+  },
+  "components/doomgeneric/doomstat.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297791,
+    "ast_hash": "4c1dbded661686c1b81df7080b29fc96",
+    "semantic_hash": "4c1dbded661686c1b81df7080b29fc96"
+  },
+  "components/doomgeneric/doomstat.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297791,
+    "ast_hash": "4b29646ca4779f227e0aeb9465ecc9ae",
+    "semantic_hash": "4b29646ca4779f227e0aeb9465ecc9ae"
+  },
+  "components/doomgeneric/doomtype.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297792,
+    "ast_hash": "beb80e451dcdff141410b652d24db394",
+    "semantic_hash": "beb80e451dcdff141410b652d24db394"
+  },
+  "components/doomgeneric/dstrings.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297792,
+    "ast_hash": "8073a8e8dc84e46ce3d2bf13da734565",
+    "semantic_hash": "8073a8e8dc84e46ce3d2bf13da734565"
+  },
+  "components/doomgeneric/dstrings.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297792,
+    "ast_hash": "4fc84012b86f0d74f96ac203b708580d",
+    "semantic_hash": "4fc84012b86f0d74f96ac203b708580d"
+  },
+  "components/doomgeneric/dummy.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297793,
+    "ast_hash": "b26ad7c3770eb89ff534767a22187675",
+    "semantic_hash": "b26ad7c3770eb89ff534767a22187675"
+  },
+  "components/doomgeneric/f_finale.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297793,
+    "ast_hash": "7406267f267678f7d8416ed2cfada23a",
+    "semantic_hash": "7406267f267678f7d8416ed2cfada23a"
+  },
+  "components/doomgeneric/f_finale.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297794,
+    "ast_hash": "6a540bf75b55729f58fdbdbcd77a0292",
+    "semantic_hash": "6a540bf75b55729f58fdbdbcd77a0292"
+  },
+  "components/doomgeneric/f_wipe.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297794,
+    "ast_hash": "7145f134272c9e7c0eadf1afad2170c4",
+    "semantic_hash": "7145f134272c9e7c0eadf1afad2170c4"
+  },
+  "components/doomgeneric/f_wipe.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297795,
+    "ast_hash": "f9916f5cab65d716883763cd518e5fa3",
+    "semantic_hash": "f9916f5cab65d716883763cd518e5fa3"
+  },
+  "components/doomgeneric/g_game.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297795,
+    "ast_hash": "59f9f97aa21cf5c8179dcb3579267b7a",
+    "semantic_hash": "59f9f97aa21cf5c8179dcb3579267b7a"
+  },
+  "components/doomgeneric/g_game.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297795,
+    "ast_hash": "9e6aca44b2497ac212c17d901e2fb44b",
+    "semantic_hash": "9e6aca44b2497ac212c17d901e2fb44b"
+  },
+  "components/doomgeneric/gusconf.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297796,
+    "ast_hash": "6950f2b91979092b796f80cb0a0852cc",
+    "semantic_hash": "6950f2b91979092b796f80cb0a0852cc"
+  },
+  "components/doomgeneric/gusconf.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297796,
+    "ast_hash": "445475ab9681e16217d29139bb3bb023",
+    "semantic_hash": "445475ab9681e16217d29139bb3bb023"
+  },
+  "components/doomgeneric/hu_lib.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2977972,
+    "ast_hash": "96a94a15fa6f872c663591ee46c49886",
+    "semantic_hash": "96a94a15fa6f872c663591ee46c49886"
+  },
+  "components/doomgeneric/hu_lib.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2977972,
+    "ast_hash": "ca2f6746e1b2c6204d47223fd870e931",
+    "semantic_hash": "ca2f6746e1b2c6204d47223fd870e931"
+  },
+  "components/doomgeneric/hu_stuff.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2977972,
+    "ast_hash": "00799ae8b2be9142421a34058a17c0eb",
+    "semantic_hash": "00799ae8b2be9142421a34058a17c0eb"
+  },
+  "components/doomgeneric/hu_stuff.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297798,
+    "ast_hash": "716d76c7d626e532a16daeed9670d6a4",
+    "semantic_hash": "716d76c7d626e532a16daeed9670d6a4"
+  },
+  "components/doomgeneric/i_allegromusic.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297798,
+    "ast_hash": "521742664a99fc79a22acc57c7cc9123",
+    "semantic_hash": "521742664a99fc79a22acc57c7cc9123"
+  },
+  "components/doomgeneric/i_allegrosound.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2977989,
+    "ast_hash": "7314a7cccdf3fb84f5a0f6462788e693",
+    "semantic_hash": "7314a7cccdf3fb84f5a0f6462788e693"
+  },
+  "components/doomgeneric/i_cdmus.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2977989,
+    "ast_hash": "efa9b607b138800523af78d84d338f79",
+    "semantic_hash": "efa9b607b138800523af78d84d338f79"
+  },
+  "components/doomgeneric/i_cdmus.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2977998,
+    "ast_hash": "9ce83ad719e6e157ccd5316371a45131",
+    "semantic_hash": "9ce83ad719e6e157ccd5316371a45131"
+  },
+  "components/doomgeneric/i_endoom.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2977998,
+    "ast_hash": "32538aebe2ac324bee8704952593e08a",
+    "semantic_hash": "32538aebe2ac324bee8704952593e08a"
+  },
+  "components/doomgeneric/i_endoom.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2977998,
+    "ast_hash": "ec14c5cb0529401958cb5a9ebd4a30df",
+    "semantic_hash": "ec14c5cb0529401958cb5a9ebd4a30df"
+  },
+  "components/doomgeneric/i_input.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297801,
+    "ast_hash": "a686e0febc6ad9c6e25597f4e3ed39b3",
+    "semantic_hash": "a686e0febc6ad9c6e25597f4e3ed39b3"
+  },
+  "components/doomgeneric/i_joystick.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297801,
+    "ast_hash": "225e9e5626dba27faad030fb0904f565",
+    "semantic_hash": "225e9e5626dba27faad030fb0904f565"
+  },
+  "components/doomgeneric/i_joystick.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297802,
+    "ast_hash": "44d4243f94b8b5a1520290ea32bd0f08",
+    "semantic_hash": "44d4243f94b8b5a1520290ea32bd0f08"
+  },
+  "components/doomgeneric/i_scale.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297802,
+    "ast_hash": "5feffcf459bc2a050f35d0c8058c8def",
+    "semantic_hash": "5feffcf459bc2a050f35d0c8058c8def"
+  },
+  "components/doomgeneric/i_scale.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297803,
+    "ast_hash": "b3323feeb2920aa922dbe51a0a901330",
+    "semantic_hash": "b3323feeb2920aa922dbe51a0a901330"
+  },
+  "components/doomgeneric/i_sdlmusic.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297803,
+    "ast_hash": "5ddca7606805f05010dee1d84199a0f5",
+    "semantic_hash": "5ddca7606805f05010dee1d84199a0f5"
+  },
+  "components/doomgeneric/i_sdlsound.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297803,
+    "ast_hash": "13790c7ea3de9c18fe69346e33c77642",
+    "semantic_hash": "13790c7ea3de9c18fe69346e33c77642"
+  },
+  "components/doomgeneric/i_sound.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297804,
+    "ast_hash": "f0cec0067a0805a7590efbbdc5eb3f0a",
+    "semantic_hash": "f0cec0067a0805a7590efbbdc5eb3f0a"
+  },
+  "components/doomgeneric/i_sound.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297804,
+    "ast_hash": "e97fb47df8d3fd96179ae63826a28eb9",
+    "semantic_hash": "e97fb47df8d3fd96179ae63826a28eb9"
+  },
+  "components/doomgeneric/i_swap.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297805,
+    "ast_hash": "f2e7be01d53e1cdf5018877be12d352f",
+    "semantic_hash": "f2e7be01d53e1cdf5018877be12d352f"
+  },
+  "components/doomgeneric/i_system.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297805,
+    "ast_hash": "55850013942876d65a904422be6ee1d4",
+    "semantic_hash": "55850013942876d65a904422be6ee1d4"
+  },
+  "components/doomgeneric/i_system.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297806,
+    "ast_hash": "f91a9049dc61f1261f7fcc62fc9a86f2",
+    "semantic_hash": "f91a9049dc61f1261f7fcc62fc9a86f2"
+  },
+  "components/doomgeneric/i_timer.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297806,
+    "ast_hash": "4b70eaf7ccd6c602d8017a00eb3d373b",
+    "semantic_hash": "4b70eaf7ccd6c602d8017a00eb3d373b"
+  },
+  "components/doomgeneric/i_timer.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978072,
+    "ast_hash": "16a6e5644ff1bb7a7bf814ebcf624ac7",
+    "semantic_hash": "16a6e5644ff1bb7a7bf814ebcf624ac7"
+  },
+  "components/doomgeneric/i_video.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978072,
+    "ast_hash": "c3e08672fa0a000ce442a2e26a787f40",
+    "semantic_hash": "c3e08672fa0a000ce442a2e26a787f40"
+  },
+  "components/doomgeneric/i_video.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297808,
+    "ast_hash": "639932331546ae2bc96984cad8b472c4",
+    "semantic_hash": "639932331546ae2bc96984cad8b472c4"
+  },
+  "components/doomgeneric/icon.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297808,
+    "ast_hash": "12461fb3dd036d1f2a7d12f720045d3e",
+    "semantic_hash": "12461fb3dd036d1f2a7d12f720045d3e"
+  },
+  "components/doomgeneric/info.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297809,
+    "ast_hash": "eab8644ab9da4c5a575140544047b198",
+    "semantic_hash": "eab8644ab9da4c5a575140544047b198"
+  },
+  "components/doomgeneric/info.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297809,
+    "ast_hash": "ee94a57a6342aa1c2c967b532d87fc0b",
+    "semantic_hash": "ee94a57a6342aa1c2c967b532d87fc0b"
+  },
+  "components/doomgeneric/m_argv.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297809,
+    "ast_hash": "5dc26a3a9bb7c02df5b847a78a5cf9ca",
+    "semantic_hash": "5dc26a3a9bb7c02df5b847a78a5cf9ca"
+  },
+  "components/doomgeneric/m_argv.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978098,
+    "ast_hash": "28686837cab0b57cd99bfce10e464c16",
+    "semantic_hash": "28686837cab0b57cd99bfce10e464c16"
+  },
+  "components/doomgeneric/m_bbox.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978098,
+    "ast_hash": "823ec013a09e1d152a834d1023027fa1",
+    "semantic_hash": "823ec013a09e1d152a834d1023027fa1"
+  },
+  "components/doomgeneric/m_bbox.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297811,
+    "ast_hash": "683856018228c1ed014e81cff07b6d08",
+    "semantic_hash": "683856018228c1ed014e81cff07b6d08"
+  },
+  "components/doomgeneric/m_cheat.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297811,
+    "ast_hash": "3bb7b10f47e6af6ea7255eb1b561dc4f",
+    "semantic_hash": "3bb7b10f47e6af6ea7255eb1b561dc4f"
+  },
+  "components/doomgeneric/m_cheat.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297812,
+    "ast_hash": "e3facc5a317c7969cc3aa396aca2bca1",
+    "semantic_hash": "e3facc5a317c7969cc3aa396aca2bca1"
+  },
+  "components/doomgeneric/m_config.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297812,
+    "ast_hash": "5e986de5b820ee8f291278dbe74046f3",
+    "semantic_hash": "5e986de5b820ee8f291278dbe74046f3"
+  },
+  "components/doomgeneric/m_config.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297813,
+    "ast_hash": "72efd6d4464f3441e0ceeb5d2dcad64d",
+    "semantic_hash": "72efd6d4464f3441e0ceeb5d2dcad64d"
+  },
+  "components/doomgeneric/m_controls.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297813,
+    "ast_hash": "23e7b0a36815304144ba93ba8f97042e",
+    "semantic_hash": "23e7b0a36815304144ba93ba8f97042e"
+  },
+  "components/doomgeneric/m_controls.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297813,
+    "ast_hash": "3075863978d41ff9717c47bcc7ddd93b",
+    "semantic_hash": "3075863978d41ff9717c47bcc7ddd93b"
+  },
+  "components/doomgeneric/m_fixed.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978141,
+    "ast_hash": "96d57debfb98852c283afe6f309f52df",
+    "semantic_hash": "96d57debfb98852c283afe6f309f52df"
+  },
+  "components/doomgeneric/m_fixed.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978141,
+    "ast_hash": "1a4d0ff93950eedcc3b9552782deadec",
+    "semantic_hash": "1a4d0ff93950eedcc3b9552782deadec"
+  },
+  "components/doomgeneric/m_menu.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297815,
+    "ast_hash": "492654fb47eaed1a2af77e4cad8accc2",
+    "semantic_hash": "492654fb47eaed1a2af77e4cad8accc2"
+  },
+  "components/doomgeneric/m_menu.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297815,
+    "ast_hash": "749cf1f648821a7cb09de909d0c7e1a1",
+    "semantic_hash": "749cf1f648821a7cb09de909d0c7e1a1"
+  },
+  "components/doomgeneric/m_misc.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297815,
+    "ast_hash": "411b3454a9646643f91a880101558fa4",
+    "semantic_hash": "411b3454a9646643f91a880101558fa4"
+  },
+  "components/doomgeneric/m_misc.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297816,
+    "ast_hash": "0764df8ba358d1becb2f522f33ddd9bb",
+    "semantic_hash": "0764df8ba358d1becb2f522f33ddd9bb"
+  },
+  "components/doomgeneric/m_random.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297816,
+    "ast_hash": "a3db5015eb2ddc39af1c10546f6142da",
+    "semantic_hash": "a3db5015eb2ddc39af1c10546f6142da"
+  },
+  "components/doomgeneric/m_random.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297817,
+    "ast_hash": "621050a077cb68b737ee3db22bf665e2",
+    "semantic_hash": "621050a077cb68b737ee3db22bf665e2"
+  },
+  "components/doomgeneric/memio.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297817,
+    "ast_hash": "ccd62d549fc4e3b29be183a2137f5521",
+    "semantic_hash": "ccd62d549fc4e3b29be183a2137f5521"
+  },
+  "components/doomgeneric/memio.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297817,
+    "ast_hash": "5c3864d4c2cfe17dbcb122107984369b",
+    "semantic_hash": "5c3864d4c2cfe17dbcb122107984369b"
+  },
+  "components/doomgeneric/mus2mid.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978182,
+    "ast_hash": "cd5e102ef1925d77f65dd81d698a6344",
+    "semantic_hash": "cd5e102ef1925d77f65dd81d698a6344"
+  },
+  "components/doomgeneric/mus2mid.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978182,
+    "ast_hash": "d24bceb8b30894a4d3b500696ca9e943",
+    "semantic_hash": "d24bceb8b30894a4d3b500696ca9e943"
+  },
+  "components/doomgeneric/net_client.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297819,
+    "ast_hash": "67bf81d01e412e2c76d090b526f4edd4",
+    "semantic_hash": "67bf81d01e412e2c76d090b526f4edd4"
+  },
+  "components/doomgeneric/net_dedicated.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297819,
+    "ast_hash": "83202fd54c2967214fddeadecd1834ce",
+    "semantic_hash": "83202fd54c2967214fddeadecd1834ce"
+  },
+  "components/doomgeneric/net_defs.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978199,
+    "ast_hash": "23c9124f479c7fd827c4adc7e4f615d9",
+    "semantic_hash": "23c9124f479c7fd827c4adc7e4f615d9"
+  },
+  "components/doomgeneric/net_gui.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978199,
+    "ast_hash": "5e61fc25d1d4f4934004af03bcee93c1",
+    "semantic_hash": "5e61fc25d1d4f4934004af03bcee93c1"
+  },
+  "components/doomgeneric/net_io.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978199,
+    "ast_hash": "edc744d119d60ff75049a1146158682a",
+    "semantic_hash": "edc744d119d60ff75049a1146158682a"
+  },
+  "components/doomgeneric/net_loop.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297821,
+    "ast_hash": "8680f5a0df11fa3e6446842d73329ad3",
+    "semantic_hash": "8680f5a0df11fa3e6446842d73329ad3"
+  },
+  "components/doomgeneric/net_packet.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297821,
+    "ast_hash": "39e936e1317af5029d1eed0eb1fba669",
+    "semantic_hash": "39e936e1317af5029d1eed0eb1fba669"
+  },
+  "components/doomgeneric/net_query.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297822,
+    "ast_hash": "c67f2acaddc7d63c9beb992246a2a78f",
+    "semantic_hash": "c67f2acaddc7d63c9beb992246a2a78f"
+  },
+  "components/doomgeneric/net_sdl.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297822,
+    "ast_hash": "1833f1b40115f92aa20b2215ce15214a",
+    "semantic_hash": "1833f1b40115f92aa20b2215ce15214a"
+  },
+  "components/doomgeneric/net_server.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297822,
+    "ast_hash": "2a39b6cbbb376d2e0a3454b80110133d",
+    "semantic_hash": "2a39b6cbbb376d2e0a3454b80110133d"
+  },
+  "components/doomgeneric/p_ceilng.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297823,
+    "ast_hash": "af6966c0f3bef189cf5677a1ef556cd8",
+    "semantic_hash": "af6966c0f3bef189cf5677a1ef556cd8"
+  },
+  "components/doomgeneric/p_doors.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297823,
+    "ast_hash": "bd8de860e9872d09e6ed054c8208513e",
+    "semantic_hash": "bd8de860e9872d09e6ed054c8208513e"
+  },
+  "components/doomgeneric/p_enemy.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297824,
+    "ast_hash": "e0924598fc54115f6dc7f3d1b7917ab8",
+    "semantic_hash": "e0924598fc54115f6dc7f3d1b7917ab8"
+  },
+  "components/doomgeneric/p_floor.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297824,
+    "ast_hash": "bc28ae03274d8c8329362c82c1af028e",
+    "semantic_hash": "bc28ae03274d8c8329362c82c1af028e"
+  },
+  "components/doomgeneric/p_inter.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297824,
+    "ast_hash": "1f33f5473d0da81b53873a416a75eba5",
+    "semantic_hash": "1f33f5473d0da81b53873a416a75eba5"
+  },
+  "components/doomgeneric/p_inter.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297825,
+    "ast_hash": "273be5e163e820e4fa408135426a5105",
+    "semantic_hash": "273be5e163e820e4fa408135426a5105"
+  },
+  "components/doomgeneric/p_lights.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297825,
+    "ast_hash": "c1100a1bab4674d56c70f2719beb873d",
+    "semantic_hash": "c1100a1bab4674d56c70f2719beb873d"
+  },
+  "components/doomgeneric/p_local.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297825,
+    "ast_hash": "65778eb3f31af6692ef3af118a06dacc",
+    "semantic_hash": "65778eb3f31af6692ef3af118a06dacc"
+  },
+  "components/doomgeneric/p_map.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297826,
+    "ast_hash": "0daf329f1f1c9f517c9f543b1ae6087e",
+    "semantic_hash": "0daf329f1f1c9f517c9f543b1ae6087e"
+  },
+  "components/doomgeneric/p_maputl.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297826,
+    "ast_hash": "1408a1e87d91a6293386921b99e41c6e",
+    "semantic_hash": "1408a1e87d91a6293386921b99e41c6e"
+  },
+  "components/doomgeneric/p_mobj.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297827,
+    "ast_hash": "b77ed40291bdd81b9c6e14fae7b863e1",
+    "semantic_hash": "b77ed40291bdd81b9c6e14fae7b863e1"
+  },
+  "components/doomgeneric/p_mobj.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297827,
+    "ast_hash": "c486b96ebccb89134c1641cbf6bbdb9f",
+    "semantic_hash": "c486b96ebccb89134c1641cbf6bbdb9f"
+  },
+  "components/doomgeneric/p_plats.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297827,
+    "ast_hash": "f80bf1a799fcc67e5830e801071ee620",
+    "semantic_hash": "f80bf1a799fcc67e5830e801071ee620"
+  },
+  "components/doomgeneric/p_pspr.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978282,
+    "ast_hash": "da0df74f9b3d5d694f1b96b56359cb84",
+    "semantic_hash": "da0df74f9b3d5d694f1b96b56359cb84"
+  },
+  "components/doomgeneric/p_pspr.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978282,
+    "ast_hash": "0af30f1cf8ecd03eaac6dd1d66232e6e",
+    "semantic_hash": "0af30f1cf8ecd03eaac6dd1d66232e6e"
+  },
+  "components/doomgeneric/p_saveg.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978282,
+    "ast_hash": "249780398555dc640bd4b7e7da7a20fb",
+    "semantic_hash": "249780398555dc640bd4b7e7da7a20fb"
+  },
+  "components/doomgeneric/p_saveg.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978292,
+    "ast_hash": "2641eb556e6c4d838e5ecce81078be48",
+    "semantic_hash": "2641eb556e6c4d838e5ecce81078be48"
+  },
+  "components/doomgeneric/p_setup.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978292,
+    "ast_hash": "4e13ebd4a7a3fd35fad2ee99ac53492a",
+    "semantic_hash": "4e13ebd4a7a3fd35fad2ee99ac53492a"
+  },
+  "components/doomgeneric/p_setup.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978299,
+    "ast_hash": "b528d0cff70d656a6f4ae81ffa222088",
+    "semantic_hash": "b528d0cff70d656a6f4ae81ffa222088"
+  },
+  "components/doomgeneric/p_sight.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978299,
+    "ast_hash": "2f9d02aff70dad08f40596c5d6a7629e",
+    "semantic_hash": "2f9d02aff70dad08f40596c5d6a7629e"
+  },
+  "components/doomgeneric/p_spec.c": {
+    "mtime": 1786814644.5428567,
+    "seen": 1787283249.2978299,
+    "ast_hash": "7c828a52ffe9b0966a9b883e1d33f080",
+    "semantic_hash": "7c828a52ffe9b0966a9b883e1d33f080"
+  },
+  "components/doomgeneric/p_spec.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978308,
+    "ast_hash": "cb81ca55ce59e80cf4159aaec092bd9f",
+    "semantic_hash": "cb81ca55ce59e80cf4159aaec092bd9f"
+  },
+  "components/doomgeneric/p_switch.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978308,
+    "ast_hash": "2f43ca85b576884ce3deb337d03d4ceb",
+    "semantic_hash": "2f43ca85b576884ce3deb337d03d4ceb"
+  },
+  "components/doomgeneric/p_telept.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297832,
+    "ast_hash": "7c217387b4af3b1ee59eb390b695f48d",
+    "semantic_hash": "7c217387b4af3b1ee59eb390b695f48d"
+  },
+  "components/doomgeneric/p_tick.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297832,
+    "ast_hash": "7be1360a888ad796f037e40c5b1460ce",
+    "semantic_hash": "7be1360a888ad796f037e40c5b1460ce"
+  },
+  "components/doomgeneric/p_tick.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297832,
+    "ast_hash": "aa2a0373447677cc99847f6192cdc277",
+    "semantic_hash": "aa2a0373447677cc99847f6192cdc277"
+  },
+  "components/doomgeneric/p_user.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297833,
+    "ast_hash": "98b718fde428feb675338af1f8561842",
+    "semantic_hash": "98b718fde428feb675338af1f8561842"
+  },
+  "components/doomgeneric/r_bsp.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297833,
+    "ast_hash": "9d50b2c141546621cc7bef446037bf1b",
+    "semantic_hash": "9d50b2c141546621cc7bef446037bf1b"
+  },
+  "components/doomgeneric/r_bsp.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297833,
+    "ast_hash": "01e1d72f06e367a58427f1038c037c83",
+    "semantic_hash": "01e1d72f06e367a58427f1038c037c83"
+  },
+  "components/doomgeneric/r_data.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297834,
+    "ast_hash": "5d45f8467a8d72723cb1fb030366624c",
+    "semantic_hash": "5d45f8467a8d72723cb1fb030366624c"
+  },
+  "components/doomgeneric/r_data.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297834,
+    "ast_hash": "da3e4bb437de195e337d37a2a79cd016",
+    "semantic_hash": "da3e4bb437de195e337d37a2a79cd016"
+  },
+  "components/doomgeneric/r_defs.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297835,
+    "ast_hash": "f454863ac324532064d8f46ad7271a54",
+    "semantic_hash": "f454863ac324532064d8f46ad7271a54"
+  },
+  "components/doomgeneric/r_draw.c": {
+    "mtime": 1786814644.3343265,
+    "seen": 1787283249.297835,
+    "ast_hash": "68acf1aabc79e0c8b0247a2733807a53",
+    "semantic_hash": "68acf1aabc79e0c8b0247a2733807a53"
+  },
+  "components/doomgeneric/r_draw.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297835,
+    "ast_hash": "e93f0ef229419101d8e1189541055063",
+    "semantic_hash": "e93f0ef229419101d8e1189541055063"
+  },
+  "components/doomgeneric/r_local.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297836,
+    "ast_hash": "cc694bfa56e5e8e03d837a95264f975a",
+    "semantic_hash": "cc694bfa56e5e8e03d837a95264f975a"
+  },
+  "components/doomgeneric/r_main.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297836,
+    "ast_hash": "b162d845358d55b31b9cf2651727c4aa",
+    "semantic_hash": "b162d845358d55b31b9cf2651727c4aa"
+  },
+  "components/doomgeneric/r_main.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297836,
+    "ast_hash": "5179868cbeb60bfb804d767c3afcc2d6",
+    "semantic_hash": "5179868cbeb60bfb804d767c3afcc2d6"
+  },
+  "components/doomgeneric/r_plane.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297837,
+    "ast_hash": "683d4bc1605f6eb0fb3448729f525c06",
+    "semantic_hash": "683d4bc1605f6eb0fb3448729f525c06"
+  },
+  "components/doomgeneric/r_plane.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297837,
+    "ast_hash": "45eab5d972565bb2c5b2fcad3efd9fac",
+    "semantic_hash": "45eab5d972565bb2c5b2fcad3efd9fac"
+  },
+  "components/doomgeneric/r_segs.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297838,
+    "ast_hash": "735903100fb1b4c438f6cbac62191c07",
+    "semantic_hash": "735903100fb1b4c438f6cbac62191c07"
+  },
+  "components/doomgeneric/r_segs.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297838,
+    "ast_hash": "6124afd2753e0a4d8780b2e5da2496d6",
+    "semantic_hash": "6124afd2753e0a4d8780b2e5da2496d6"
+  },
+  "components/doomgeneric/r_sky.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297838,
+    "ast_hash": "794d4c3184fc0d18aae1b670e6bba65c",
+    "semantic_hash": "794d4c3184fc0d18aae1b670e6bba65c"
+  },
+  "components/doomgeneric/r_sky.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978392,
+    "ast_hash": "c3fc9538c0fdb565f096736ec966ce5a",
+    "semantic_hash": "c3fc9538c0fdb565f096736ec966ce5a"
+  },
+  "components/doomgeneric/r_state.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978392,
+    "ast_hash": "d062b3cd5a0d7aaede4f5021cf81294a",
+    "semantic_hash": "d062b3cd5a0d7aaede4f5021cf81294a"
+  },
+  "components/doomgeneric/r_things.c": {
+    "mtime": 1786814644.4778514,
+    "seen": 1787283249.29784,
+    "ast_hash": "37cc463ddeaa62848e03ba3ffc8ef8a9",
+    "semantic_hash": "37cc463ddeaa62848e03ba3ffc8ef8a9"
+  },
+  "components/doomgeneric/r_things.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.29784,
+    "ast_hash": "748e813b090a1e35202d0910639a70f2",
+    "semantic_hash": "748e813b090a1e35202d0910639a70f2"
+  },
+  "components/doomgeneric/s_sound.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297842,
+    "ast_hash": "405391207772f6fe7878d9f83fa9e79c",
+    "semantic_hash": "405391207772f6fe7878d9f83fa9e79c"
+  },
+  "components/doomgeneric/s_sound.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297843,
+    "ast_hash": "57c4fdaf6f79a2e16e9260d717352ea2",
+    "semantic_hash": "57c4fdaf6f79a2e16e9260d717352ea2"
+  },
+  "components/doomgeneric/sha1.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297843,
+    "ast_hash": "f5ef25f77ff2c92d4946010f3561ad49",
+    "semantic_hash": "f5ef25f77ff2c92d4946010f3561ad49"
+  },
+  "components/doomgeneric/sha1.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297843,
+    "ast_hash": "70502efc907068342518da634daea031",
+    "semantic_hash": "70502efc907068342518da634daea031"
+  },
+  "components/doomgeneric/sounds.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297844,
+    "ast_hash": "7b7300e026154dd90e6a20e72bb5c349",
+    "semantic_hash": "7b7300e026154dd90e6a20e72bb5c349"
+  },
+  "components/doomgeneric/sounds.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297844,
+    "ast_hash": "8aa94d473f909b2281284098796da7ed",
+    "semantic_hash": "8aa94d473f909b2281284098796da7ed"
+  },
+  "components/doomgeneric/st_lib.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297845,
+    "ast_hash": "9b69ae2bec42ea6e8b4ab8d3207192de",
+    "semantic_hash": "9b69ae2bec42ea6e8b4ab8d3207192de"
+  },
+  "components/doomgeneric/st_lib.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297845,
+    "ast_hash": "da5ed834464dbcf7c10a83843fab2be8",
+    "semantic_hash": "da5ed834464dbcf7c10a83843fab2be8"
+  },
+  "components/doomgeneric/st_stuff.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297845,
+    "ast_hash": "7847ffe81624b479f6a799a2330659e8",
+    "semantic_hash": "7847ffe81624b479f6a799a2330659e8"
+  },
+  "components/doomgeneric/st_stuff.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297846,
+    "ast_hash": "02e9db5582e5f41ab8d5978bbde7588c",
+    "semantic_hash": "02e9db5582e5f41ab8d5978bbde7588c"
+  },
+  "components/doomgeneric/statdump.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297846,
+    "ast_hash": "8146dd2b17bf8b74e92e5039e18f6202",
+    "semantic_hash": "8146dd2b17bf8b74e92e5039e18f6202"
+  },
+  "components/doomgeneric/statdump.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297847,
+    "ast_hash": "718b03e66c9bccf431fe07aca8f0aee1",
+    "semantic_hash": "718b03e66c9bccf431fe07aca8f0aee1"
+  },
+  "components/doomgeneric/tables.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297847,
+    "ast_hash": "4072f001c4c995dbb13d2db37ca6edd1",
+    "semantic_hash": "4072f001c4c995dbb13d2db37ca6edd1"
+  },
+  "components/doomgeneric/tables.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297847,
+    "ast_hash": "e28ec8082b0f5e4e750e030c1010e9b9",
+    "semantic_hash": "e28ec8082b0f5e4e750e030c1010e9b9"
+  },
+  "components/doomgeneric/v_patch.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297848,
+    "ast_hash": "b2ad04c97bea499bb3cd2777b6a68c0d",
+    "semantic_hash": "b2ad04c97bea499bb3cd2777b6a68c0d"
+  },
+  "components/doomgeneric/v_video.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297848,
+    "ast_hash": "d447793ec0d4901cab053fdb0fb862e8",
+    "semantic_hash": "d447793ec0d4901cab053fdb0fb862e8"
+  },
+  "components/doomgeneric/v_video.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297848,
+    "ast_hash": "38b2c6ab780b8f62b17c21d294c634ea",
+    "semantic_hash": "38b2c6ab780b8f62b17c21d294c634ea"
+  },
+  "components/doomgeneric/w_checksum.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978492,
+    "ast_hash": "4ae46b4ffbe2b1746a507e9f2c0d2d0f",
+    "semantic_hash": "4ae46b4ffbe2b1746a507e9f2c0d2d0f"
+  },
+  "components/doomgeneric/w_checksum.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978492,
+    "ast_hash": "cc98a000175523b440831be39cdfd354",
+    "semantic_hash": "cc98a000175523b440831be39cdfd354"
+  },
+  "components/doomgeneric/w_file.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978501,
+    "ast_hash": "8964aa0dff1fc9d298be9f99f678b2a1",
+    "semantic_hash": "8964aa0dff1fc9d298be9f99f678b2a1"
+  },
+  "components/doomgeneric/w_file.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978501,
+    "ast_hash": "a83342c093c8e7029293375c3f159756",
+    "semantic_hash": "a83342c093c8e7029293375c3f159756"
+  },
+  "components/doomgeneric/w_file_stdc.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978501,
+    "ast_hash": "0e0190355b9816904df48337d203de44",
+    "semantic_hash": "0e0190355b9816904df48337d203de44"
+  },
+  "components/doomgeneric/w_main.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978508,
+    "ast_hash": "8f6fad3e32db693db2c61d7cd75663f0",
+    "semantic_hash": "8f6fad3e32db693db2c61d7cd75663f0"
+  },
+  "components/doomgeneric/w_main.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978508,
+    "ast_hash": "c823d03fe3de0ba4eb84fd434971f295",
+    "semantic_hash": "c823d03fe3de0ba4eb84fd434971f295"
+  },
+  "components/doomgeneric/w_merge.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978518,
+    "ast_hash": "ae9291603799abfd8129f52586f6e1fd",
+    "semantic_hash": "ae9291603799abfd8129f52586f6e1fd"
+  },
+  "components/doomgeneric/w_wad.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978518,
+    "ast_hash": "05ee929ae872bcba0a88e5d0cbf1e8fd",
+    "semantic_hash": "05ee929ae872bcba0a88e5d0cbf1e8fd"
+  },
+  "components/doomgeneric/w_wad.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978518,
+    "ast_hash": "3651eadda411c4a8b2e4e48e490f7d8a",
+    "semantic_hash": "3651eadda411c4a8b2e4e48e490f7d8a"
+  },
+  "components/doomgeneric/wi_stuff.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297853,
+    "ast_hash": "77fac88aac0b905901c19e0d1d32ed7a",
+    "semantic_hash": "77fac88aac0b905901c19e0d1d32ed7a"
+  },
+  "components/doomgeneric/wi_stuff.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297853,
+    "ast_hash": "b49c45579f3c14a64924e558984fc09d",
+    "semantic_hash": "b49c45579f3c14a64924e558984fc09d"
+  },
+  "components/doomgeneric/z_zone.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297853,
+    "ast_hash": "9a65b4bdd17bc9ee562be930b2e1ecca",
+    "semantic_hash": "9a65b4bdd17bc9ee562be930b2e1ecca"
+  },
+  "components/doomgeneric/z_zone.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297854,
+    "ast_hash": "2bd8727be86053b75d38d35e65c44535",
+    "semantic_hash": "2bd8727be86053b75d38d35e65c44535"
+  },
+  "components/flash_mmap.h": {
+    "mtime": 1786814325.760306,
+    "seen": 1787283249.297854,
+    "ast_hash": "554a1c33a609232c22b6f15c71706f1c",
+    "semantic_hash": "554a1c33a609232c22b6f15c71706f1c"
+  },
+  "components/mario/ControllerTypes.h": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.297855,
+    "ast_hash": "ce5f35f0e9b0299783f7d8a82debd74d",
+    "semantic_hash": "ce5f35f0e9b0299783f7d8a82debd74d"
+  },
+  "components/mario/apu2A03.h": {
+    "mtime": 1786814326.050394,
+    "seen": 1787283249.297855,
+    "ast_hash": "5213d5d6fb944f4d12b02065e7b14b41",
+    "semantic_hash": "5213d5d6fb944f4d12b02065e7b14b41"
+  },
+  "components/mario/bus.cpp": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.297855,
+    "ast_hash": "df9cb02804fb0362ff831f5ac8f65c94",
+    "semantic_hash": "df9cb02804fb0362ff831f5ac8f65c94"
+  },
+  "components/mario/bus.h": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.297856,
+    "ast_hash": "edcabc9ed5e654b0f409635fea5e14fc",
+    "semantic_hash": "edcabc9ed5e654b0f409635fea5e14fc"
+  },
+  "components/mario/cartridge.cpp": {
+    "mtime": 1786814708.7003522,
+    "seen": 1787283249.297856,
+    "ast_hash": "98c02494202dff71699145bbe2f5b52f",
+    "semantic_hash": "98c02494202dff71699145bbe2f5b52f"
+  },
+  "components/mario/cartridge.h": {
+    "mtime": 1786814498.7734435,
+    "seen": 1787283249.297857,
+    "ast_hash": "a06f728a80fd43f4a07725cca24e6558",
+    "semantic_hash": "a06f728a80fd43f4a07725cca24e6558"
+  },
+  "components/mario/controller.cpp": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.297857,
+    "ast_hash": "acff1a4e31dff10c4d93f757e9906545",
+    "semantic_hash": "acff1a4e31dff10c4d93f757e9906545"
+  },
+  "components/mario/controller.h": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.297857,
+    "ast_hash": "bb7d14538fd8791ab0373b39c3a961ec",
+    "semantic_hash": "bb7d14538fd8791ab0373b39c3a961ec"
+  },
+  "components/mario/cpu6502.cpp": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.297858,
+    "ast_hash": "ee841bc49dba1855dca42874d5c4e35f",
+    "semantic_hash": "ee841bc49dba1855dca42874d5c4e35f"
+  },
+  "components/mario/cpu6502.h": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.297858,
+    "ast_hash": "d08d2dda9bbff71564615d89eefb6ef3",
+    "semantic_hash": "d08d2dda9bbff71564615d89eefb6ef3"
+  },
+  "components/mario/mapper.cpp": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.297859,
+    "ast_hash": "61315b2952daf24fe88cc6f8a12111bf",
+    "semantic_hash": "61315b2952daf24fe88cc6f8a12111bf"
+  },
+  "components/mario/mapper.h": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.297859,
+    "ast_hash": "ae035ed2959212aa2ed53c4232c625df",
+    "semantic_hash": "ae035ed2959212aa2ed53c4232c625df"
+  },
+  "components/mario/mappers/mapper000.cpp": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.297859,
+    "ast_hash": "d059f982e598698d30e1ffaf195b8744",
+    "semantic_hash": "d059f982e598698d30e1ffaf195b8744"
+  },
+  "components/mario/mappers/mapper000.h": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.2978601,
+    "ast_hash": "c913ac4318b58288517d016d4b0c2427",
+    "semantic_hash": "c913ac4318b58288517d016d4b0c2427"
+  },
+  "components/mario/mappers/mapper001.cpp": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.2978601,
+    "ast_hash": "6a0ba6615de14e81239a35453e4adc2d",
+    "semantic_hash": "6a0ba6615de14e81239a35453e4adc2d"
+  },
+  "components/mario/mappers/mapper001.h": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.297861,
+    "ast_hash": "2860bb3ec7d3b63d9cd1155b82a36fdc",
+    "semantic_hash": "2860bb3ec7d3b63d9cd1155b82a36fdc"
+  },
+  "components/mario/mappers/mapper002.cpp": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.297861,
+    "ast_hash": "4d5e20a707c4a75e3b6acff62eb54f2a",
+    "semantic_hash": "4d5e20a707c4a75e3b6acff62eb54f2a"
+  },
+  "components/mario/mappers/mapper002.h": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.297861,
+    "ast_hash": "df04bccbb6533ce811f1cad1c71c2665",
+    "semantic_hash": "df04bccbb6533ce811f1cad1c71c2665"
+  },
+  "components/mario/mappers/mapper003.cpp": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.2978618,
+    "ast_hash": "9f4da4b56562d010cd218a0788c3e2d9",
+    "semantic_hash": "9f4da4b56562d010cd218a0788c3e2d9"
+  },
+  "components/mario/mappers/mapper003.h": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.2978618,
+    "ast_hash": "abd9c636965121158e5ab6486af869c9",
+    "semantic_hash": "abd9c636965121158e5ab6486af869c9"
+  },
+  "components/mario/mappers/mapper004.cpp": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.2978618,
+    "ast_hash": "433ba2e516bc8bde92a5d3767cf6e765",
+    "semantic_hash": "433ba2e516bc8bde92a5d3767cf6e765"
+  },
+  "components/mario/mappers/mapper004.h": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.297863,
+    "ast_hash": "a8213200d0b270a79cb49f313ac4d1b3",
+    "semantic_hash": "a8213200d0b270a79cb49f313ac4d1b3"
+  },
+  "components/mario/mappers/mapper069.cpp": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.297863,
+    "ast_hash": "4f5dfcca028e6181b373a3504dae17bd",
+    "semantic_hash": "4f5dfcca028e6181b373a3504dae17bd"
+  },
+  "components/mario/mappers/mapper069.h": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.297864,
+    "ast_hash": "8b3b9525571a85deb39a61b7300539ee",
+    "semantic_hash": "8b3b9525571a85deb39a61b7300539ee"
+  },
+  "components/mario/ppu2C02.cpp": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.297864,
+    "ast_hash": "1b389e88e0f197b69ca20792ed480371",
+    "semantic_hash": "1b389e88e0f197b69ca20792ed480371"
+  },
+  "components/mario/ppu2C02.h": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.297864,
+    "ast_hash": "fc257b6b6e8444be59fbddbc27038bae",
+    "semantic_hash": "fc257b6b6e8444be59fbddbc27038bae"
+  },
+  "components/mario/rom_backends.h": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.297865,
+    "ast_hash": "8d091e7669ea6627c88cb05046ae09ae",
+    "semantic_hash": "8d091e7669ea6627c88cb05046ae09ae"
+  },
+  "components/mario/rom_types.h": {
+    "mtime": 1786195066.0,
+    "seen": 1787283249.297865,
+    "ast_hash": "2d1ffc0766a2dee0d95c7a9f9a4654e2",
+    "semantic_hash": "2d1ffc0766a2dee0d95c7a9f9a4654e2"
+  },
+  "components/opencalc_breakout.c": {
+    "mtime": 1786595670.2877557,
+    "seen": 1787283249.297865,
+    "ast_hash": "a06ed028cd476c55c0de44b0d4d3624f",
+    "semantic_hash": "a06ed028cd476c55c0de44b0d4d3624f"
+  },
+  "components/opencalc_breakout.h": {
+    "mtime": 1786193844.0,
+    "seen": 1787283249.2978659,
+    "ast_hash": "f0f220ca8ae7413cd7566014eca416da",
+    "semantic_hash": "f0f220ca8ae7413cd7566014eca416da"
+  },
+  "components/opencalc_config.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978659,
+    "ast_hash": "3942fb6734ea10f16261efebac7fe81f",
+    "semantic_hash": "3942fb6734ea10f16261efebac7fe81f"
+  },
+  "components/opencalc_doom.c": {
+    "mtime": 1786595678.1667376,
+    "seen": 1787283249.297867,
+    "ast_hash": "96dc75d12c70d0ef38e878b03195ace9",
+    "semantic_hash": "96dc75d12c70d0ef38e878b03195ace9"
+  },
+  "components/opencalc_doom.h": {
+    "mtime": 1786595678.1313474,
+    "seen": 1787283249.297867,
+    "ast_hash": "c464e0b712ddb3b2c0907f1deff0348d",
+    "semantic_hash": "c464e0b712ddb3b2c0907f1deff0348d"
+  },
+  "components/opencalc_mario.cpp": {
+    "mtime": 1786814691.0404422,
+    "seen": 1787283249.297867,
+    "ast_hash": "fa39dd99264ae93b53e47eccd050c524",
+    "semantic_hash": "fa39dd99264ae93b53e47eccd050c524"
+  },
+  "components/opencalc_mario.h": {
+    "mtime": 1786814364.8242984,
+    "seen": 1787283249.297868,
+    "ast_hash": "9830a4da6a3c399bd655d7d0618bc98d",
+    "semantic_hash": "9830a4da6a3c399bd655d7d0618bc98d"
+  },
+  "components/opencalc_math.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297868,
+    "ast_hash": "fadafb5c55cc1db1e18017f8db6af9ee",
+    "semantic_hash": "fadafb5c55cc1db1e18017f8db6af9ee"
+  },
+  "components/opencalc_math.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297868,
+    "ast_hash": "1a38c9466e35b58fa05c7c0e39bbf6d0",
+    "semantic_hash": "1a38c9466e35b58fa05c7c0e39bbf6d0"
+  },
+  "components/opencalc_persist.c": {
+    "mtime": 1786595615.8920743,
+    "seen": 1787283249.297869,
+    "ast_hash": "bc1e1dd6ce11195fe3cf518b43797533",
+    "semantic_hash": "bc1e1dd6ce11195fe3cf518b43797533"
+  },
+  "components/opencalc_persist.h": {
+    "mtime": 1786814426.0187597,
+    "seen": 1787283249.297869,
+    "ast_hash": "774b273c9e7ccc088d697df752b26f9b",
+    "semantic_hash": "774b273c9e7ccc088d697df752b26f9b"
+  },
+  "components/opencalc_power.c": {
+    "mtime": 1786596727.6600425,
+    "seen": 1787283249.2978702,
+    "ast_hash": "c8c7e92c9223209a52d8fa1e9f18aa10",
+    "semantic_hash": "c8c7e92c9223209a52d8fa1e9f18aa10"
+  },
+  "components/opencalc_power.h": {
+    "mtime": 1786596402.4541156,
+    "seen": 1787283249.2978702,
+    "ast_hash": "61004825ebeba96637faba166d28ff99",
+    "semantic_hash": "61004825ebeba96637faba166d28ff99"
+  },
+  "components/opencalc_snake.c": {
+    "mtime": 1786595670.2531133,
+    "seen": 1787283249.2978702,
+    "ast_hash": "c29d64ae7b43a067ba435bb6c5a14206",
+    "semantic_hash": "c29d64ae7b43a067ba435bb6c5a14206"
+  },
+  "components/opencalc_snake.h": {
+    "mtime": 1786193362.0,
+    "seen": 1787283249.297871,
+    "ast_hash": "ff6f4a604a1c2dafd0949e10623836b1",
+    "semantic_hash": "ff6f4a604a1c2dafd0949e10623836b1"
+  },
+  "components/opencalc_tetris.c": {
+    "mtime": 1786595651.74981,
+    "seen": 1787283249.297871,
+    "ast_hash": "28a78a4307d2304d56ad31b55e5755cf",
+    "semantic_hash": "28a78a4307d2304d56ad31b55e5755cf"
+  },
+  "components/opencalc_tetris.h": {
+    "mtime": 1786156108.0,
+    "seen": 1787283249.297871,
+    "ast_hash": "16e608c7eeb0c41ca3220bffa9a8ded6",
+    "semantic_hash": "16e608c7eeb0c41ca3220bffa9a8ded6"
+  },
+  "components/opencalc_ui.c": {
+    "mtime": 1786597258.8784866,
+    "seen": 1787283249.2978718,
+    "ast_hash": "fac9477b8efa79b6b7779fb5fcb41c17",
+    "semantic_hash": "fac9477b8efa79b6b7779fb5fcb41c17"
+  },
+  "components/opencalc_ui.h": {
+    "mtime": 1786597142.1228783,
+    "seen": 1787283249.2978718,
+    "ast_hash": "852c843de3dfb6cb22b9646d8389fbf8",
+    "semantic_hash": "852c843de3dfb6cb22b9646d8389fbf8"
+  },
+  "components/snake_core.h": {
+    "mtime": 1786193362.0,
+    "seen": 1787283249.2978728,
+    "ast_hash": "847d9cbf2cee319f3d4b45eb1ef721f4",
+    "semantic_hash": "847d9cbf2cee319f3d4b45eb1ef721f4"
+  },
+  "components/storage.c": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978728,
+    "ast_hash": "66135233df33ac27f293a6ee2a904e7d",
+    "semantic_hash": "66135233df33ac27f293a6ee2a904e7d"
+  },
+  "components/storage.h": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.2978728,
+    "ast_hash": "07971efe3e8ce0cb9b4cc9cd1f5df2ad",
+    "semantic_hash": "07971efe3e8ce0cb9b4cc9cd1f5df2ad"
+  },
+  "components/tetris_core.h": {
+    "mtime": 1786156108.0,
+    "seen": 1787283249.297874,
+    "ast_hash": "4738b36582a4c2d14f5b4fafc9f94411",
+    "semantic_hash": "4738b36582a4c2d14f5b4fafc9f94411"
+  },
+  "components/tiny-python.c": {
+    "mtime": 1780972365.8447905,
+    "seen": 1787283249.297874,
+    "ast_hash": "57e579fd0ab6e4b5b90ac84a833c5154",
+    "semantic_hash": "57e579fd0ab6e4b5b90ac84a833c5154"
+  },
+  "components/tiny-python.h": {
+    "mtime": 1780971949.7026153,
+    "seen": 1787283249.297875,
+    "ast_hash": "4436526fd5ea234b3ffb30cc7b7c28e2",
+    "semantic_hash": "4436526fd5ea234b3ffb30cc7b7c28e2"
+  },
+  "components/usb_msc.c": {
+    "mtime": 1780969276.0642462,
+    "seen": 1787283249.297875,
+    "ast_hash": "3971a7f8f0d03ba3f96dbe484ca4f1f8",
+    "semantic_hash": "3971a7f8f0d03ba3f96dbe484ca4f1f8"
+  },
+  "components/usb_msc.h": {
+    "mtime": 1780968624.2601428,
+    "seen": 1787283249.297875,
+    "ast_hash": "689921945438fbff1b5845eadae7b1a2",
+    "semantic_hash": "689921945438fbff1b5845eadae7b1a2"
+  },
+  "config.h": {
+    "mtime": 1786597761.9897628,
+    "seen": 1787283249.297876,
+    "ast_hash": "4fe859cd94a86638fe4f5259304ad82b",
+    "semantic_hash": "4fe859cd94a86638fe4f5259304ad82b"
+  },
+  "main.c": {
+    "mtime": 1786597144.8135788,
+    "seen": 1787283249.297876,
+    "ast_hash": "30ea7c1721c8d6a9a75a0b5d8d11d0f6",
+    "semantic_hash": "30ea7c1721c8d6a9a75a0b5d8d11d0f6"
+  },
+  "CMakeLists.txt": {
+    "mtime": 1786814464.8156362,
+    "seen": 1787283249.297877,
+    "ast_hash": "53ccc0c22772262bc63970e0708e6a3c",
+    "semantic_hash": "53ccc0c22772262bc63970e0708e6a3c"
+  },
+  "components/tiny-python-readme.md": {
+    "mtime": 1780969529.2614326,
+    "seen": 1787283249.297877,
+    "ast_hash": "471993e1486d16e71da03a0b41836b8f",
+    "semantic_hash": "471993e1486d16e71da03a0b41836b8f"
+  },
+  "idf_component.yml": {
+    "mtime": 1779994989.0,
+    "seen": 1787283249.297877,
+    "ast_hash": "6896cef7f50685d1d7dc850904f4bd75",
+    "semantic_hash": "6896cef7f50685d1d7dc850904f4bd75"
+  }
+}

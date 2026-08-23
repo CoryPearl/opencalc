@@ -17,6 +17,7 @@ struct Mapper000_state
 };
 
 Mapper createMapper000(uint8_t PRG_banks, uint8_t CHR_banks, ROMBackend backend, Cartridge* cart);
+void mapper000_destroy(Mapper* mapper);
 
 bool mapper000_cpuRead(Mapper* mapper, uint16_t addr, uint8_t& data);
 bool mapper000_cpuWrite(Mapper* mapper, uint16_t addr, uint8_t data);

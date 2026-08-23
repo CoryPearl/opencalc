@@ -84,6 +84,12 @@ Cartridge::Cartridge(const char* filename, ROMBackend backend)
 
 Cartridge::~Cartridge()
 {
+    switch (mapper_ID)
+    {
+    case 0: mapper000_destroy(&mapper); break;
+    default: break;
+    }
+    rom.close();
 }
 
 bool Cartridge::cpuRead(uint16_t addr, uint8_t& data)
@@ -218,6 +224,9 @@ void Cartridge::createMapper(uint8_t number_PRG_banks, uint8_t number_CHR_banks,
     {
     case 0: mapper = createMapper000(number_PRG_banks, number_CHR_banks, backend, this); break;
     default: is_valid = false; break;
+    }
+    if (!mapper.state) {
+        is_valid = false;
     }
 }
 

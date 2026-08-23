@@ -187,7 +187,11 @@ IRAM_ATTR void Ppu2C02::renderScanline(uint16_t current_scanline)
 inline void Ppu2C02::transferScroll()
 {
     if (!(mask.reg & (1 << 3) || mask.reg & (1 << 4))) return;
-    v.reg = (scanline == 0) ? t.reg : v.reg = (v.reg & ~0x041F) | (t.reg & 0x041F);
+    if (scanline == 0) {
+        v.reg = t.reg;
+    } else {
+        v.reg = (v.reg & ~0x041F) | (t.reg & 0x041F);
+    }
 }
 
 inline void Ppu2C02::incrementY()
