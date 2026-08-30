@@ -126,7 +126,7 @@ After flashing
 When you mointor after flashing, the board will be in serial mode. Press the reset button on the back once to boot the software and be able to check outputs in the USB monitor.
 
 See [firmware/FIRMWARE_README.md](firmware/FIRMWARE_README.md) for build, flash, USB storage, and Doom setup notes.
-See [hardware/pcb/pcb.md](hardware/pcb/pcb.md) for info on the current pcb design.
+See [hardware/pcb/PCB_README.md](hardware/pcb/PCB_README.md) for info on the current pcb design.
 
 ## Status
 

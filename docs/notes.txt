@@ -15,5 +15,6 @@ next prompts:
 - fix errors in build log
 - enter key not working in caluclator app
 - create an animated gif of what the ui lokos like, should be high quality and maybe 20 seconds of just using the calculator
+- look over all readme files includeing hardware and top leval and firmware to make sure looking good
 
 codex resume 019e5120-6419-79a2-838e-e21c6775bba5
