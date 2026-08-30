@@ -1,0 +1,470 @@
+Command: /Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python /Users/corypearl/.espressif/v6.0.1/esp-idf/tools/idf_monitor.py -p /dev/cu.usbmodemopencalc1 -b 115200 --toolchain-prefix xtensa-esp32s3-elf- --target esp32s3 --revision 0 /Users/corypearl/Desktop/opencalc/firmware/build/opencalc.elf /Users/corypearl/Desktop/opencalc/firmware/build/bootloader/bootloader.elf --no-reset -m '/Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python' '/Users/corypearl/.espressif/v6.0.1/esp-idf/tools/idf.py' '-p' '/dev/cu.usbmodemopencalc1'
+
+OpenCalc USB CDC console ready
+Storage and serial are active on this USB-C port.
+[0;32mI (3690) usb: TinyUSB CDC console enabled[0m
+[0;33mW (3690) storage: Failed to set volume label: 12[0m
+[0;32mI (3690) board_init: Wake reason mask: 0x00000001[0m
+[0;32mI (3690) board_init: Initialising ILI9341 on SPI2, 320x240[0m
+[0;32mI (3690) board_init: LCD pins: SCLK=12 MOSI=11 MISO=13 CS=10 DC=14 RST=15 BCKL=47[0m
+[0;32mI (3700) ili9341: LCD panel create success, version: 2.0.2[0m
+[0;32mI (3820) board_init: Backlight PWM GPIO=47. Drive/control this from 3V3 only, never 5V.[0m
+[0;32mI (3850) board_init: LCD visible gap: x=0 y=0[0m
+[0;32mI (3850) board_init: Full-frame LCD DMA buffer ready: 153600 bytes[0m
+[0;32mI (3850) board_init: Keypad ready: 10x5 matrix, scan=columns-low/read-rows, per-key diodes=1, settle=5us[0m
+[0;32mI (3850) board_init: Touch disabled for bring-up[0m
+[0;32mI (3860) board_init: Battery monitor ADC GPIO=7 channel=6 divider=100000/100000 calibrated=1[0m
+[0;32mI (3860) board_init: Display ready[0m
+[0;32mI (3860) main_task: Returned from app_main()[0m
+[0;32mI (3860) usb: USB storage exported to host[0m
+keypad button 29 -> r5 c3 )
+key r5 c3
+keypad button 29 -> r5 c3 )
+key r5 c3
+
+OpenCalc USB CDC console ready
+Storage and serial are active on this USB-C port.
+[0;32mI (3690) usb: TinyUSB CDC console enabled[0m
+[0;33mW (3690) storage: Failed to set volume label: 12[0m
+[0;32mI (3690) board_init: Wake reason mask: 0x00000001[0m
+[0;32mI (3690) board_init: Initialising ILI9341 on SPI2, 320x240[0m
+[0;32mI (3690) board_init: LCD pins: SCLK=12 MOSI=11 MISO=13 CS=10 DC=14 RST=15 BCKL=47[0m
+[0;32mI (3700) ili9341: LCD panel create success, version: 2.0.2[0m
+[0;32mI (3820) board_init: Backlight PWM GPIO=47. Drive/control this from 3V3 only, never 5V.[0m
+[0;32mI (3850) board_init: LCD visible gap: x=0 y=0[0m
+[0;32mI (3850) board_init: Full-frame LCD DMA buffer ready: 153600 bytes[0m
+[0;32mI (3850) board_init: Keypad ready: 10x5 matrix, scan=columns-low/read-rows, per-key diodes=1, settle=5us[0m
+[0;32mI (3850) board_init: Touch disabled for bring-up[0m
+[0;32mI (3860) board_init: Battery monitor ADC GPIO=7 channel=6 divider=100000/100000 calibrated=1[0m
+[0;32mI (3860) board_init: Display ready[0m
+[0;32mI (3860) main_task: Returned from app_main()[0m
+[0;32mI (3860) usb: USB storage exported to host[0m
+keypad button 28 -> r5 c2 (
+key r5 c2
+keypad button 13 -> r2 c2 back
+key r2 c2
+keypad button 15 -> r2 c4 right
+key r2 c4
+keypad button 9 -> r1 c3 left
+key r1 c3
+
+OpenCalc USB CDC console ready
+Storage and serial are active on this USB-C port.
+[0;32mI (3690) usb: TinyUSB CDC console enabled[0m
+[0;33mW (3690) storage: Failed to set volume label: 12[0m
+[0;32mI (3690) board_init: Wake reason mask: 0x00000001[0m
+[0;32mI (3690) board_init: Initialising ILI9341 on SPI2, 320x240[0m
+[0;32mI (3690) board_init: LCD pins: SCLK=12 MOSI=11 MISO=13 CS=10 DC=14 RST=15 BCKL=47[0m
+[0;32mI (3700) ili9341: LCD panel create success, version: 2.0.2[0m
+[0;32mI (3820) board_init: Backlight PWM GPIO=47. Drive/control this from 3V3 only, never 5V.[0m
+[0;32mI (3850) board_init: LCD visible gap: x=0 y=0[0m
+[0;32mI (3850) board_init: Full-frame LCD DMA buffer ready: 153600 bytes[0m
+[0;32mI (3850) board_init: Keypad ready: 10x5 matrix, scan=columns-low/read-rows, per-key diodes=1, settle=5us[0m
+[0;32mI (3850) board_init: Touch disabled for bring-up[0m
+[0;32mI (3860) board_init: Battery monitor ADC GPIO=7 channel=6 divider=100000/100000 calibrated=1[0m
+[0;32mI (3860) board_init: Display ready[0m
+[0;32mI (3860) main_task: Returned from app_main()[0m
+[0;32mI (3860) usb: USB storage exported to host[0m
+keypad button 46 -> r9 c0 on (home)
+key r9 c0
+[0;32mI (10460) usb: USB storage exported to host[0m
+keypad button 15 -> r2 c4 right
+key r2 c4
+keypad button 9 -> r1 c3 left
+key r1 c3
+keypad button 50 -> r9 c4 enter
+key r9 c4
+keypad button 38 -> r7 c2 5
+key r7 c2
+keypad button 38 -> r7 c2 5
+key r7 c2
+keypad button 38 -> r7 c2 5
+key r7 c2
+keypad button 38 -> r7 c2 5
+key r7 c2
+keypad button 38 -> r7 c2 5
+key r7 c2
+keypad button 38 -> r7 c2 5
+key r7 c2
+keypad button 37 -> r7 c1 4
+key r7 c1
+keypad button 30 -> r5 c4 +
+key r5 c4
+keypad button 32 -> r6 c1 7
+key r6 c1
+keypad button 32 -> r6 c1 7
+key r6 c1
+keypad button 32 -> r6 c1 7
+key r6 c1
+keypad button 32 -> r6 c1 7
+key r6 c1
+keypad button 32 -> r6 c1 7
+key r6 c1
+keypad button 50 -> r9 c4 enter
+key r9 c4
+keypad button 50 -> r9 c4 enter
+key r9 c4
+keypad button 50 -> r9 c4 enter
+key r9 c4
+keypad button 50 -> r9 c4 enter
+key r9 c4
+keypad button 50 -> r9 c4 enter
+key r9 c4
+keypad button 5 -> r0 c4 graph
+key r0 c4
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+keypad button 7 -> r1 c1 mode
+key r1 c1
+[0;32mI (73720) usb: USB storage exported to host[0m
+keypad button 11 -> r2 c0 alpha
+key r2 c0
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+keypad button 50 -> r9 c4 enter
+key r9 c4
+tetris on
+keypad button 9 -> r1 c3 left
+keypad button 15 -> r2 c4 right
+keypad button 10 -> r1 c4 up
+keypad button 9 -> r1 c3 left
+keypad button 9 -> r1 c3 left
+keypad button 9 -> r1 c3 left
+keypad button 9 -> r1 c3 left
+keypad button 46 -> r9 c0 on (home)
+[0;32mI (129550) usb: USB storage exported to host[0m
+keypad button 14 -> r2 c3 down
+key r2 c3
+keypad button 50 -> r9 c4 enter
+key r9 c4
+[0;32mI (133600) usb: MSC event 0, owner=usb[0m
+[0;32mI (133600) usb: MSC event 1, owner=app[0m
+[0;32mI (133600) usb: USB storage mounted for app[0m
+[0;32mI (133610) doom: Starting Doom with /data/doom1.wad[0m
+ 
+OpenCalc USB CDC console ready
+Storage and serial are active on this USB-C port.
+[0;32mI (3691) usb: TinyUSB CDC console enabled[0m
+[0;33mW (3691) storage: Failed to set volume label: 12[0m
+[0;32mI (3691) board_init: Wake reason mask: 0x00000001[0m
+[0;32mI (3691) board_init: Initialising ILI9341 on SPI2, 320x240[0m
+[0;32mI (3691) board_init: LCD pins: SCLK=12 MOSI=11 MISO=13 CS=10 DC=14 RST=15 BCKL=47[0m
+[0;32mI (3701) ili9341: LCD panel create success, version: 2.0.2[0m
+[0;32mI (3821) board_init: Backlight PWM GPIO=47. Drive/control this from 3V3 only, never 5V.[0m
+[0;32mI (3851) board_init: LCD visible gap: x=0 y=0[0m
+[0;32mI (3851) board_init: Full-frame LCD DMA buffer ready: 153600 bytes[0m
+[0;32mI (3851) board_init: Keypad ready: 10x5 matrix, scan=columns-low/read-rows, per-key diodes=1, settle=5us[0m
+[0;32mI (3851) board_init: Touch disabled for bring-up[0m
+[0;32mI (3861) board_init: Battery monitor ADC GPIO=7 channel=6 divider=100000/100000 calibrated=1[0m
+[0;32mI (3861) board_init: Display ready[0m
+[0;32mI (3861) main_task: Returned from app_main()[0m
+[0;32mI (3861) usb: USB storage exported to host[0m
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+keypad button 11 -> r2 c0 alpha
+key r2 c0
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+keypad button 11 -> r2 c0 alpha
+key r2 c0
+keypad button 11 -> r2 c0 alpha
+key r2 c0
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+keypad button 11 -> r2 c0 alpha
+key r2 c0
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+keypad button 14 -> r2 c3 down
+key r2 c3
+keypad button 14 -> r2 c3 down
+key r2 c3
+keypad button 50 -> r9 c4 enter
+key r9 c4
+snake on
+keypad button 10 -> r1 c4 up
+keypad button 15 -> r2 c4 right
+keypad button 14 -> r2 c3 down
+keypad button 9 -> r1 c3 left
+keypad button 46 -> r9 c0 on (home)
+[0;32mI (29671) usb: USB storage exported to host[0m
+keypad button 14 -> r2 c3 down
+key r2 c3
+keypad button 14 -> r2 c3 down
+key r2 c3
+keypad button 50 -> r9 c4 enter
+key r9 c4
+[0;32mI (34271) usb: MSC event 0, owner=usb[0m
+[0;32mI (34271) usb: MSC event 1, owner=app[0m
+[0;32mI (34271) usb: USB storage mounted for app[0m
+CRC32: D445F698
+Allocated 32 KB for PRG ROM, free heap: 5975764 bytes
+Allocated 8 KB for CHR ROM, free heap: 5967568 bytes
+Cartridge (Mapper 0) Initialized
+mario on
+keypad button 14 -> r2 c3 down
+keypad button 10 -> r1 c4 up
+keypad button 14 -> r2 c3 down
+keypad button 9 -> r1 c3 left
+keypad button 15 -> r2 c4 right
+keypad button 1 -> r0 c0 y=
+keypad button 50 -> r9 c4 enter
+keypad button 50 -> r9 c4 enter
+keypad button 15 -> r2 c4 right
+keypad button 9 -> r1 c3 left
+keypad button 10 -> r1 c4 up
+keypad button 10 -> r1 c4 up
+keypad button 14 -> r2 c3 down
+keypad button 46 -> r9 c0 on (home)
+[0;32mI (57891) usb: MSC event 0, owner=app[0m
+[0;32mI (57891) usb: MSC event 1, owner=usb[0m
+[0;32mI (57891) usb: USB storage exported to host[0m
+keypad button 46 -> r9 c0 on (home)
+key r9 c0
+[0;32mI (57971) usb: USB storage exported to host[0m
+keypad button 50 -> r9 c4 enter
+key r9 c4
+keypad button 32 -> r6 c1 7
+key r6 c1
+keypad button 30 -> r5 c4 +
+key r5 c4
+keypad button 32 -> r6 c1 7
+key r6 c1
+keypad button 50 -> r9 c4 enter
+key r9 c4
+calc 7+7 => 14
+keypad button 38 -> r7 c2 5
+key r7 c2
+keypad button 38 -> r7 c2 5
+key r7 c2
+keypad button 38 -> r7 c2 5
+key r7 c2
+keypad button 38 -> r7 c2 5
+key r7 c2
+keypad button 38 -> r7 c2 5
+key r7 c2
+keypad button 30 -> r5 c4 +
+key r5 c4
+keypad button 39 -> r7 c3 6
+key r7 c3
+keypad button 39 -> r7 c3 6
+key r7 c3
+keypad button 39 -> r7 c3 6
+key r7 c3
+keypad button 39 -> r7 c3 6
+key r7 c3
+keypad button 39 -> r7 c3 6
+key r7 c3
+keypad button 39 -> r7 c3 6
+key r7 c3
+keypad button 50 -> r9 c4 enter
+key r9 c4
+calc 55555+666666 => 722221
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+keypad button 7 -> r1 c1 mode
+key r1 c1
+[0;32mI (95951) usb: USB storage exported to host[0m
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+keypad button 11 -> r2 c0 alpha
+key r2 c0
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+keypad button 14 -> r2 c3 down
+key r2 c3
+keypad button 14 -> r2 c3 down
+key r2 c3
+keypad button 14 -> r2 c3 down
+key r2 c3
+keypad button 50 -> r9 c4 enter
+key r9 c4
+breakout on
+keypad button 50 -> r9 c4 enter
+keypad button 15 -> r2 c4 right
+keypad button 15 -> r2 c4 right
+keypad button 15 -> r2 c4 right
+keypad button 9 -> r1 c3 left
+keypad button 15 -> r2 c4 right
+keypad button 15 -> r2 c4 right
+keypad button 9 -> r1 c3 left
+keypad button 9 -> r1 c3 left
+keypad button 6 -> r1 c0 2nd
+keypad button 7 -> r1 c1 mode
+keypad button 7 -> r1 c1 mode
+keypad button 6 -> r1 c0 2nd
+keypad button 7 -> r1 c1 mode
+keypad button 46 -> r9 c0 on (home)
+[0;32mI (116681) usb: USB storage exported to host[0m
+keypad button 46 -> r9 c0 on (home)
+key r9 c0
+[0;32mI (116761) usb: USB storage exported to host[0m
+keypad button 11 -> r2 c0 alpha
+key r2 c0
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+keypad button 14 -> r2 c3 down
+key r2 c3
+keypad button 50 -> r9 c4 enter
+key r9 c4
+[0;32mI (122421) usb: MSC event 0, owner=usb[0m
+[0;32mI (122421) usb: MSC event 1, owner=app[0m
+[0;32mI (122421) usb: USB storage mounted for app[0m
+[0;32mI (122431) doom: Starting Doom with /data/doom1.wad[0m
+ 
+OpenCalc USB CDC console ready
+Storage and serial are active on this USB-C port.
+[0;32mI (3691) usb: TinyUSB CDC console enabled[0m
+[0;33mW (3691) storage: Failed to set volume label: 12[0m
+[0;32mI (3691) board_init: Wake reason mask: 0x00000001[0m
+[0;32mI (3691) board_init: Initialising ILI9341 on SPI2, 320x240[0m
+[0;32mI (3691) board_init: LCD pins: SCLK=12 MOSI=11 MISO=13 CS=10 DC=14 RST=15 BCKL=47[0m
+[0;32mI (3701) ili9341: LCD panel create success, version: 2.0.2[0m
+[0;32mI (3821) board_init: Backlight PWM GPIO=47. Drive/control this from 3V3 only, never 5V.[0m
+[0;32mI (3851) board_init: LCD visible gap: x=0 y=0[0m
+[0;32mI (3851) board_init: Full-frame LCD DMA buffer ready: 153600 bytes[0m
+[0;32mI (3851) board_init: Keypad ready: 10x5 matrix, scan=columns-low/read-rows, per-key diodes=1, settle=5us[0m
+[0;32mI (3851) board_init: Touch disabled for bring-up[0m
+[0;32mI (3861) board_init: Battery monitor ADC GPIO=7 channel=6 divider=100000/100000 calibrated=1[0m
+[0;32mI (3861) board_init: Display ready[0m
+[0;32mI (3861) main_task: Returned from app_main()[0m
+[0;32mI (3861) usb: USB storage exported to host[0m
+keypad button 18 -> r3 c2 prgm
+key r3 c2
+keypad button 50 -> r9 c4 enter
+key r9 c4
+[0;32mI (87121) usb: MSC event 0, owner=usb[0m
+[0;32mI (87121) usb: MSC event 1, owner=app[0m
+[0;32mI (87121) usb: USB storage mounted for app[0m
+[0;32mI (87131) usb: USB storage mounted for app[0m
+keypad button 50 -> r9 c4 enter
+key r9 c4
+Running /data/scripts/fib.py
+python memory: stack_free=18088 internal_free=34862 psram_free=5989440
+Python finished: ok
+keypad button 50 -> r9 c4 enter
+key r9 c4
+[0;32mI (93551) usb: USB storage mounted for app[0m
+keypad button 46 -> r9 c0 on (home)
+key r9 c0
+[0;32mI (95821) usb: MSC event 0, owner=app[0m
+[0;32mI (95821) usb: MSC event 1, owner=usb[0m
+[0;32mI (95821) usb: USB storage exported to host[0m
+keypad button 15 -> r2 c4 right
+key r2 c4
+keypad button 14 -> r2 c3 down
+key r2 c3
+keypad button 15 -> r2 c4 right
+key r2 c4
+keypad button 9 -> r1 c3 left
+key r1 c3
+keypad button 9 -> r1 c3 left
+key r1 c3
+keypad button 10 -> r1 c4 up
+key r1 c4
+keypad button 15 -> r2 c4 right
+key r2 c4
+keypad button 14 -> r2 c3 down
+key r2 c3
+keypad button 9 -> r1 c3 left
+key r1 c3
+keypad button 15 -> r2 c4 right
+key r2 c4
+keypad button 15 -> r2 c4 right
+key r2 c4
+keypad button 15 -> r2 c4 right
+key r2 c4
+keypad button 14 -> r2 c3 down
+key r2 c3
+keypad button 9 -> r1 c3 left
+key r1 c3
+keypad button 9 -> r1 c3 left
+key r1 c3
+keypad button 9 -> r1 c3 left
+key r1 c3
+keypad button 50 -> r9 c4 enter
+key r9 c4
+keypad button 9 -> r1 c3 left
+key r1 c3
+brightness 70%
+keypad button 9 -> r1 c3 left
+key r1 c3
+brightness 60%
+keypad button 9 -> r1 c3 left
+key r1 c3
+brightness 50%
+keypad button 9 -> r1 c3 left
+key r1 c3
+brightness 40%
+keypad button 9 -> r1 c3 left
+key r1 c3
+brightness 30%
+keypad button 15 -> r2 c4 right
+key r2 c4
+brightness 40%
+keypad button 15 -> r2 c4 right
+key r2 c4
+brightness 50%
+keypad button 15 -> r2 c4 right
+key r2 c4
+brightness 60%
+keypad button 15 -> r2 c4 right
+key r2 c4
+brightness 70%
+keypad button 15 -> r2 c4 right
+key r2 c4
+brightness 80%
+keypad button 15 -> r2 c4 right
+key r2 c4
+brightness 90%
+keypad button 15 -> r2 c4 right
+key r2 c4
+brightness 100%
+keypad button 14 -> r2 c3 down
+key r2 c3
+keypad button 14 -> r2 c3 down
+key r2 c3
+keypad button 15 -> r2 c4 right
+key r2 c4
+keypad button 9 -> r1 c3 left
+key r1 c3
+keypad button 50 -> r9 c4 enter
+key r9 c4
+[0;32mI (187821) pm: Frequency switching config: CPU_MAX: 160, APB_MAX: 80, APB_MIN: 80, Light sleep: DISABLED[0m
+keypad button 50 -> r9 c4 enter
+key r9 c4
+[0;32mI (188941) pm: Frequency switching config: CPU_MAX: 160, APB_MAX: 80, APB_MIN: 80, Light sleep: DISABLED[0m
+keypad button 14 -> r2 c3 down
+key r2 c3
+keypad button 50 -> r9 c4 enter
+key r9 c4
+keypad button 50 -> r9 c4 enter
+key r9 c4
+keypad button 14 -> r2 c3 down
+key r2 c3
+keypad button 50 -> r9 c4 enter
+key r9 c4
+[0;32mI (193811) pm: Frequency switching config: CPU_MAX: 160, APB_MAX: 80, APB_MIN: 80, Light sleep: DISABLED[0m
+factory reset runtime state
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+keypad button 11 -> r2 c0 alpha
+key r2 c0
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+keypad button 41 -> r8 c0 sto
+key r8 c0
+stored Ans=0
+keypad button 46 -> r9 c0 on (home)
+key r9 c0
+[0;32mI (202361) usb: USB storage exported to host[0m

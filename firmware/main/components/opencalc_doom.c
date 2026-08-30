@@ -9,12 +9,14 @@
 #include "doomgeneric/m_menu.h"
 
 #include "esp_log.h"
+#include "esp_heap_caps.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/stat.h>
 
 static const char *TAG = "doom";
@@ -33,16 +35,30 @@ static unsigned char s_window_weapon_key = 0;
 static int s_serial_pressed_key = 0;
 static int64_t s_serial_release_time_us = 0;
 static bool s_doom_started = false;
-static EXT_RAM_BSS_ATTR uint32_t s_doom_frame_320x240[320 * 240];
 static char *s_doom_argv[] = {
     "opencalc-doom",
     "-iwad",
     "/data/doom1.wad",
     "-nosound",
     "-nomusic",
+    "-nogui",
+    "-mb",
+    "4",
 };
 static const int s_doom_argc = sizeof(s_doom_argv) / sizeof(s_doom_argv[0]);
 enum { OPENCALC_DOOM_NEXT_WEAPON_KEY = 'n' };
+
+static void doom_log_resources(const char *stage)
+{
+    ESP_LOGI(TAG,
+             "%s: internal free=%u largest=%u, PSRAM free=%u largest=%u, stack free=%u",
+             stage,
+             (unsigned int)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
+             (unsigned int)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
+             (unsigned int)heap_caps_get_free_size(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT),
+             (unsigned int)heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT),
+             (unsigned int)uxTaskGetStackHighWaterMark(NULL));
+}
 
 static void doom_clear_input_state(void)
 {
@@ -231,13 +247,19 @@ bool opencalc_doom_start(void)
     }
 
     ESP_LOGI(TAG, "Starting Doom with /data/doom1.wad");
+    doom_log_resources("before Doom init");
     key_nextweapon = OPENCALC_DOOM_NEXT_WEAPON_KEY;
     board_display_lock();
     board_draw_text_screen("doom");
     board_display_unlock();
-    doomgeneric_Create(s_doom_argc, s_doom_argv);
+    if (!doomgeneric_Create(s_doom_argc, s_doom_argv)) {
+        ESP_LOGE(TAG, "Doom initialization failed");
+        doom_log_resources("after failed Doom init");
+        return false;
+    }
     doom_restart_to_main_menu();
     s_doom_started = true;
+    doom_log_resources("after Doom init");
     return true;
 }
 
@@ -259,19 +281,9 @@ void DG_DrawFrame(void)
         return;
     }
 
-    for (int y = 0; y < 240; y++) {
-        int src_y = (y * 200) / 240;
-        const uint32_t *src_row = src + src_y * 320;
-        uint32_t *dst_row = s_doom_frame_320x240 + y * 320;
-        for (int x = 0; x < 320; x++) {
-            dst_row[x] = src_row[x];
-        }
-    }
-
     board_display_lock();
-    board_draw_rgb888_frame_320x240(s_doom_frame_320x240);
+    board_draw_rgb888_frame_320x200(src);
     board_display_unlock();
-    vTaskDelay(pdMS_TO_TICKS(1));
 }
 
 bool opencalc_doom_press_button_number(int number)

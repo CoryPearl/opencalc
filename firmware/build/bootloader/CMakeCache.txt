@@ -261,7 +261,7 @@ IGNORE_EXTRA_COMPONENT:UNINITIALIZED=
 PROJECT_SOURCE_DIR:UNINITIALIZED=/Users/corypearl/Desktop/opencalc/firmware
 
 //No help, variable specified on the command line.
-PYTHON:UNINITIALIZED=/Users/corypearl/.espressif/python_env/idf6.0_py3.13_env/bin/python
+PYTHON:UNINITIALIZED=/Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python
 
 //No help, variable specified on the command line.
 PYTHON_DEPS_CHECKED:UNINITIALIZED=1

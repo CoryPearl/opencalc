@@ -6,11 +6,8 @@
 // font, the same left info column (x=4..97) and 200x200 arena at
 // (110,20) used by Snake.
 //
-// The matrix keypad is event-driven (one press = one event), so paddle
-// movement here is a fixed step per button press, same as how Tetris/
-// Snake handle their button-driven movement on this hardware -- there's
-// no "held" state to read. If your keypad driver can report continuous
-// hold, swap the button-number case for a per-tick move while held.
+// Physical left/right input is sampled every frame so the paddle follows a
+// held key. Serial button commands remain discrete taps for bring-up.
 //
 // Wiring in: identical pattern to opencalc_tetris.c / opencalc_snake.c --
 //   opencalc_breakout_init() once at boot, opencalc_breakout_enter() to
@@ -34,6 +31,7 @@
 
 #define UI_W 320
 #define UI_H 240
+#define BREAKOUT_PADDLE_SPEED 220.0f
 
 #define C_BG      0x0b0d10u
 #define C_SURFACE 0x171b21u
@@ -335,6 +333,16 @@ void opencalc_breakout_tick(void)
     float dt_ms = (float)(now - s_last_us) / 1000.0f;
     s_last_us = now;
     if (dt_ms > 200.0f) dt_ms = 200.0f;
+
+    bool matrix[BOARD_KEYPAD_ROWS][BOARD_KEYPAD_COLS];
+    board_keypad_scan_matrix(matrix);
+    bool left_held = matrix[1][3];
+    bool right_held = matrix[2][4];
+    if (left_held != right_held) {
+        float direction = left_held ? -1.0f : 1.0f;
+        breakout_move_paddle(&s_game,
+                             direction * BREAKOUT_PADDLE_SPEED * (dt_ms / 1000.0f));
+    }
 
     breakout_step(&s_game, dt_ms);
     breakout_note_score();

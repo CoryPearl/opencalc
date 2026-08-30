@@ -119,9 +119,13 @@ idf_component_register(
 
 target_compile_definitions(${COMPONENT_LIB} PRIVATE PY_MAX_TOKENS=128)
 target_compile_definitions(${COMPONENT_LIB} PRIVATE DOOMGENERIC_RESX=320 DOOMGENERIC_RESY=200)
-target_compile_definitions(${COMPONENT_LIB} PRIVATE COMPOSITE_VIDEO=1 FRAMESKIP=1)
+target_compile_definitions(${COMPONENT_LIB} PRIVATE COMPOSITE_VIDEO=1 OPENCALC_NONBLOCKING_DOOM_TICS=1)
 target_compile_options(${COMPONENT_LIB} PRIVATE
     -Wno-error
+    -Wno-dangling-pointer
+    -Wno-format
+    -Wno-format-truncation
+    -Wno-implicit-fallthrough
     -Wno-error=missing-field-initializers
     -Wno-error=unterminated-string-initialization
     -Wno-error=format
@@ -131,4 +135,10 @@ target_compile_options(${COMPONENT_LIB} PRIVATE
     -Wno-error=unused-but-set-parameter
     -Wno-error=unused-variable
     -Wno-error=unused-const-variable
+    -Wno-missing-field-initializers
+    -Wno-type-limits
+    -Wno-unused-but-set-parameter
+    -Wno-unused-but-set-variable
+    -Wno-unused-const-variable
+    -Wno-unused-variable
 )

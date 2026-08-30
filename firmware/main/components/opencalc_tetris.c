@@ -197,9 +197,15 @@ static void draw_ghost(int x, int y, int size)
 static tetris_t s_game;
 static bool s_active = false;
 static int64_t s_last_us = 0;
-static int64_t s_down_repeat_us = 0;
+static bool s_left_was_held = false;
+static bool s_right_was_held = false;
+static int64_t s_left_repeat_us = 0;
+static int64_t s_right_repeat_us = 0;
 static long s_high_score = 0;
 static bool s_high_score_dirty = false;
+
+#define TETRIS_HORIZONTAL_DAS_US 180000
+#define TETRIS_HORIZONTAL_ARR_US 70000
 
 static void tetris_note_score(void)
 {
@@ -344,11 +350,11 @@ static void draw_tetris_frame(void)
     y += 6;
 
     /* key instructions, bottom-left, under the info panels */
-    text(LEFT_X, y, "9/15 MOVE", T_MUTED, 1); y += 8;
-    text(LEFT_X, y, "10/6 ROTATE", T_MUTED, 1); y += 8;
-    text(LEFT_X, y, "50 DROP", T_MUTED, 1); y += 8;
-    text(LEFT_X, y, "41 HOLD", T_MUTED, 1); y += 8;
-    text(LEFT_X, y, "13 PAUSE", T_MUTED, 1);
+    text(LEFT_X, y, "R/L MOVE", T_MUTED, 1); y += 8;
+    text(LEFT_X, y, "Up/Down ROTATE", T_MUTED, 1); y += 8;
+    text(LEFT_X, y, "Y= DROP", T_MUTED, 1); y += 8;
+    text(LEFT_X, y, "Window HOLD", T_MUTED, 1); y += 8;
+    text(LEFT_X, y, "Back PAUSE", T_MUTED, 1);
 
     /* --- right column: next 4 pieces --- */
     text(RIGHT_X, BOARD_Y, "NEXT", T_ACCENT, 1);
@@ -375,7 +381,7 @@ static void draw_tetris_frame(void)
         const char *msg = "GAME OVER";
         int w = text_width(msg, 1);
         text(BOARD_X + (BOARD_W_PX - w) / 2, BOARD_Y + BOARD_H_PX / 2 - 12, msg, T_DANGER, 1);
-        const char *msg2 = "50=RETRY";
+        const char *msg2 = "Enter=RETRY";
         int w2 = text_width(msg2, 1);
         text(BOARD_X + (BOARD_W_PX - w2) / 2, BOARD_Y + BOARD_H_PX / 2 + 2, msg2, T_MUTED, 1);
     }
@@ -401,7 +407,10 @@ void opencalc_tetris_enter(void)
     tetris_init(&s_game, seed);
     s_active = true;
     s_last_us = esp_timer_get_time();
-    s_down_repeat_us = 0;
+    s_left_was_held = false;
+    s_right_was_held = false;
+    s_left_repeat_us = 0;
+    s_right_repeat_us = 0;
     draw_tetris_frame();
 }
 
@@ -423,15 +432,39 @@ void opencalc_tetris_tick(void)
     }
 
     bool matrix[BOARD_KEYPAD_ROWS][BOARD_KEYPAD_COLS];
-    bool soft_drop = false;
-    if (!s_game.game_over && board_keypad_scan_matrix(matrix) && matrix[2][3]) {
-        if (s_down_repeat_us == 0 || now >= s_down_repeat_us) {
-            soft_drop = true;
-            s_down_repeat_us = now + 140000;
+    board_keypad_scan_matrix(matrix);
+
+    bool controls_enabled = !s_game.game_over && !s_game.paused;
+    bool left_held = controls_enabled && matrix[1][3];
+    bool right_held = controls_enabled && matrix[2][4];
+    bool soft_drop = controls_enabled && matrix[2][3];
+
+    /* The edge-driven keypad handler performs the first horizontal move.
+     * Repeat only after DAS so a tap still moves exactly one column. */
+    if (left_held && !right_held) {
+        if (!s_left_was_held) {
+            s_left_repeat_us = now + TETRIS_HORIZONTAL_DAS_US;
+        } else if (now >= s_left_repeat_us) {
+            tetris_try_move(&s_game, -1, 0);
+            s_left_repeat_us = now + TETRIS_HORIZONTAL_ARR_US;
         }
     } else {
-        s_down_repeat_us = 0;
+        s_left_repeat_us = 0;
     }
+
+    if (right_held && !left_held) {
+        if (!s_right_was_held) {
+            s_right_repeat_us = now + TETRIS_HORIZONTAL_DAS_US;
+        } else if (now >= s_right_repeat_us) {
+            tetris_try_move(&s_game, 1, 0);
+            s_right_repeat_us = now + TETRIS_HORIZONTAL_ARR_US;
+        }
+    } else {
+        s_right_repeat_us = 0;
+    }
+
+    s_left_was_held = left_held;
+    s_right_was_held = right_held;
 
     tetris_step(&s_game, dt_ms, soft_drop);
     tetris_note_score();
@@ -461,12 +494,11 @@ bool opencalc_tetris_press_button_number(int number)
     case 15: /* right */
         tetris_try_move(&s_game, 1, 0);
         break;
-    case 14: /* down -> single-step soft drop (matrix keypad is event driven, not held-state) */
+    case 14: /* down -> initial step; tick() maintains soft drop while held */
         tetris_try_move(&s_game, 0, 1);
         if (!s_game.game_over) {
             s_game.score += 1;
         }
-        s_down_repeat_us = esp_timer_get_time() + 180000;
         break;
     case 10: /* up -> rotate clockwise */
         tetris_try_rotate(&s_game, 1);

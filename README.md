@@ -9,8 +9,8 @@ OpenCalc is an open source graphing calculator project inspired by the TI-84, bu
 The calculator runs **OpenCalc OS**, the project’s open-source ESP32-S3 operating environment. OpenCalc OS includes the calculator interface, math and graphing engines, built-in apps, Python-style scripting runtime, USB file storage, keypad handling, display drivers, and power management.
 
 <p align="center">
-    <img src="hardware/pcb/pcb_asm_front.jpg" alt="PCBFRONT" width="300" height="500">
-    <img src="hardware/pcb/pcb_asm_back.jpg" alt="PCBFRONT" width="300" height="500">
+  <img src="hardware/pcb/pcb_done_v4_front.png" alt="PCB Front" width="45%">
+  <img src="hardware/pcb/pcb_done_v4_back.png" alt="PCB Back" width="45%">
 </p>
 
 \*\*First prototype PCB
@@ -32,6 +32,7 @@ The current prototype includes:
 - 10x5 button matrix support
 - USB mass storage named `opencalc`
 - flashed script/storage image support
+- Python style scripting - [README](firmware/main/components/tiny-python-readme.md)
 - graphing calculator UI with calculator, graph, table, apps, settings, scripts, matrix, stats, finance, conics, and inequality graphing
 - A few games
 - Wi-Fi + bluetooth available but disabled for now due to no use for them
@@ -95,6 +96,32 @@ firmware/   OpenCalc OS source for the ESP32-S3 calculator
 hardware/   key layouts, graphics, and hardware design files
 docs/       notes and project website files
 ```
+
+## Flash And Monitor
+
+Plug USB-C port into computer.
+
+While holding boot, press reset, then let go of both.
+
+From a fresh terminal:
+
+```zsh
+cd firmware
+idf
+idf.py build
+idf.py flash
+idf.py monitor
+```
+
+If you need the specific port name, list available ports with:
+
+```zsh
+ls /dev/cu.*
+```
+
+After flashing
+
+When you mointor after flashing, the board will be in serial mode. Press the reset button on the back once to boot the software and be able to check outputs in the USB monitor.
 
 See [firmware/FIRMWARE_README.md](firmware/FIRMWARE_README.md) for build, flash, USB storage, and Doom setup notes.
 See [hardware/pcb/pcb.md](hardware/pcb/pcb.md) for info on the current pcb design.

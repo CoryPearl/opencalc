@@ -1,0 +1,256 @@
+Command: /Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python /Users/corypearl/.espressif/v6.0.1/esp-idf/tools/idf_monitor.py -p /dev/cu.usbmodemopencalc1 -b 115200 --toolchain-prefix xtensa-esp32s3-elf- --target esp32s3 --revision 0 /Users/corypearl/Desktop/opencalc/firmware/build/opencalc.elf /Users/corypearl/Desktop/opencalc/firmware/build/bootloader/bootloader.elf --no-reset -m '/Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python' '/Users/corypearl/.espressif/v6.0.1/esp-idf/tools/idf.py' '-p' '/dev/cu.usbmodemopencalc1'
+fps=24
+fps=24
+keypad button 46 -> r9 c0 on (home)
+keypad button 46 -> r9 c0 on (home)
+key r9 c0
+fps=36
+fps=50
+fps=50
+fps=50
+fps=50
+fps=50
+fps=50
+keypad button 11 -> r2 c0 alpha
+key r2 c0
+fps=46
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+fps=46
+keypad button 14 -> r2 c3 down
+key r2 c3
+fps=46
+fps=50
+keypad button 50 -> r9 c4 enter
+key r9 c4
+[0;32mI (41594) usb: MSC event 0, owner=usb[0m
+[0;32mI (41594) usb: MSC event 1, owner=app[0m
+[0;32mI (41594) usb: USB storage mounted for app[0m
+[0;32mI (41594) doom: Starting Doom with /data/doom1.wad[0m
+[0;32mI (41604) doom: before Doom init: internal free=62158 largest=34816, PSRAM free=5835836 largest=5767168, stack free=18152[0m
+ deathmatch: 0  startmap: 1  startepisode: 1
+player 1 of 1 (1 nodes)
+Emulating the behavior of the 'Doom 1.9' executable.
+HU_Init: Setting up heads up display.
+ST_Init: Init status bar.
+[0;32mI (42104) doom: Title: DOOM Shareware[0m
+I_InitGraphics: framebuffer: x_res: 320, y_res: 200, x_virtual: 320, y_virtual: 200, bpp: 32
+I_InitGraphics: framebuffer: RGBA: 8888, red_off: 16, green_off: 8, blue_off: 0, transp_off: 24
+I_InitGraphics: DOOM screen size: w x h: 320 x 200
+I_InitGraphics: Auto-scaling factor: 1
+[0;32mI (43254) doom: after Doom init: internal free=57578 largest=34816, PSRAM free=1347632 largest=1343488, stack free=17576[0m
+doom on
+fps=11
+fps=1
+fps=19
+fps=19
+keypad button 50 -> r9 c4 enter
+fps=19
+keypad button 50 -> r9 c4 enter
+fps=19
+fps=9
+fps=16
+keypad button 50 -> r9 c4 enter
+fps=13
+fps=17
+keypad button 9 -> r1 c3 left
+keypad button 10 -> r1 c4 up
+fps=17
+fps=17
+keypad button 1 -> r0 c0 y=
+keypad button 9 -> r1 c3 left
+fps=17
+keypad button 15 -> r2 c4 right
+fps=16
+keypad button 10 -> r1 c4 up
+fps=16
+keypad button 9 -> r1 c3 left
+fps=16
+keypad button 10 -> r1 c4 up
+fps=16
+keypad button 9 -> r1 c3 left
+keypad button 10 -> r1 c4 up
+fps=16
+keypad button 1 -> r0 c0 y=
+keypad button 15 -> r2 c4 right
+fps=16
+keypad button 10 -> r1 c4 up
+keypad button 1 -> r0 c0 y=
+keypad button 1 -> r0 c0 y=
+fps=16
+keypad button 15 -> r2 c4 right
+fps=17
+keypad button 10 -> r1 c4 up
+keypad button 15 -> r2 c4 right
+fps=17
+keypad button 10 -> r1 c4 up
+fps=16
+keypad button 15 -> r2 c4 right
+fps=16
+keypad button 10 -> r1 c4 up
+keypad button 15 -> r2 c4 right
+fps=15
+keypad button 9 -> r1 c3 left
+fps=16
+keypad button 10 -> r1 c4 up
+fps=15
+keypad button 10 -> r1 c4 up
+fps=15
+keypad button 9 -> r1 c3 left
+keypad button 10 -> r1 c4 up
+fps=16
+fps=16
+keypad button 10 -> r1 c4 up
+fps=16
+keypad button 15 -> r2 c4 right
+fps=16
+keypad button 15 -> r2 c4 right
+fps=16
+keypad button 10 -> r1 c4 up
+fps=16
+fps=16
+keypad button 10 -> r1 c4 up
+keypad button 15 -> r2 c4 right
+fps=16
+keypad button 10 -> r1 c4 up
+keypad button 1 -> r0 c0 y=
+keypad button 1 -> r0 c0 y=
+fps=17
+keypad button 1 -> r0 c0 y=
+fps=17
+fps=17
+fps=18
+fps=18
+fps=18
+fps=18
+fps=18
+fps=18
+fps=18
+fps=18
+keypad button 46 -> r9 c0 on (home)
+keypad button 46 -> r9 c0 on (home)
+key r9 c0
+fps=26
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+keypad button 11 -> r2 c0 alpha
+key r2 c0
+fps=41
+fps=53
+keypad button 11 -> r2 c0 alpha
+key r2 c0
+fps=48
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+fps=44
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+keypad button 11 -> r2 c0 alpha
+key r2 c0
+fps=39
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+keypad button 14 -> r2 c3 down
+key r2 c3
+fps=36
+keypad button 14 -> r2 c3 down
+key r2 c3
+fps=48
+keypad button 14 -> r2 c3 down
+key r2 c3
+keypad button 14 -> r2 c3 down
+key r2 c3
+fps=44
+keypad button 50 -> r9 c4 enter
+key r9 c4
+[0;32mI (102294) usb: USB storage mounted for app[0m
+CRC32: D445F698
+Allocated 32 KB for PRG ROM, free heap: 1356672 bytes
+Allocated 8 KB for CHR ROM, free heap: 1348476 bytes
+Cartridge (Mapper 0) Initialized
+mario on
+fps=23
+fps=21
+fps=20
+keypad button 50 -> r9 c4 enter
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+fps=21
+fps=19
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+keypad button 15 -> r2 c4 right
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+keypad button 3 -> r0 c2 zoom
+fps=20
+keypad button 15 -> r2 c4 right
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+keypad button 3 -> r0 c2 zoom
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+fps=20
+keypad button 46 -> r9 c0 on (home)
+keypad button 46 -> r9 c0 on (home)
+key r9 c0
+keypad button 6 -> r1 c0 2nd
+key r1 c0
+fps=37
+keypad button 46 -> r9 c0 on (home)
+key r9 c0
+software off
+[0;32mI (153464) board_init: Entering software off (deep sleep)[0m
+[0;32mI (153464) board_init: Waiting for ON/HOME key release before deep sleep[0m
+
+OpenCalc USB CDC console ready
+Serial is active; storage is mounted by the app for runtime file access.
+[0;32mI (3670) usb: TinyUSB CDC console enabled[0m
+[0;33mW (3670) storage: Failed to set volume label: 12[0m
+[0;32mI (3670) board_init: Wake reason mask: 0x00000008[0m
+[0;32mI (3670) board_init: EXT1 wake status: 0x0000000000000000[0m
+[0;32mI (3670) board_init: Initialising ILI9341 on SPI2, 320x240[0m
+[0;32mI (3670) board_init: LCD pins: SCLK=12 MOSI=11 MISO=13 CS=10 DC=14 RST=15 BCKL=47[0m
+[0;32mI (3670) ili9341: LCD panel create success, version: 2.0.2[0m
+[0;32mI (3800) board_init: Backlight PWM GPIO=47. Drive/control this from 3V3 only, never 5V.[0m
+[0;32mI (3810) board_init: LCD visible gap: x=0 y=0[0m
+[0;32mI (3810) board_init: Double-frame LCD DMA buffers ready: 307200 bytes, SPI=80MHz[0m
+[0;32mI (3820) board_init: Keypad ready: 10x5 matrix, scan=columns-low/read-rows, per-key diodes=1, settle=5us[0m
+[0;32mI (3820) board_init: Touch disabled for bring-up[0m
+[0;32mI (3820) board_init: Battery monitor ADC GPIO=7 channel=6 divider=100000/100000 calibrated=1[0m
+[0;32mI (3820) board_init: Display ready[0m
+[0;32mI (3820) main_task: Returned from app_main()[0m
+fps=51
+fps=48
+fps=50

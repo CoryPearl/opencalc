@@ -23,6 +23,10 @@
 
 #include <stdarg.h>
 
+#ifdef ESP_PLATFORM
+#include "esp_heap_caps.h"
+#endif
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -55,8 +59,12 @@
 #include <CoreFoundation/CFUserNotification.h>
 #endif
 
-#define DEFAULT_RAM 6 /* MiB */
-#define MIN_RAM     6  /* MiB */
+/* Doom's zone shares 8 MiB PSRAM with framebuffers and the rest of OpenCalc.
+ * A 6 MiB minimum cannot fit after those allocations and causes a reboot
+ * during startup. Four MiB matches the original game's practical memory
+ * budget while leaving headroom for display conversion and filesystem I/O. */
+#define DEFAULT_RAM 4 /* MiB */
+#define MIN_RAM     4 /* MiB */
 
 
 typedef struct atexit_listentry_s atexit_listentry_t;
@@ -116,7 +124,11 @@ static byte *AutoAllocMemory(int *size, int default_ram, int min_ram)
 
         *size = default_ram * 1024 * 1024;
 
+#ifdef ESP_PLATFORM
+        zonemem = heap_caps_malloc(*size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+#else
         zonemem = malloc(*size);
+#endif
 
         // Failed to allocate?  Reduce zone size until we reach a size
         // that is acceptable.
@@ -575,4 +587,3 @@ boolean I_GetMemoryValue(unsigned int offset, void *value, int size)
 
     return false;
 }
-

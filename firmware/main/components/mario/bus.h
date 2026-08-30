@@ -33,7 +33,7 @@ public:
     void connectScreen(TFT_eSPI* screen);
     void connectFramebuffer(uint8_t* framebuffer);
     void reset();
-    void clock();
+    void clock(bool render_frame = true);
     void IRQ();
     void NMI();
     void OAM_Write(uint8_t addr, uint8_t data);

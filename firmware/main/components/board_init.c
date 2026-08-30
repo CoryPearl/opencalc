@@ -13,6 +13,7 @@
 #include "esp_adc/adc_oneshot.h"
 #include "driver/gpio.h"
 #include "driver/ledc.h"
+#include "driver/rtc_io.h"
 #include "driver/spi_master.h"
 #include "esp_attr.h"
 #include "esp_err.h"
@@ -22,6 +23,7 @@
 #include "esp_log.h"
 #include "esp_rom_sys.h"
 #include "esp_sleep.h"
+#include "esp_system.h"
 #include "esp_heap_caps.h"
 
 #include "esp_lcd_ili9341.h"
@@ -43,6 +45,11 @@ static bool s_battery_adc_calibrated = false;
 
 static void log_wakeup_reason(void)
 {
+    ESP_LOGI(TAG,
+             "Reset reason=%d, sleep wake cause=%d",
+             (int)esp_reset_reason(),
+             (int)esp_sleep_get_wakeup_cause());
+
     uint32_t causes = esp_sleep_get_wakeup_causes();
     if (causes == 0) {
         ESP_LOGI(TAG, "Wake reason: power-on/reset");
@@ -52,6 +59,9 @@ static void log_wakeup_reason(void)
     ESP_LOGI(TAG, "Wake reason mask: 0x%08" PRIx32, causes);
     if (causes & BIT(ESP_SLEEP_WAKEUP_EXT1)) {
         ESP_LOGI(TAG, "EXT1 wake status: 0x%016llx", esp_sleep_get_ext1_wakeup_status());
+    }
+    if (causes & BIT(ESP_SLEEP_WAKEUP_EXT0)) {
+        ESP_LOGI(TAG, "Wake source: EXT0 ON/HOME key");
     }
 }
 
@@ -267,7 +277,7 @@ static const board_key_t KEYPAD_MAP[BOARD_KEYPAD_ROWS][BOARD_KEYPAD_COLS] = {
 /* ILI9341 SPI can usually run much faster than bring-up speed.
    Drop this to 10 MHz if long breadboard wires cause artifacts. */
 #if OPENCALC_HARDWARE_IS_PCB_V3
-#define LCD_SPI_CLOCK_HZ  (60 * 1000 * 1000)
+#define LCD_SPI_CLOCK_HZ  (OPENCALC_LCD_SPI_CLOCK_MHZ * 1000 * 1000)
 #else
 #define LCD_SPI_CLOCK_HZ  (20 * 1000 * 1000)
 #endif
@@ -275,6 +285,8 @@ static const board_key_t KEYPAD_MAP[BOARD_KEYPAD_ROWS][BOARD_KEYPAD_COLS] = {
 
 static esp_lcd_panel_handle_t s_panel_handle = NULL;
 static uint16_t *s_full_frame_565 = NULL;
+static SemaphoreHandle_t s_lcd_transfer_done = NULL;
+static bool s_full_frame_transfer_pending = false;
 #if ENABLE_TOUCH_INPUT
 static spi_device_handle_t s_touch_handle = NULL;
 #endif
@@ -291,6 +303,86 @@ static inline uint16_t lcd_rgb888_to_rgb565(uint32_t pixel)
 static inline uint16_t lcd_swap_rgb565(uint16_t pixel)
 {
     return (uint16_t)((pixel << 8) | (pixel >> 8));
+}
+
+static bool IRAM_ATTR lcd_color_transfer_done(
+    esp_lcd_panel_io_handle_t panel_io,
+    esp_lcd_panel_io_event_data_t *edata,
+    void *user_ctx)
+{
+    (void)panel_io;
+    (void)edata;
+    (void)user_ctx;
+
+    BaseType_t higher_priority_task_woken = pdFALSE;
+    if (s_lcd_transfer_done != NULL) {
+        xSemaphoreGiveFromISR(s_lcd_transfer_done, &higher_priority_task_woken);
+    }
+    return higher_priority_task_woken == pdTRUE;
+}
+
+static esp_err_t lcd_wait_for_pending_full_frame(void)
+{
+    if (!s_full_frame_transfer_pending) {
+        return ESP_OK;
+    }
+
+    if (xSemaphoreTake(s_lcd_transfer_done, pdMS_TO_TICKS(500)) != pdTRUE) {
+        ESP_LOGE(TAG, "Timed out waiting for full-frame LCD DMA transfer");
+        return ESP_ERR_TIMEOUT;
+    }
+
+    s_full_frame_transfer_pending = false;
+    return ESP_OK;
+}
+
+static esp_err_t lcd_draw_bitmap_sync(
+    esp_lcd_panel_handle_t panel,
+    int x_start,
+    int y_start,
+    int x_end,
+    int y_end,
+    const void *pixels)
+{
+    if (s_lcd_transfer_done == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    esp_err_t err = lcd_wait_for_pending_full_frame();
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    err = esp_lcd_panel_draw_bitmap(
+        panel, x_start, y_start, x_end, y_end, pixels);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    if (xSemaphoreTake(s_lcd_transfer_done, pdMS_TO_TICKS(500)) != pdTRUE) {
+        ESP_LOGE(TAG, "Timed out waiting for LCD DMA transfer");
+        return ESP_ERR_TIMEOUT;
+    }
+    return ESP_OK;
+}
+
+static esp_err_t lcd_draw_full_frame_async(const void *pixels)
+{
+    if (s_panel_handle == NULL || s_lcd_transfer_done == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    esp_err_t err = lcd_wait_for_pending_full_frame();
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    err = esp_lcd_panel_draw_bitmap(
+        s_panel_handle, 0, 0, LCD_H_RES, LCD_V_RES, pixels);
+    if (err == ESP_OK) {
+        s_full_frame_transfer_pending = true;
+    }
+    return err;
 }
 
 static void lcd_clear_physical_panel(esp_lcd_panel_handle_t panel_handle)
@@ -310,7 +402,7 @@ static void lcd_clear_physical_panel(esp_lcd_panel_handle_t panel_handle)
         if (y + h > LCD_V_RES) {
             h = LCD_V_RES - y;
         }
-        ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(panel_handle, 0, y, LCD_H_RES, y + h, black_buf));
+        ESP_ERROR_CHECK(lcd_draw_bitmap_sync(panel_handle, 0, y, LCD_H_RES, y + h, black_buf));
     }
 }
 
@@ -389,8 +481,8 @@ static void gpio_isr_service_init(void)
 static void keypad_set_idle(void)
 {
 #if ENABLE_KEYPAD_MATRIX_INPUT
-    for (int row = 0; row < BOARD_KEYPAD_ROWS; row++) {
-        gpio_set_level(KEYPAD_ROW_PINS[row], 0);
+    for (int col = 0; col < BOARD_KEYPAD_COLS; col++) {
+        gpio_set_level(KEYPAD_COL_PINS[col], 0);
     }
 #endif
 }
@@ -398,23 +490,43 @@ static void keypad_set_idle(void)
 #if OPENCALC_WAKE_FROM_KEYPAD_IN_SOFTWARE_OFF && ENABLE_KEYPAD_MATRIX_INPUT
 static void keypad_prepare_for_deep_sleep(gpio_num_t wake_pin)
 {
-    for (int row = 0; row < BOARD_KEYPAD_ROWS; row++) {
-        gpio_set_level(KEYPAD_ROW_PINS[row], 0);
-        (void)gpio_sleep_sel_en(KEYPAD_ROW_PINS[row]);
-        (void)gpio_sleep_set_direction(KEYPAD_ROW_PINS[row], GPIO_MODE_OUTPUT);
-        (void)gpio_sleep_set_pull_mode(KEYPAD_ROW_PINS[row], GPIO_FLOATING);
-    }
-
+    /* Only COL0 is active in deep sleep, so the row-9 ON/HOME switch is the
+     * only key that can pull the wake row low. Keep the other columns high. */
     for (int col = 0; col < BOARD_KEYPAD_COLS; col++) {
-        gpio_set_pull_mode(KEYPAD_COL_PINS[col], GPIO_PULLUP_ONLY);
-        (void)gpio_sleep_sel_en(KEYPAD_COL_PINS[col]);
-        (void)gpio_sleep_set_direction(KEYPAD_COL_PINS[col], GPIO_MODE_INPUT);
-        (void)gpio_sleep_set_pull_mode(KEYPAD_COL_PINS[col], GPIO_PULLUP_ONLY);
+        gpio_num_t pin = KEYPAD_COL_PINS[col];
+        ESP_ERROR_CHECK(gpio_set_direction(pin, GPIO_MODE_OUTPUT));
+        ESP_ERROR_CHECK(gpio_set_level(pin, col == 0 ? 0 : 1));
+        ESP_ERROR_CHECK(gpio_hold_en(pin));
+    }
+    gpio_deep_sleep_hold_en();
+
+    for (int row = 0; row < BOARD_KEYPAD_ROWS; row++) {
+        gpio_set_pull_mode(KEYPAD_ROW_PINS[row], GPIO_PULLUP_ONLY);
     }
 
-    gpio_set_pull_mode(wake_pin, GPIO_PULLUP_ONLY);
+    /* GPIO16 is an RTC IO on ESP32-S3. Configure its deep-sleep input and
+     * pull-up in the RTC domain rather than relying on light-sleep GPIO state. */
+    ESP_ERROR_CHECK(rtc_gpio_init(wake_pin));
+    ESP_ERROR_CHECK(rtc_gpio_set_direction(wake_pin, RTC_GPIO_MODE_INPUT_ONLY));
+    ESP_ERROR_CHECK(rtc_gpio_set_direction_in_sleep(wake_pin, RTC_GPIO_MODE_INPUT_ONLY));
+    ESP_ERROR_CHECK(rtc_gpio_pullup_en(wake_pin));
+    ESP_ERROR_CHECK(rtc_gpio_pulldown_dis(wake_pin));
 }
 #endif
+
+static void keypad_release_deep_sleep_holds(void)
+{
+#if OPENCALC_WAKE_FROM_KEYPAD_IN_SOFTWARE_OFF && ENABLE_KEYPAD_MATRIX_INPUT
+    gpio_deep_sleep_hold_dis();
+    for (int col = 0; col < BOARD_KEYPAD_COLS; col++) {
+        (void)gpio_hold_dis(KEYPAD_COL_PINS[col]);
+    }
+    if (rtc_gpio_is_valid_gpio(PIN_NUM_KEYPAD_ROW9)) {
+        (void)rtc_gpio_hold_dis(PIN_NUM_KEYPAD_ROW9);
+        (void)rtc_gpio_deinit(PIN_NUM_KEYPAD_ROW9);
+    }
+#endif
+}
 
 /* ── Backlight ────────────────────────────────────────────────── */
 static void backlight_on(void)
@@ -507,6 +619,24 @@ static void lcd_prepare_for_deep_sleep(void)
     sleep_drive_input_pulldown(PIN_NUM_LCD_MISO);
 }
 
+static void lcd_prepare_for_light_sleep(void)
+{
+    backlight_off();
+
+    if (s_panel_handle != NULL) {
+        (void)esp_lcd_panel_disp_on_off(s_panel_handle, false);
+    }
+}
+
+static void lcd_resume_from_light_sleep(void)
+{
+    if (s_panel_handle != NULL) {
+        (void)esp_lcd_panel_disp_on_off(s_panel_handle, true);
+    }
+
+    backlight_on();
+}
+
 static void keypad_init(void)
 {
 #if !ENABLE_KEYPAD_MATRIX_INPUT
@@ -524,33 +654,33 @@ static void keypad_init(void)
         col_mask |= (1ULL << KEYPAD_COL_PINS[col]);
     }
 
-    gpio_config_t row_cfg = {
-        .pin_bit_mask = row_mask,
+    gpio_config_t col_cfg = {
+        .pin_bit_mask = col_mask,
         .mode = GPIO_MODE_OUTPUT,
         .pull_up_en = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_DISABLE,
     };
-    ESP_ERROR_CHECK(gpio_config(&row_cfg));
+    ESP_ERROR_CHECK(gpio_config(&col_cfg));
 
-    gpio_config_t col_cfg = {
-        .pin_bit_mask = col_mask,
+    gpio_config_t row_cfg = {
+        .pin_bit_mask = row_mask,
         .mode = GPIO_MODE_INPUT,
         .pull_up_en = GPIO_PULLUP_ENABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_NEGEDGE,
     };
-    ESP_ERROR_CHECK(gpio_config(&col_cfg));
+    ESP_ERROR_CHECK(gpio_config(&row_cfg));
 
     keypad_set_idle();
     gpio_isr_service_init();
 
-    for (int col = 0; col < BOARD_KEYPAD_COLS; col++) {
-        ESP_ERROR_CHECK(gpio_isr_handler_add(KEYPAD_COL_PINS[col], keypad_gpio_isr, NULL));
+    for (int row = 0; row < BOARD_KEYPAD_ROWS; row++) {
+        ESP_ERROR_CHECK(gpio_isr_handler_add(KEYPAD_ROW_PINS[row], keypad_gpio_isr, NULL));
     }
 
     ESP_LOGI(TAG,
-             "Keypad ready: %dx%d matrix, per-key diodes=%d, settle=%dus",
+             "Keypad ready: %dx%d matrix, scan=columns-low/read-rows, per-key diodes=%d, settle=%dus",
              BOARD_KEYPAD_ROWS,
              BOARD_KEYPAD_COLS,
              OPENCALC_KEYPAD_HAS_PER_KEY_DIODES,
@@ -706,11 +836,16 @@ static void touch_init(void)
 void board_init(void)
 {
     log_wakeup_reason();
+    keypad_release_deep_sleep_holds();
     onboard_led_off();
 
     if (s_display_mutex == NULL) {
         s_display_mutex = xSemaphoreCreateMutex();
         ESP_ERROR_CHECK(s_display_mutex == NULL ? ESP_ERR_NO_MEM : ESP_OK);
+    }
+    if (s_lcd_transfer_done == NULL) {
+        s_lcd_transfer_done = xSemaphoreCreateBinary();
+        ESP_ERROR_CHECK(s_lcd_transfer_done == NULL ? ESP_ERR_NO_MEM : ESP_OK);
     }
 
     ESP_LOGI(TAG, "Initialising ILI9341 on SPI2, %dx%d", LCD_H_RES, LCD_V_RES);
@@ -745,11 +880,10 @@ void board_init(void)
         .lcd_cmd_bits      = 8,
         .lcd_param_bits    = 8,
         .spi_mode          = 0,
-        /*
-         * The draw helpers reuse one DMA line buffer per frame chunk. Keep the
-         * panel IO queue shallow so the buffer is not overwritten while SPI DMA
-         * is still transmitting the previous chunk.
-         */
+        .on_color_trans_done = lcd_color_transfer_done,
+        .user_ctx          = NULL,
+        /* Full frames overlap DMA with game work, but the backing buffer is
+         * always reclaimed through on_color_trans_done before reuse. */
         .trans_queue_depth = 1,
     };
     ESP_ERROR_CHECK(
@@ -779,12 +913,15 @@ void board_init(void)
     ESP_ERROR_CHECK(esp_lcd_panel_set_gap(panel_handle, LCD_X_GAP, LCD_Y_GAP));
     ESP_LOGI(TAG, "LCD visible gap: x=%d y=%d", LCD_X_GAP, LCD_Y_GAP);
 
-    s_full_frame_565 = heap_caps_malloc(LCD_H_RES * LCD_V_RES * sizeof(uint16_t),
-                                        MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
+    const size_t frame_bytes = LCD_H_RES * LCD_V_RES * sizeof(uint16_t);
+    s_full_frame_565 = heap_caps_malloc(frame_bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
     if (s_full_frame_565 == NULL) {
         ESP_LOGW(TAG, "Full-frame DMA buffer unavailable; falling back to chunked LCD updates");
     } else {
-        ESP_LOGI(TAG, "Full-frame LCD DMA buffer ready: %d bytes", LCD_H_RES * LCD_V_RES * 2);
+        ESP_LOGI(TAG,
+                 "Pipelined full-frame LCD DMA buffer ready: %u bytes, SPI=%dMHz",
+                 (unsigned)frame_bytes,
+                 OPENCALC_LCD_SPI_CLOCK_MHZ);
     }
 
     s_panel_handle = panel_handle;
@@ -822,16 +959,16 @@ bool board_keypad_scan(int *row, int *col)
     (void)col;
     return false;
 #else
-    for (int scan_row = 0; scan_row < BOARD_KEYPAD_ROWS; scan_row++) {
-        for (int r = 0; r < BOARD_KEYPAD_ROWS; r++) {
-            gpio_set_level(KEYPAD_ROW_PINS[r], 1);
+    for (int scan_col = 0; scan_col < BOARD_KEYPAD_COLS; scan_col++) {
+        for (int c = 0; c < BOARD_KEYPAD_COLS; c++) {
+            gpio_set_level(KEYPAD_COL_PINS[c], 1);
         }
 
-        gpio_set_level(KEYPAD_ROW_PINS[scan_row], 0);
+        gpio_set_level(KEYPAD_COL_PINS[scan_col], 0);
         esp_rom_delay_us(OPENCALC_KEYPAD_ROW_SETTLE_US);
 
-        for (int scan_col = 0; scan_col < BOARD_KEYPAD_COLS; scan_col++) {
-            if (gpio_get_level(KEYPAD_COL_PINS[scan_col]) == 0) {
+        for (int scan_row = 0; scan_row < BOARD_KEYPAD_ROWS; scan_row++) {
+            if (gpio_get_level(KEYPAD_ROW_PINS[scan_row]) == 0) {
                 if (row != NULL) {
                     *row = scan_row;
                 }
@@ -863,16 +1000,16 @@ bool board_keypad_scan_matrix(bool pressed[BOARD_KEYPAD_ROWS][BOARD_KEYPAD_COLS]
         memset(pressed, 0, sizeof(bool) * BOARD_KEYPAD_ROWS * BOARD_KEYPAD_COLS);
     }
 
-    for (int scan_row = 0; scan_row < BOARD_KEYPAD_ROWS; scan_row++) {
-        for (int r = 0; r < BOARD_KEYPAD_ROWS; r++) {
-            gpio_set_level(KEYPAD_ROW_PINS[r], 1);
+    for (int scan_col = 0; scan_col < BOARD_KEYPAD_COLS; scan_col++) {
+        for (int c = 0; c < BOARD_KEYPAD_COLS; c++) {
+            gpio_set_level(KEYPAD_COL_PINS[c], 1);
         }
 
-        gpio_set_level(KEYPAD_ROW_PINS[scan_row], 0);
+        gpio_set_level(KEYPAD_COL_PINS[scan_col], 0);
         esp_rom_delay_us(OPENCALC_KEYPAD_ROW_SETTLE_US);
 
-        for (int scan_col = 0; scan_col < BOARD_KEYPAD_COLS; scan_col++) {
-            if (gpio_get_level(KEYPAD_COL_PINS[scan_col]) == 0) {
+        for (int scan_row = 0; scan_row < BOARD_KEYPAD_ROWS; scan_row++) {
+            if (gpio_get_level(KEYPAD_ROW_PINS[scan_row]) == 0) {
                 any_pressed = true;
                 if (pressed != NULL) {
                     pressed[scan_row][scan_col] = true;
@@ -883,6 +1020,37 @@ bool board_keypad_scan_matrix(bool pressed[BOARD_KEYPAD_ROWS][BOARD_KEYPAD_COLS]
 
     keypad_set_idle();
     return any_pressed;
+#endif
+}
+
+bool board_keypad_read_raw_levels(char rows[BOARD_KEYPAD_ROWS + 1], char cols[BOARD_KEYPAD_COLS + 1])
+{
+#if !ENABLE_KEYPAD_MATRIX_INPUT
+    if (rows != NULL) {
+        memset(rows, '0', BOARD_KEYPAD_ROWS);
+        rows[BOARD_KEYPAD_ROWS] = '\0';
+    }
+    if (cols != NULL) {
+        memset(cols, '0', BOARD_KEYPAD_COLS);
+        cols[BOARD_KEYPAD_COLS] = '\0';
+    }
+    return false;
+#else
+    if (rows != NULL) {
+        for (int row = 0; row < BOARD_KEYPAD_ROWS; row++) {
+            rows[row] = gpio_get_level(KEYPAD_ROW_PINS[row]) ? '1' : '0';
+        }
+        rows[BOARD_KEYPAD_ROWS] = '\0';
+    }
+
+    if (cols != NULL) {
+        for (int col = 0; col < BOARD_KEYPAD_COLS; col++) {
+            cols[col] = gpio_get_level(KEYPAD_COL_PINS[col]) ? '1' : '0';
+        }
+        cols[BOARD_KEYPAD_COLS] = '\0';
+    }
+
+    return true;
 #endif
 }
 
@@ -960,6 +1128,52 @@ bool board_touch_take_interrupt(void)
 
 void board_enter_deep_sleep(void)
 {
+#if OPENCALC_SOFTWARE_OFF_USE_LIGHT_SLEEP
+    ESP_LOGI(TAG, "Entering software off (light sleep)");
+
+    lcd_prepare_for_light_sleep();
+    onboard_led_off();
+    ESP_ERROR_CHECK(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL));
+
+#if OPENCALC_WAKE_FROM_KEYPAD_IN_SOFTWARE_OFF && ENABLE_KEYPAD_MATRIX_INPUT
+    const gpio_num_t wake_pin = PIN_NUM_KEYPAD_ROW9;
+    keypad_set_idle();
+    ESP_ERROR_CHECK(gpio_set_pull_mode(wake_pin, GPIO_PULLUP_ONLY));
+
+    ESP_LOGI(TAG, "Waiting for ON/HOME key release before light sleep");
+    while (gpio_get_level(wake_pin) == 0) {
+        vTaskDelay(pdMS_TO_TICKS(20));
+    }
+
+    int stable_high_ms = 0;
+    while (stable_high_ms < 120) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+        stable_high_ms = gpio_get_level(wake_pin) == 0 ? 0 : stable_high_ms + 10;
+    }
+
+    ESP_ERROR_CHECK(gpio_wakeup_enable(wake_pin, GPIO_INTR_LOW_LEVEL));
+    ESP_ERROR_CHECK(esp_sleep_enable_gpio_wakeup());
+    ESP_LOGI(TAG, "Light-sleep GPIO wake armed on ON/HOME GPIO%d", wake_pin);
+#else
+    keypad_set_idle();
+    ESP_LOGI(TAG, "Keypad wake disabled for software off; light sleep will need reset/power cycle");
+#endif
+
+#ifdef ESP_PD_DOMAIN_MODEM
+    (void)esp_sleep_pd_config(ESP_PD_DOMAIN_MODEM, ESP_PD_OPTION_OFF);
+#endif
+    esp_err_t err = esp_light_sleep_start();
+
+#if OPENCALC_WAKE_FROM_KEYPAD_IN_SOFTWARE_OFF && ENABLE_KEYPAD_MATRIX_INPUT
+    (void)gpio_wakeup_disable(PIN_NUM_KEYPAD_ROW9);
+#endif
+    (void)esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+    lcd_resume_from_light_sleep();
+
+    ESP_LOGI(TAG, "Woke from software off (light sleep), err=%s", esp_err_to_name(err));
+    return;
+#endif
+
     ESP_LOGI(TAG, "Entering software off (deep sleep)");
 
     lcd_prepare_for_deep_sleep();
@@ -968,13 +1182,36 @@ void board_enter_deep_sleep(void)
     ESP_ERROR_CHECK(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL));
 
 #if OPENCALC_WAKE_FROM_KEYPAD_IN_SOFTWARE_OFF && ENABLE_KEYPAD_MATRIX_INPUT
-    const gpio_num_t wake_pin = PIN_NUM_KEYPAD_COL0;
+    const gpio_num_t wake_pin = PIN_NUM_KEYPAD_ROW9;
     keypad_prepare_for_deep_sleep(wake_pin);
-    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup_io(1ULL << wake_pin, ESP_EXT1_WAKEUP_ANY_LOW));
+
+    ESP_LOGI(TAG, "Waiting for ON/HOME key release before deep sleep");
+    while (rtc_gpio_get_level(wake_pin) == 0) {
+        vTaskDelay(pdMS_TO_TICKS(20));
+    }
+
+    /* Require a stable release. A short low pulse here would satisfy EXT0 as
+     * soon as deep sleep starts and look exactly like an immediate reboot. */
+    int stable_high_ms = 0;
+    while (stable_high_ms < 250) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+        if (rtc_gpio_get_level(wake_pin) == 0) {
+            stable_high_ms = 0;
+        } else {
+            stable_high_ms += 10;
+        }
+    }
+
+    /* One dedicated wake input is more reliable than routing a single key
+     * through EXT1's multi-pin mask logic. GPIO16 is RTC-capable on ESP32-S3. */
+    ESP_ERROR_CHECK(esp_sleep_enable_ext0_wakeup(wake_pin, 0));
+    ESP_LOGI(TAG, "Deep-sleep EXT0 wake armed on ON/HOME GPIO%d, level=%lu",
+             wake_pin,
+             (unsigned long)rtc_gpio_get_level(wake_pin));
 
     /*
-     * Keep RTC peripherals powered so the wake-column pull-up remains active.
-     * If this domain is powered off, the matrix column can float low and wake
+     * Keep RTC peripherals powered so the wake-row pull-up remains active.
+     * If this domain is powered off, the matrix row can float low and wake
      * immediately, which looks like a reboot instead of software off.
      */
     (void)esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
@@ -994,12 +1231,6 @@ void board_enter_deep_sleep(void)
 #endif
 #ifdef ESP_PD_DOMAIN_MODEM
     (void)esp_sleep_pd_config(ESP_PD_DOMAIN_MODEM, ESP_PD_OPTION_OFF);
-#endif
-
-#if OPENCALC_WAKE_FROM_KEYPAD_IN_SOFTWARE_OFF && ENABLE_KEYPAD_MATRIX_INPUT
-    while (gpio_get_level(wake_pin) == 0) {
-        vTaskDelay(pdMS_TO_TICKS(20));
-    }
 #endif
 
     esp_deep_sleep_start();
@@ -1226,7 +1457,7 @@ void board_draw_text_screen(const char *text)
         if (y + h > LCD_V_RES) {
             h = LCD_V_RES - y;
         }
-        ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(s_panel_handle, 0, y, LCD_H_RES, y + h, black_buf));
+        ESP_ERROR_CHECK(lcd_draw_bitmap_sync(s_panel_handle, 0, y, LCD_H_RES, y + h, black_buf));
     }
 
     int len = 0;
@@ -1264,7 +1495,7 @@ void board_draw_text_screen(const char *text)
         }
     }
 
-    ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(s_panel_handle, x0, y0, x0 + text_w, y0 + text_h, text_buf));
+    ESP_ERROR_CHECK(lcd_draw_bitmap_sync(s_panel_handle, x0, y0, x0 + text_w, y0 + text_h, text_buf));
 }
 
 void board_draw_rgb888_frame_320x200(const uint32_t *pixels)
@@ -1282,6 +1513,21 @@ void board_draw_rgb888_frame_320x200(const uint32_t *pixels)
         return;
     }
 
+    if (s_full_frame_565 != NULL) {
+        ESP_ERROR_CHECK(lcd_wait_for_pending_full_frame());
+        for (int y = 0; y < DST_H; y++) {
+            int src_y = ((2 * y + 1) * SRC_H) / (2 * DST_H);
+            const uint32_t *src = pixels + src_y * FRAME_W;
+            uint16_t *dst = s_full_frame_565 + y * FRAME_W;
+            for (int x = 0; x < FRAME_W; x++) {
+                dst[x] = lcd_rgb888_to_rgb565(src[x]);
+            }
+        }
+
+        ESP_ERROR_CHECK(lcd_draw_full_frame_async(s_full_frame_565));
+        return;
+    }
+
     for (int y = 0; y < DST_H; y += CHUNK_H) {
         int h = CHUNK_H;
         if (y + h > DST_H) {
@@ -1289,7 +1535,7 @@ void board_draw_rgb888_frame_320x200(const uint32_t *pixels)
         }
 
         for (int row = 0; row < h; row++) {
-            int src_y = ((y + row) * SRC_H) / DST_H;
+            int src_y = ((2 * (y + row) + 1) * SRC_H) / (2 * DST_H);
             const uint32_t *src = pixels + src_y * FRAME_W;
             uint16_t *dst = line_buf + row * FRAME_W;
             for (int x = 0; x < FRAME_W; x++) {
@@ -1297,7 +1543,7 @@ void board_draw_rgb888_frame_320x200(const uint32_t *pixels)
             }
         }
 
-        ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(s_panel_handle, 0, y, FRAME_W, y + h, line_buf));
+        ESP_ERROR_CHECK(lcd_draw_bitmap_sync(s_panel_handle, 0, y, FRAME_W, y + h, line_buf));
     }
 }
 
@@ -1331,7 +1577,7 @@ void board_draw_rgb565_frame_320x200(const uint16_t *pixels)
             }
         }
 
-        ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(s_panel_handle, 0, y, FRAME_W, y + h, line_buf));
+        ESP_ERROR_CHECK(lcd_draw_bitmap_sync(s_panel_handle, 0, y, FRAME_W, y + h, line_buf));
     }
 }
 
@@ -1350,11 +1596,14 @@ void board_draw_rgb888_frame_320x240(const uint32_t *pixels)
     }
 
     if (s_full_frame_565 != NULL) {
+        /* The previous transfer may still be reading this buffer. Reclaim it
+         * before conversion, then queue the completed frame asynchronously. */
+        ESP_ERROR_CHECK(lcd_wait_for_pending_full_frame());
         for (int i = 0; i < FRAME_W * FRAME_H; i++) {
             s_full_frame_565[i] = lcd_rgb888_to_rgb565(pixels[i]);
         }
 
-        ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(s_panel_handle, 0, 0, FRAME_W, FRAME_H, s_full_frame_565));
+        ESP_ERROR_CHECK(lcd_draw_full_frame_async(s_full_frame_565));
         return;
     }
 
@@ -1372,6 +1621,6 @@ void board_draw_rgb888_frame_320x240(const uint32_t *pixels)
             }
         }
 
-        ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(s_panel_handle, 0, y, FRAME_W, y + h, line_buf));
+        ESP_ERROR_CHECK(lcd_draw_bitmap_sync(s_panel_handle, 0, y, FRAME_W, y + h, line_buf));
     }
 }

@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-08-30T05:10:56.755382+00:00",
+  "nodes": {
+    "components_opencalc_tetris_c_components_opencalc_tetris": {
+      "code_fingerprint": "dbd43cde2a1eb072e0dc4cd1abec0b63c240f1df4ee8ab47972c6ca482e10633",
+      "label": "opencalc_tetris.c",
+      "last": "2026-08-30T05:05:32.188543+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-30T05:05:32.188543+00:00",
+          "outcome": "useful",
+          "q": "i still cannot hold down a button in tetris, also do not build until i say"
+        }
+      ],
+      "score": 0.999913209,
+      "source_file": "components/opencalc_tetris.c",
+      "status": "tentative",
+      "uses": 1
+    }
+  },
+  "version": 1
+}

@@ -48,6 +48,7 @@ const board_key_t *board_keypad_key_at(int row, int col);
 bool board_keypad_take_interrupt(void);
 bool board_keypad_scan(int *row, int *col);
 bool board_keypad_scan_matrix(bool pressed[BOARD_KEYPAD_ROWS][BOARD_KEYPAD_COLS]);
+bool board_keypad_read_raw_levels(char rows[BOARD_KEYPAD_ROWS + 1], char cols[BOARD_KEYPAD_COLS + 1]);
 bool board_power_button_pressed(void);
 bool board_touch_take_interrupt(void);
 bool board_touch_scan(int *x, int *y);

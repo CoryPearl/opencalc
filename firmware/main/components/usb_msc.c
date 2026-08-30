@@ -1,9 +1,18 @@
 #include "tinyusb.h"
 #include "tinyusb_default_config.h"
 #include "tinyusb_msc.h"
+#include "opencalc_config.h"
 #include "esp_log.h"
 #include "storage.h"
 
+#if OPENCALC_ENABLE_USB_CDC_CONSOLE && CONFIG_TINYUSB_CDC_ENABLED
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "tinyusb_cdc_acm.h"
+#include "tinyusb_console.h"
+#endif
+
+#include <stdio.h>
 #include <sys/stat.h>
 
 static const char *TAG = "usb";
@@ -84,7 +93,45 @@ void init_usb_msc(void)
     err = tinyusb_driver_install(&tusb_cfg);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "TinyUSB disabled: %s", esp_err_to_name(err));
+        return;
     }
+
+#if OPENCALC_ENABLE_USB_CDC_CONSOLE
+#if CONFIG_TINYUSB_CDC_ENABLED
+    const tinyusb_config_cdcacm_t cdc_cfg = {
+        .cdc_port = TINYUSB_CDC_ACM_0,
+        .callback_rx = NULL,
+        .callback_rx_wanted_char = NULL,
+        .callback_line_state_changed = NULL,
+        .callback_line_coding_changed = NULL,
+    };
+    err = tinyusb_cdcacm_init(&cdc_cfg);
+    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
+        ESP_LOGW(TAG, "TinyUSB CDC disabled: %s", esp_err_to_name(err));
+        return;
+    }
+
+    err = tinyusb_console_init(TINYUSB_CDC_ACM_0);
+    if (err == ESP_OK) {
+        setvbuf(stdin, NULL, _IONBF, 0);
+        setvbuf(stdout, NULL, _IONBF, 0);
+        setvbuf(stderr, NULL, _IONBF, 0);
+        vTaskDelay(pdMS_TO_TICKS(OPENCALC_USB_CDC_STARTUP_BANNER_DELAY_MS));
+        printf("\nOpenCalc USB CDC console ready\n");
+#if OPENCALC_EXPORT_USB_STORAGE_TO_HOST
+        printf("Storage and serial are active on this USB-C port.\n");
+#else
+        printf("Serial is active; storage is mounted by the app for runtime file access.\n");
+#endif
+        fflush(stdout);
+        ESP_LOGI(TAG, "TinyUSB CDC console enabled");
+    } else {
+        ESP_LOGW(TAG, "TinyUSB CDC console redirect failed: %s", esp_err_to_name(err));
+    }
+#else
+    ESP_LOGW(TAG, "USB CDC console requested but CONFIG_TINYUSB_CDC_ENABLED is off");
+#endif
+#endif
 }
 
 static bool set_storage_mount_point(tinyusb_msc_mount_point_t mount_point)

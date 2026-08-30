@@ -2,6 +2,7 @@
 
 extern "C" {
 #include "board_init.h"
+#include "opencalc_config.h"
 #include "opencalc_persist.h"
 }
 
@@ -22,14 +23,17 @@ extern "C" {
 #define LCD_W 320
 #define LCD_H 240
 #define INPUT_HOLD_US 180000
+#define NES_FRAME_PERIOD_US 16639LL
+#define NES_MAX_CATCHUP_FRAMES 3
 
 static Bus *s_bus = nullptr;
 static Cartridge *s_cart = nullptr;
 static uint8_t *s_nes_frame = nullptr;
 static uint32_t *s_lcd_frame = nullptr;
 static bool s_active = false;
-static int64_t s_last_frame_us = 0;
 static int64_t s_started_us = 0;
+static int64_t s_last_emu_tick_us = 0;
+static int64_t s_emu_time_accumulator_us = 0;
 static int64_t s_input_until_us[50];
 static uint32_t s_high_score = 0;
 static uint32_t s_score = 0;
@@ -48,6 +52,18 @@ static const uint32_t s_nes_palette[64] = {
 static bool button_held(int number)
 {
     return number >= 1 && number <= 50 && esp_timer_get_time() < s_input_until_us[number - 1];
+}
+
+static bool matrix_button_held(
+    const bool matrix[BOARD_KEYPAD_ROWS][BOARD_KEYPAD_COLS],
+    int number)
+{
+    if (number < 1 || number > BOARD_KEYPAD_ROWS * BOARD_KEYPAD_COLS) {
+        return false;
+    }
+
+    int index = number - 1;
+    return matrix[index / BOARD_KEYPAD_COLS][index % BOARD_KEYPAD_COLS];
 }
 
 static void hold_button(int number)
@@ -80,15 +96,20 @@ static bool ensure_buffers(void)
 
 static uint8_t controller_state(void)
 {
+    bool matrix[BOARD_KEYPAD_ROWS][BOARD_KEYPAD_COLS];
+    board_keypad_scan_matrix(matrix);
+
+#define MARIO_BUTTON_DOWN(number) (matrix_button_held(matrix, (number)) || button_held(number))
     uint8_t state = 0;
-    if (button_held(3)) state |= (uint8_t)CONTROLLER::A;                         // Zoom
-    if (button_held(1)) state |= (uint8_t)CONTROLLER::B;                         // Y=
-    if (button_held(13)) state |= (uint8_t)CONTROLLER::Select;                   // Back
-    if (button_held(50)) state |= (uint8_t)CONTROLLER::Start;                    // Enter
-    if (button_held(10)) state |= (uint8_t)CONTROLLER::Up;
-    if (button_held(14)) state |= (uint8_t)CONTROLLER::Down;
-    if (button_held(9)) state |= (uint8_t)CONTROLLER::Left;
-    if (button_held(15)) state |= (uint8_t)CONTROLLER::Right;
+    if (MARIO_BUTTON_DOWN(3)) state |= (uint8_t)CONTROLLER::A;                   // Zoom
+    if (MARIO_BUTTON_DOWN(1)) state |= (uint8_t)CONTROLLER::B;                   // Y=
+    if (MARIO_BUTTON_DOWN(13)) state |= (uint8_t)CONTROLLER::Select;             // Back
+    if (MARIO_BUTTON_DOWN(50)) state |= (uint8_t)CONTROLLER::Start;              // Enter
+    if (MARIO_BUTTON_DOWN(10)) state |= (uint8_t)CONTROLLER::Up;
+    if (MARIO_BUTTON_DOWN(14)) state |= (uint8_t)CONTROLLER::Down;
+    if (MARIO_BUTTON_DOWN(9)) state |= (uint8_t)CONTROLLER::Left;
+    if (MARIO_BUTTON_DOWN(15)) state |= (uint8_t)CONTROLLER::Right;
+#undef MARIO_BUTTON_DOWN
     return state;
 }
 
@@ -134,7 +155,8 @@ void opencalc_mario_enter(void)
     memset(s_input_until_us, 0, sizeof(s_input_until_us));
     s_score = 0;
     s_started_us = esp_timer_get_time();
-    s_last_frame_us = 0;
+    s_last_emu_tick_us = s_started_us;
+    s_emu_time_accumulator_us = NES_FRAME_PERIOD_US;
 
     board_display_lock();
     if (!ensure_buffers()) {
@@ -180,14 +202,32 @@ void opencalc_mario_tick(void)
     }
 
     int64_t now = esp_timer_get_time();
-    if (now - s_last_frame_us < 33333) {
-        return;
-    }
-    s_last_frame_us = now;
     s_score = (uint32_t)((now - s_started_us) / 1000000);
 
+    int64_t elapsed_us = now - s_last_emu_tick_us;
+    s_last_emu_tick_us = now;
+    if (elapsed_us < 0) {
+        elapsed_us = 0;
+    } else if (elapsed_us > NES_FRAME_PERIOD_US * NES_MAX_CATCHUP_FRAMES) {
+        elapsed_us = NES_FRAME_PERIOD_US * NES_MAX_CATCHUP_FRAMES;
+    }
+    s_emu_time_accumulator_us += elapsed_us;
+
+    int frames_due = (int)(s_emu_time_accumulator_us / NES_FRAME_PERIOD_US);
+    if (frames_due < 1) {
+        return;
+    }
+    if (frames_due > NES_MAX_CATCHUP_FRAMES) {
+        frames_due = NES_MAX_CATCHUP_FRAMES;
+    }
+    s_emu_time_accumulator_us -= (int64_t)frames_due * NES_FRAME_PERIOD_US;
+
     s_bus->controller = controller_state();
-    s_bus->clock();
+    for (int frame = 0; frame < frames_due; frame++) {
+        /* CPU/game time always advances at the NES rate. Only the final frame
+         * in a catch-up batch spends time rendering all 240 PPU scanlines. */
+        s_bus->clock(frame == frames_due - 1);
+    }
 
     board_display_lock();
     draw_frame();

@@ -13,6 +13,8 @@ typedef struct {
 } graph_parser_t;
 
 static bool s_angle_degrees = true;
+static double s_calc_vars[26];
+static bool s_calc_var_set[26];
 
 void opencalc_math_set_degrees(bool degrees)
 {
@@ -1042,6 +1044,9 @@ static double calc_parse_primary(calc_parser_t *p)
         if (p->has_x) {
             return p->x;
         }
+        if (s_calc_var_set['X' - 'A']) {
+            return s_calc_vars['X' - 'A'];
+        }
         p->ok = false;
         return 0.0;
     }
@@ -1053,6 +1058,16 @@ static double calc_parse_primary(calc_parser_t *p)
             name[i++] = *p->s++;
         }
         name[i] = '\0';
+        if (name[1] == '\0') {
+            int index = toupper((unsigned char)name[0]) - 'A';
+            if (index >= 0 && index < 26) {
+                if (s_calc_var_set[index]) {
+                    return s_calc_vars[index];
+                }
+                p->ok = false;
+                return 0.0;
+            }
+        }
         return calc_apply_func(p, name);
     }
 
@@ -1156,6 +1171,34 @@ bool opencalc_math_eval_expression(const char *expr, double *out)
 {
     if (expr == NULL || out == NULL) {
         return false;
+    }
+
+    const char *start = expr;
+    while (isspace((unsigned char)*start)) {
+        start++;
+    }
+    if (isalpha((unsigned char)start[0])) {
+        const char *after_name = start + 1;
+        while (isspace((unsigned char)*after_name)) {
+            after_name++;
+        }
+        if (*after_name == '=') {
+            int index = toupper((unsigned char)start[0]) - 'A';
+            if (index < 0 || index >= 26) {
+                return false;
+            }
+            after_name++;
+            calc_parser_t assign = {.s = after_name, .x = 0.0, .has_x = false, .ok = true};
+            double assigned = calc_parse_expr(&assign);
+            calc_skip_ws(&assign);
+            if (!assign.ok || *assign.s != '\0' || !isfinite(assigned)) {
+                return false;
+            }
+            s_calc_vars[index] = assigned;
+            s_calc_var_set[index] = true;
+            *out = assigned;
+            return true;
+        }
     }
 
     calc_parser_t p = {.s = expr, .x = 0.0, .has_x = false, .ok = true};

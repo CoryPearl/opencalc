@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "esp_timer.h"
+
 #include "components/board_init.h"
 #include "components/opencalc_config.h"
 #include "components/opencalc_persist.h"
@@ -18,7 +20,7 @@
 #include "components/storage.h"
 #include "components/usb_msc.h"
 
-#define OPENCALC_FRAME_DELAY_MS (1000 / OPENCALC_TARGET_FPS > 0 ? 1000 / OPENCALC_TARGET_FPS : 1)
+#define OPENCALC_FRAME_PERIOD_US (1000000LL / OPENCALC_TARGET_FPS)
 
 #if OPENCALC_ENABLE_SERIAL_BUTTON_INPUT
 static void serial_button_task(void *arg) 
@@ -93,17 +95,24 @@ static void opencalc_ui_task(void *arg)
     (void)arg;
 
     board_set_event_task(xTaskGetCurrentTaskHandle());
+#if OPENCALC_EXPORT_USB_STORAGE_TO_HOST
     usb_msc_mount_usb();
+#endif
 
     opencalc_ui_init();
     opencalc_ui_draw();
 
+#if OPENCALC_DEBUG_LOG_FPS
+    int frame_count = 0;
+    int64_t last_fps_log_us = esp_timer_get_time();
+#endif
+
     while (true) {
+        int64_t frame_start_us = esp_timer_get_time();
+
         if (opencalc_ui_doom_active()) {
             opencalc_ui_tick_doom();
-            ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(OPENCALC_FRAME_DELAY_MS));
         } else {
-            ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(OPENCALC_FRAME_DELAY_MS));
             opencalc_ui_tick();
         }
 
@@ -113,6 +122,32 @@ static void opencalc_ui_task(void *arg)
 
         opencalc_ui_handle_keypad_interrupt();
         // opencalc_ui_handle_touch_interrupt();
+
+#if OPENCALC_DEBUG_LOG_FPS
+        frame_count++;
+        int64_t now_us = esp_timer_get_time();
+        if (now_us - last_fps_log_us >= 1000000) {
+            printf("fps=%d\n", frame_count);
+            fflush(stdout);
+            frame_count = 0;
+            last_fps_log_us = now_us;
+        }
+#endif
+
+        /* Rendering and LCD DMA time count toward the frame budget. Sleeping a
+         * full frame period after rendering was limiting games to about 10 FPS. */
+        int64_t frame_elapsed_us = esp_timer_get_time() - frame_start_us;
+        int64_t frame_wait_us = OPENCALC_FRAME_PERIOD_US - frame_elapsed_us;
+        if (frame_wait_us > 0) {
+            TickType_t wait_ticks = pdMS_TO_TICKS((frame_wait_us + 999) / 1000);
+            if (wait_ticks > 0) {
+                ulTaskNotifyTake(pdTRUE, wait_ticks);
+            } else {
+                taskYIELD();
+            }
+        } else {
+            taskYIELD();
+        }
     }
 }
 
@@ -124,11 +159,31 @@ void app_main(void) {
     storage_set_label();
 
     board_init();
-    opencalc_ui_start_worker();
 
 #if OPENCALC_ENABLE_SERIAL_BUTTON_INPUT
-    xTaskCreatePinnedToCore(serial_button_task, "serial_buttons", 16384, NULL, 5, NULL, OPENCALC_WORKER_CORE);
+    BaseType_t serial_ok = xTaskCreatePinnedToCore(
+        serial_button_task,
+        "serial_buttons",
+        16384,
+        NULL,
+        5,
+        NULL,
+        OPENCALC_WORKER_CORE);
+    if (serial_ok != pdPASS) {
+        printf("ERROR: failed to start serial button task\n");
+    }
 #endif
 
-    xTaskCreatePinnedToCore(opencalc_ui_task, "opencalc_ui", OPENCALC_UI_TASK_STACK, NULL, 6, NULL, OPENCALC_UI_CORE);
+    BaseType_t ui_ok = xTaskCreatePinnedToCore(
+        opencalc_ui_task,
+        "opencalc_ui",
+        OPENCALC_UI_TASK_STACK,
+        NULL,
+        6,
+        NULL,
+        OPENCALC_UI_CORE);
+    if (ui_ok != pdPASS) {
+        printf("ERROR: failed to start UI task; running UI on app_main\n");
+        opencalc_ui_task(NULL);
+    }
 }

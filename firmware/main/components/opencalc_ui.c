@@ -454,7 +454,7 @@ static game_id_t s_active_game = GAME_NONE;
 static int s_game_selection = 0;
 static uint32_t s_doom_high_score = 0;
 static uint32_t s_doom_last_saved_high_score = 0;
-static bool s_usb_storage_enabled = true;
+static bool s_usb_storage_enabled = OPENCALC_EXPORT_USB_STORAGE_TO_HOST != 0;
 static bool s_sleep_enabled = true;
 static bool s_power_save_enabled = false;
 static int s_power_save_saved_brightness = 80;
@@ -497,6 +497,7 @@ static void ui_work_task(void *arg);
 static bool submit_calc_eval_job(void);
 static bool submit_solver_solve_job(void);
 static bool submit_graph_calc_job(void);
+static void ui_work_apply_result(const ui_work_result_t *result);
 
 static void ui_draw_current(void);
 static void status_message(const char *text);
@@ -825,10 +826,18 @@ static void ui_text(int x, int y, const char *text, uint32_t color, int scale)
             cx += 6 * scale;
             continue;
         }
+        if (c == '*') {
+            ui_rect(cx + 2 * scale, y + scale, scale, 5 * scale, color);
+            ui_rect(cx, y + 3 * scale, 5 * scale, scale, color);
+            ui_rect(cx + scale, y + 2 * scale, scale, scale, color);
+            ui_rect(cx + 3 * scale, y + 2 * scale, scale, scale, color);
+            ui_rect(cx + scale, y + 4 * scale, scale, scale, color);
+            ui_rect(cx + 3 * scale, y + 4 * scale, scale, scale, color);
+            cx += 6 * scale;
+            continue;
+        }
         if (c == '$') {
             c = 'S';
-        } else if (c == '*') {
-            c = 'X';
         }
 
         const uint8_t *glyph = font_for(c);
@@ -884,7 +893,13 @@ static const uint8_t *ui_calc_glyph(char c, uint8_t custom[7])
     case '>': custom[1] = 0x08; custom[2] = 0x04; custom[3] = 0x02; custom[4] = 0x04; custom[5] = 0x08; break;
     case '/': custom[0] = 0x01; custom[1] = 0x02; custom[2] = 0x02; custom[3] = 0x04; custom[4] = 0x08; custom[5] = 0x08; custom[6] = 0x10; break;
     case '%': custom[0] = 0x19; custom[1] = 0x1a; custom[2] = 0x04; custom[3] = 0x04; custom[4] = 0x0b; custom[5] = 0x13; break;
-    case '*': c = 'X'; break;
+    case '*':
+        custom[1] = 0x04;
+        custom[2] = 0x15;
+        custom[3] = 0x0e;
+        custom[4] = 0x15;
+        custom[5] = 0x04;
+        break;
     case '$': c = 'S'; break;
     default: return font_for(c);
     }
@@ -3985,7 +4000,9 @@ static void close_active_game_to_menu(void)
 
     s_active_game = GAME_NONE;
     vTaskDelay(pdMS_TO_TICKS(30));
+#if OPENCALC_EXPORT_USB_STORAGE_TO_HOST
     usb_msc_mount_usb();
+#endif
     s_page = PAGE_GAME_MENU;
     ui_draw_current();
 }
@@ -4026,12 +4043,19 @@ static void launch_selected_game(void)
 
     if (game == GAME_DOOM) {
 #if OPENCALC_ENABLE_DOOM
-        usb_msc_mount_app();
+        if (!usb_msc_mount_app()) {
+            printf("Doom could not take ownership of USB storage\n");
+            s_page = PAGE_GAME_MENU;
+            ui_draw_current();
+            return;
+        }
         if (!opencalc_doom_wad_available()) {
             printf("Doom WAD missing: copy doom1.wad to the USB drive root\n");
             s_page = PAGE_GAME_MENU;
             ui_draw_current();
+#if OPENCALC_EXPORT_USB_STORAGE_TO_HOST
             usb_msc_mount_usb();
+#endif
             return;
         }
         if (opencalc_doom_start()) {
@@ -4039,7 +4063,12 @@ static void launch_selected_game(void)
             printf("doom on\n");
             return;
         }
+        printf("Doom initialization failed; see resource logs above\n");
+        s_page = PAGE_GAME_MENU;
+        ui_draw_current();
+#if OPENCALC_EXPORT_USB_STORAGE_TO_HOST
         usb_msc_mount_usb();
+#endif
 #else
         printf("doom disabled\n");
 #endif
@@ -4052,7 +4081,9 @@ static void launch_selected_game(void)
             printf("Mario ROM missing: copy mario.nes to the USB drive root\n");
             s_page = PAGE_GAME_MENU;
             ui_draw_current();
+#if OPENCALC_EXPORT_USB_STORAGE_TO_HOST
             usb_msc_mount_usb();
+#endif
             return;
         }
         opencalc_mario_enter();
@@ -4066,6 +4097,7 @@ static void power_off_calculator(void)
 {
     printf("software off\n");
     board_enter_deep_sleep();
+    ui_draw_current();
 }
 
 static void apply_power_save_mode(bool enabled)
@@ -5984,10 +6016,20 @@ static void ui_work_task(void *arg)
 
 static bool ui_work_submit(const ui_work_job_t *job)
 {
-    if (s_work_queue == NULL || job == NULL) {
+    if (s_work_queue == NULL || s_work_task == NULL || job == NULL) {
         return false;
     }
     return xQueueSend(s_work_queue, job, 0) == pdTRUE;
+}
+
+static void run_calc_eval_synchronously(const ui_work_job_t *job)
+{
+    ui_work_result_t result;
+    memset(&result, 0, sizeof(result));
+    result.type = UI_WORK_CALC_EVAL;
+    opencalc_math_set_degrees(job->degrees);
+    work_calc_eval(job, &result);
+    ui_work_apply_result(&result);
 }
 
 static bool submit_calc_eval_job(void)
@@ -6006,9 +6048,8 @@ static bool submit_calc_eval_job(void)
     snprintf(job.calc.ans, sizeof(job.calc.ans), "%s", s_calc_ans);
 
     if (!ui_work_submit(&job)) {
-        snprintf(s_calc_output, sizeof(s_calc_output), "worker unavailable");
-        ui_draw_current();
-        return false;
+        run_calc_eval_synchronously(&job);
+        return true;
     }
 
     s_calc_eval_pending = true;
@@ -6279,7 +6320,11 @@ static void key_home(void)
     }
     s_home_selection = APP_CALCULATOR;
     s_page = PAGE_HOME;
+#if OPENCALC_EXPORT_USB_STORAGE_TO_HOST
     s_usb_storage_enabled = usb_msc_mount_usb();
+#else
+    s_usb_storage_enabled = false;
+#endif
     ui_draw_current();
 }
 
@@ -7075,6 +7120,73 @@ static bool active_game_press_button_number(int number)
     }
 }
 
+static bool active_game_physical_press_button_number(int number)
+{
+    if (s_active_game == GAME_NONE) {
+        return false;
+    }
+
+    if (number == 46) {
+        close_active_game_to_menu();
+        return true;
+    }
+
+    switch (s_active_game) {
+    case GAME_DOOM:
+    case GAME_MARIO:
+        /* These games read the complete physical matrix every frame. */
+        return true;
+    case GAME_BREAKOUT:
+        /* Left/right are level-based; pause and launch remain edge-based. */
+        if (number == 9 || number == 15) {
+            return true;
+        }
+        return opencalc_breakout_press_button_number(number);
+    case GAME_TETRIS:
+        return opencalc_tetris_press_button_number(number);
+    case GAME_SNAKE:
+        return opencalc_snake_press_button_number(number);
+    default:
+        return false;
+    }
+}
+
+static void debug_log_keypad_press(int number, int row, int col)
+{
+#if OPENCALC_DEBUG_LOG_KEYPAD_PRESSES
+    const board_key_t *key = board_keypad_key_at(row, col);
+    printf("keypad button %d -> r%d c%d %s\n",
+           number,
+           row,
+           col,
+           key && key->normal ? key->normal : "unmapped");
+    fflush(stdout);
+#else
+    (void)number;
+    (void)row;
+    (void)col;
+#endif
+}
+
+static void debug_log_raw_keypad_levels(void)
+{
+#if OPENCALC_DEBUG_LOG_RAW_KEYPAD_LEVELS
+    static TickType_t last_log_tick = 0;
+    TickType_t now = xTaskGetTickCount();
+    if (last_log_tick != 0 && now - last_log_tick < pdMS_TO_TICKS(1000)) {
+        return;
+    }
+
+    char rows[BOARD_KEYPAD_ROWS + 1];
+    char cols[BOARD_KEYPAD_COLS + 1];
+    if (board_keypad_read_raw_levels(rows, cols)) {
+        printf("keypad raw rows=%s cols=%s\n", rows, cols);
+        fflush(stdout);
+    }
+    last_log_tick = now;
+#endif
+}
+
 bool opencalc_ui_press_button_number(int number)
 {
     if (number < 1 || number > BOARD_KEYPAD_ROWS * BOARD_KEYPAD_COLS) {
@@ -7126,10 +7238,10 @@ void opencalc_ui_handle_serial_buttons(void)
 
 void opencalc_ui_handle_keypad_interrupt(void)
 {
-    static bool was_pressed = false;
-    static int last_row = -1;
-    static int last_col = -1;
     static bool game_prev[BOARD_KEYPAD_ROWS][BOARD_KEYPAD_COLS] = {0};
+    static bool ui_prev[BOARD_KEYPAD_ROWS][BOARD_KEYPAD_COLS] = {0};
+
+    debug_log_raw_keypad_levels();
 
     if (s_active_game != GAME_NONE) {
         bool matrix[BOARD_KEYPAD_ROWS][BOARD_KEYPAD_COLS];
@@ -7141,7 +7253,9 @@ void opencalc_ui_handle_keypad_interrupt(void)
         for (int row = 0; row < BOARD_KEYPAD_ROWS; row++) {
             for (int col = 0; col < BOARD_KEYPAD_COLS; col++) {
                 if (matrix[row][col] && !game_prev[row][col]) {
-                    active_game_press_button_number(row * BOARD_KEYPAD_COLS + col + 1);
+                    int number = row * BOARD_KEYPAD_COLS + col + 1;
+                    debug_log_keypad_press(number, row, col);
+                    active_game_physical_press_button_number(number);
                 }
                 game_prev[row][col] = matrix[row][col];
             }
@@ -7150,35 +7264,39 @@ void opencalc_ui_handle_keypad_interrupt(void)
         return;
     }
 
-    if (!board_keypad_take_interrupt()) {
+#if OPENCALC_KEYPAD_POLL_WHEN_NO_INTERRUPT
+    (void)board_keypad_take_interrupt();
+#else
+    bool had_interrupt = board_keypad_take_interrupt();
+    bool had_pressed_key = false;
+    for (int row = 0; row < BOARD_KEYPAD_ROWS && !had_pressed_key; row++) {
+        for (int col = 0; col < BOARD_KEYPAD_COLS; col++) {
+            if (ui_prev[row][col]) {
+                had_pressed_key = true;
+                break;
+            }
+        }
+    }
+    if (!had_interrupt && !had_pressed_key) {
+        return;
+    }
+#endif
+
+    bool matrix[BOARD_KEYPAD_ROWS][BOARD_KEYPAD_COLS];
+    if (!board_keypad_scan_matrix(matrix)) {
+        memset(ui_prev, 0, sizeof(ui_prev));
         return;
     }
 
-    vTaskDelay(pdMS_TO_TICKS(10));
-
-    int row = -1;
-    int col = -1;
-    bool pressed = board_keypad_scan(&row, &col);
-
-    if (pressed && (!was_pressed || row != last_row || col != last_col)) {
-        dispatch_key(row, col);
-        last_row = row;
-        last_col = col;
-    } else if (!pressed) {
-        last_row = -1;
-        last_col = -1;
+    for (int row = 0; row < BOARD_KEYPAD_ROWS; row++) {
+        for (int col = 0; col < BOARD_KEYPAD_COLS; col++) {
+            if (matrix[row][col] && !ui_prev[row][col]) {
+                debug_log_keypad_press(row * BOARD_KEYPAD_COLS + col + 1, row, col);
+                dispatch_key(row, col);
+            }
+            ui_prev[row][col] = matrix[row][col];
+        }
     }
-
-    was_pressed = pressed;
-
-    while (board_keypad_scan(NULL, NULL)) {
-        vTaskDelay(pdMS_TO_TICKS(20));
-    }
-
-    last_row = -1;
-    last_col = -1;
-    was_pressed = false;
-    (void)board_keypad_take_interrupt();
 }
 
 static void handle_touch_tap(int raw_x, int raw_y)
@@ -7305,7 +7423,17 @@ void opencalc_ui_start_worker(void)
         s_work_result_queue = xQueueCreate(4, sizeof(ui_work_result_t));
     }
     if (s_work_task == NULL && s_work_queue != NULL && s_work_result_queue != NULL) {
-        xTaskCreatePinnedToCore(ui_work_task, "opencalc_work", 24576, NULL, 5, &s_work_task, OPENCALC_WORKER_CORE);
+        BaseType_t ok = xTaskCreatePinnedToCore(ui_work_task,
+                                                "opencalc_work",
+                                                24576,
+                                                NULL,
+                                                5,
+                                                &s_work_task,
+                                                OPENCALC_WORKER_CORE);
+        if (ok != pdPASS) {
+            s_work_task = NULL;
+            printf("ERROR: failed to start math worker; calculator will run eval inline\n");
+        }
     }
 }
 
@@ -7362,7 +7490,6 @@ void opencalc_ui_tick_doom(void)
         break;
     case GAME_DOOM:
         opencalc_doom_tick();
-        save_doom_high_score();
         break;
     case GAME_SNAKE:
         opencalc_snake_tick();

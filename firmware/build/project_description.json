@@ -1,7 +1,7 @@
 {
     "version":            "1.3",
     "project_name":       "opencalc",
-    "project_version":    "0d9c64c-dirty",
+    "project_version":    "deb915a-dirty",
     "project_path":       "/Users/corypearl/Desktop/opencalc/firmware",
     "idf_path":           "/Users/corypearl/.espressif/v6.0.1/esp-idf",
     "build_dir":          "/Users/corypearl/Desktop/opencalc/firmware/build",
@@ -1645,7 +1645,7 @@
             "managed_reqs": [ "espressif__tinyusb" ],
             "managed_priv_reqs": [],
             "file": "/Users/corypearl/Desktop/opencalc/firmware/build/esp-idf/espressif__esp_tinyusb/libespressif__esp_tinyusb.a",
-            "sources": [ "/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/descriptors_control.c", "/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/tinyusb.c", "/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/usb_descriptors.c", "/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/tinyusb_task.c", "/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/tinyusb_msc.c", "/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/storage_spiflash.c", "/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/storage_sdmmc.c" ],
+            "sources": [ "/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/descriptors_control.c", "/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/tinyusb.c", "/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/usb_descriptors.c", "/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/tinyusb_task.c", "/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/cdc.c", "/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/tinyusb_cdc_acm.c", "/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/tinyusb_console.c", "/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/vfs_tinyusb.c", "/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/tinyusb_msc.c", "/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/storage_spiflash.c", "/Users/corypearl/Desktop/opencalc/firmware/managed_components/espressif__esp_tinyusb/storage_sdmmc.c" ],
             "include_dirs": [ "include" ]
         },
         "espressif__tinyusb": {

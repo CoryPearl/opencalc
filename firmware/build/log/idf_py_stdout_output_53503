@@ -1,0 +1,68 @@
+Command: /Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python /Users/corypearl/.espressif/v6.0.1/esp-idf/tools/idf_monitor.py -p /dev/cu.usbmodemopencalc1 -b 115200 --toolchain-prefix xtensa-esp32s3-elf- --target esp32s3 --revision 0 /Users/corypearl/Desktop/opencalc/firmware/build/opencalc.elf /Users/corypearl/Desktop/opencalc/firmware/build/bootloader/bootloader.elf --no-reset -m '/Users/corypearl/.espressif/python_env/idf6.0_py3.14_env/bin/python' '/Users/corypearl/.espressif/v6.0.1/esp-idf/tools/idf.py' '-p' '/dev/cu.usbmodemopencalc1'
+
+OpenCalc USB CDC console ready
+Storage and serial are active on this USB-C port.
+[0;32mI (3691) usb: TinyUSB CDC console enabled[0m
+[0;33mW (3691) storage: Failed to set volume label: 12[0m
+[0;32mI (3691) board_init: Wake reason mask: 0x00000001[0m
+[0;32mI (3691) board_init: Initialising ILI9341 on SPI2, 320x240[0m
+[0;32mI (3691) board_init: LCD pins: SCLK=12 MOSI=11 MISO=13 CS=10 DC=14 RST=15 BCKL=47[0m
+[0;32mI (3701) ili9341: LCD panel create success, version: 2.0.2[0m
+[0;32mI (3821) board_init: Backlight PWM GPIO=47. Drive/control this from 3V3 only, never 5V.[0m
+[0;32mI (3851) board_init: LCD visible gap: x=0 y=0[0m
+[0;32mI (3851) board_init: Full-frame LCD DMA buffer ready: 153600 bytes[0m
+[0;32mI (3851) board_init: Keypad ready: 10x5 matrix, scan=columns-low/read-rows, per-key diodes=1, settle=5us[0m
+[0;32mI (3851) board_init: Touch disabled for bring-up[0m
+[0;32mI (3861) board_init: Battery monitor ADC GPIO=7 channel=6 divider=100000/100000 calibrated=1[0m
+[0;32mI (3861) board_init: Display ready[0m
+[0;32mI (3861) main_task: Returned from app_main()[0m
+OpenCalc USB CDC console ready
+Storage and serial are active on this USB-C port.
+[0;32mI (3691) usb: TinyUSB CDC console enabled[0m
+[0;33mW (3691) storage: Failed to set volume label: 12[0m
+[0;32mI (3691) board_init: Wake reason mask: 0x00000001[0m
+[0;32mI (3691) board_init: Initialising ILI9341 on SPI2, 320x240[0m
+[0;32mI (3691) board_init: LCD pins: SCLK=12 MOSI=11 MISO=13 CS=10 DC=14 RST=15 BCKL=47[0m
+[0;32mI (3701) ili9341: LCD panel create success, version: 2.0.2[0m
+[0;32mI (3821) board_init: Backlight PWM GPIO=47. Drive/control this from 3V3 only, never 5V.[0m
+[0;32mI (3851) board_init: LCD visible gap: x=0 y=0[0m
+[0;32mI (3851) board_init: Full-frame LCD DMA buffer ready: 153600 bytes[0m
+[0;32mI (3851) board_init: Keypad ready: 10x5 matrix, scan=columns-low/read-rows, per-key diodes=1, settle=5us[0m
+[0;32mI (3851) board_init: Touch disabled for bring-up[0m
+[0;32mI (3861) board_init: Battery monitor ADC GPIO=7 channel=6 divider=100000/100000 calibrated=1[0m
+[0;32mI (3861) board_init: Display ready[0m
+[0;32mI (3861) main_task: Returned from app_main()[0m
+
+OpenCalc USB CDC console ready
+Storage and serial are active on this USB-C port.
+[0;32mI (3691) usb: TinyUSB CDC console enabled[0m
+[0;33mW (3691) storage: Failed to set volume label: 12[0m
+[0;32mI (3691) board_init: Wake reason mask: 0x00000001[0m
+[0;32mI (3691) board_init: Initialising ILI9341 on SPI2, 320x240[0m
+[0;32mI (3691) board_init: LCD pins: SCLK=12 MOSI=11 MISO=13 CS=10 DC=14 RST=15 BCKL=47[0m
+[0;32mI (3701) ili9341: LCD panel create success, version: 2.0.2[0m
+[0;32mI (3821) board_init: Backlight PWM GPIO=47. Drive/control this from 3V3 only, never 5V.[0m
+[0;32mI (3851) board_init: LCD visible gap: x=0 y=0[0m
+[0;32mI (3851) board_init: Full-frame LCD DMA buffer ready: 153600 bytes[0m
+[0;32mI (3851) board_init: Keypad ready: 10x5 matrix, scan=columns-low/read-rows, per-key diodes=1, settle=5us[0m
+[0;32mI (3851) board_init: Touch disabled for bring-up[0m
+[0;32mI (3861) board_init: Battery monitor ADC GPIO=7 channel=6 divider=100000/100000 calibrated=1[0m
+[0;32mI (3861) board_init: Display ready[0m
+[0;32mI (3861) main_task: Returned from app_main()[0m
+
+OpenCalc USB CDC console ready
+Storage and serial are active on this USB-C port.
+[0;32mI (3691) usb: TinyUSB CDC console enabled[0m
+[0;33mW (3691) storage: Failed to set volume label: 12[0m
+[0;32mI (3691) board_init: Wake reason mask: 0x00000001[0m
+[0;32mI (3691) board_init: Initialising ILI9341 on SPI2, 320x240[0m
+[0;32mI (3691) board_init: LCD pins: SCLK=12 MOSI=11 MISO=13 CS=10 DC=14 RST=15 BCKL=47[0m
+[0;32mI (3701) ili9341: LCD panel create success, version: 2.0.2[0m
+[0;32mI (3821) board_init: Backlight PWM GPIO=47. Drive/control this from 3V3 only, never 5V.[0m
+[0;32mI (3851) board_init: LCD visible gap: x=0 y=0[0m
+[0;32mI (3851) board_init: Full-frame LCD DMA buffer ready: 153600 bytes[0m
+[0;32mI (3851) board_init: Keypad ready: 10x5 matrix, scan=columns-low/read-rows, per-key diodes=1, settle=5us[0m
+[0;32mI (3851) board_init: Touch disabled for bring-up[0m
+[0;32mI (3861) board_init: Battery monitor ADC GPIO=7 channel=6 divider=100000/100000 calibrated=1[0m
+[0;32mI (3861) board_init: Display ready[0m
+[0;32mI (3861) main_task: Returned from app_main()[0m

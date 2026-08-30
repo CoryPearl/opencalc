@@ -30,7 +30,7 @@ extern pixel_t* DG_ScreenBuffer;
 extern "C" {
 #endif
 
-void doomgeneric_Create(int argc, char **argv);
+int doomgeneric_Create(int argc, char **argv);
 void doomgeneric_Tick();
 
 

@@ -175,6 +175,8 @@ typedef struct {
     size_t output_len;
     int exec_enabled;
     int loop_signal;
+    int return_signal;
+    py_value_t return_value;
 } parser_t;
 
 #ifdef ESP_PLATFORM
@@ -1056,6 +1058,7 @@ static int parse_statement(parser_t *p);
 static int parse_statement_list(parser_t *p);
 static int parse_block(parser_t *p);
 static py_value_t py_eval_expression(py_t *py, const char *source);
+static int py_run_function_body(py_t *py, const char *source, char *output, size_t output_size, py_value_t *return_value);
 static py_value_t py_eval_fstring(parser_t *p, const char *source);
 
 static int read_int_arg(parser_t *p, py_value_t value, const char *name) {
@@ -1117,11 +1120,10 @@ static py_value_t call_user_function(parser_t *p, py_func_t *func, py_value_t *a
         result = py_eval_expression(p->py, body);
         if (py_has_error(p->py)) {
             p->py->error[0] = '\0';
-            if (!py_run(p->py, body, scratch_output, sizeof(scratch_output))) {
+            if (!py_run_function_body(p->py, body, scratch_output, sizeof(scratch_output), &result)) {
                 result = py_none();
             } else {
                 py_append(p, scratch_output);
-                result = py_none();
             }
         }
     }
@@ -2378,19 +2380,24 @@ static int parse_def(parser_t *p) {
 
     body[0] = '\0';
     if (current(p)->type == TOK_LBRACE) {
-        int depth = 0;
-        do {
+        int depth = 1;
+        p->pos++;
+        while (depth > 0 && current(p)->type != TOK_EOF) {
             if (current(p)->type == TOK_LBRACE) {
                 depth++;
             } else if (current(p)->type == TOK_RBRACE) {
                 depth--;
+            }
+            if (depth == 0) {
+                p->pos++;
+                break;
             }
             if (!append_body_token(body, sizeof(body), current(p))) {
                 py_error(p->py, "function body too long");
                 return 0;
             }
             p->pos++;
-        } while (depth > 0 && current(p)->type != TOK_EOF);
+        }
 
         if (depth != 0) {
             py_error(p->py, "unterminated function body");
@@ -2416,6 +2423,38 @@ static int parse_def(parser_t *p) {
         return 1;
     }
     return py_set_func(p->py, name.text, params, param_count, body);
+}
+
+static int parse_return(parser_t *p) {
+    if (!expect(p, TOK_RETURN, "expected 'return'")) {
+        return 0;
+    }
+
+    if (!p->exec_enabled) {
+        while (current(p)->type != TOK_EOF &&
+               current(p)->type != TOK_SEMI &&
+               current(p)->type != TOK_RBRACE &&
+               current(p)->type != TOK_ELIF &&
+               current(p)->type != TOK_ELSE) {
+            p->pos++;
+        }
+        return 1;
+    }
+
+    if (current(p)->type == TOK_SEMI ||
+        current(p)->type == TOK_RBRACE ||
+        current(p)->type == TOK_EOF ||
+        current(p)->type == TOK_ELIF ||
+        current(p)->type == TOK_ELSE) {
+        p->return_value = py_none();
+    } else {
+        p->return_value = parse_expression(p);
+        if (py_has_error(p->py)) {
+            return 0;
+        }
+    }
+    p->return_signal = 1;
+    return 1;
 }
 
 static int is_assignment_operator(token_type_t type) {
@@ -2677,6 +2716,10 @@ static int parse_if(parser_t *p) {
         p->exec_enabled = previous_exec_enabled;
         return 0;
     }
+    if (p->return_signal) {
+        p->exec_enabled = previous_exec_enabled;
+        return 1;
+    }
 
     while (match(p, TOK_ELIF)) {
         elif_condition = parse_expression(p);
@@ -2690,6 +2733,10 @@ static int parse_if(parser_t *p) {
         if (!parse_block(p)) {
             p->exec_enabled = previous_exec_enabled;
             return 0;
+        }
+        if (p->return_signal) {
+            p->exec_enabled = previous_exec_enabled;
+            return 1;
         }
         if (condition_true) {
             branch_taken = 1;
@@ -2705,6 +2752,10 @@ static int parse_if(parser_t *p) {
         if (!parse_block(p)) {
             p->exec_enabled = previous_exec_enabled;
             return 0;
+        }
+        if (p->return_signal) {
+            p->exec_enabled = previous_exec_enabled;
+            return 1;
         }
     }
     p->exec_enabled = previous_exec_enabled;
@@ -2770,6 +2821,9 @@ static int parse_while(parser_t *p) {
             return 0;
         }
         p->exec_enabled = previous_exec_enabled;
+        if (p->return_signal) {
+            return 1;
+        }
         if (p->loop_signal == 1) {
             p->loop_signal = 0;
             break;
@@ -2924,6 +2978,9 @@ static int parse_for(parser_t *p) {
             return 0;
         }
         p->exec_enabled = previous_exec_enabled;
+        if (p->return_signal) {
+            return 1;
+        }
         if (p->loop_signal == 1) {
             p->loop_signal = 0;
             break;
@@ -3062,6 +3119,9 @@ static int parse_statement(parser_t *p) {
         }
         return 1;
     }
+    if (token->type == TOK_RETURN) {
+        return parse_return(p);
+    }
     if (token->type == TOK_GLOBAL) {
         return parse_global(p);
     }
@@ -3108,7 +3168,7 @@ static int parse_statement_list(parser_t *p) {
         if (!parse_statement(p)) {
             return 0;
         }
-        if (p->loop_signal) {
+        if (p->loop_signal || p->return_signal) {
             return 1;
         }
         if (current(p)->type == TOK_SEMI) {
@@ -3129,7 +3189,7 @@ static int parse_block(parser_t *p) {
         if (!parse_statement_list(p)) {
             return 0;
         }
-        if (p->loop_signal) {
+        if (p->loop_signal || p->return_signal) {
             int depth = 1;
             while (current(p)->type != TOK_EOF && depth > 0) {
                 if (current(p)->type == TOK_LBRACE) {
@@ -3372,6 +3432,52 @@ int py_run(py_t *py, const char *line, char *output, size_t output_size) {
         parser_free(parser);
         return 0;
     }
+    ok = !py_has_error(py);
+    parser_free(parser);
+    return ok;
+}
+
+static int py_run_function_body(py_t *py, const char *source, char *output, size_t output_size, py_value_t *return_value) {
+    parser_t *parser;
+    int ok;
+
+    if (py == NULL || source == NULL || return_value == NULL) {
+        return 0;
+    }
+
+    *return_value = py_none();
+    if (output != NULL && output_size > 0) {
+        output[0] = '\0';
+    }
+
+    parser = parser_alloc();
+    if (parser == NULL) {
+        py_error(py, "out of memory");
+        return 0;
+    }
+
+    parser->py = py;
+    parser->source = source;
+    parser->output = output;
+    parser->output_size = output_size;
+    parser->exec_enabled = 1;
+    parser->return_value = py_none();
+    py->error[0] = '\0';
+
+    if (!lex(parser)) {
+        parser_free(parser);
+        return 0;
+    }
+    if (!parse_statement_list(parser)) {
+        parser_free(parser);
+        return 0;
+    }
+    if (!parser->return_signal && !expect(parser, TOK_EOF, "unexpected trailing input")) {
+        parser_free(parser);
+        return 0;
+    }
+
+    *return_value = parser->return_signal ? parser->return_value : py_none();
     ok = !py_has_error(py);
     parser_free(parser);
     return ok;

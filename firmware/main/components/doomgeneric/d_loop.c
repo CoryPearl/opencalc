@@ -736,6 +736,16 @@ void TryRunTics (void)
 
     availabletics = lowtic - gametic/ticdup;
 
+#ifdef OPENCALC_NONBLOCKING_DOOM_TICS
+    /* OpenCalc presents at a higher rate than Doom's fixed 35 Hz simulation.
+     * Do not block the display task waiting for the next game tic; the caller
+     * can redraw the current state and return on the configured frame cadence. */
+    if (availabletics < 1)
+    {
+        return;
+    }
+#endif
+
     // decide how many tics to run
 
     if (new_sync)
