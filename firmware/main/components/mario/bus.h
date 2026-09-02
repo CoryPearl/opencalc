@@ -43,7 +43,7 @@ public:
     void loadState();
 
 private:
-    void cpuClock();
+    void clockCpu(uint16_t cycles);
     TFT_eSPI* ptr_screen;
     uint8_t controller_state;
     uint8_t controller_strobe = 0x00;

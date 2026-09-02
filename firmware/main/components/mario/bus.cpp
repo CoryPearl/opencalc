@@ -36,6 +36,7 @@ IRAM_ATTR uint8_t Bus::cpuRead(uint16_t addr)
     if (cart->cpuRead(addr, data)) {}
     else if ((addr & 0xE000) == 0x0000) { data = RAM[addr & 0x07FF]; }
     else if ((addr & 0xE000) == 0x2000) { data = ppu.cpuRead(addr & 0x0007); }
+    else if (addr == 0x4015) { data = cpu.apuRead(addr); }
     else if (addr == 0x4016)
     {
         uint8_t value = controller_state & 1;
@@ -66,15 +67,15 @@ IRAM_ATTR void Bus::clock(bool render_frame)
 
     for (int ppu_scanline = 0; ppu_scanline < 240; ppu_scanline += 3)
     {
-        cpu.clock(113);
+        clockCpu(113);
         if (render_frame) ppu.renderScanline(ppu_scanline);
         else ppu.fakeSpriteHit(ppu_scanline);
 
-        cpu.clock(114);
+        clockCpu(114);
         if (render_frame) ppu.renderScanline(ppu_scanline + 1);
         else ppu.fakeSpriteHit(ppu_scanline + 1);
 
-        cpu.clock(114);
+        clockCpu(114);
         if (render_frame) ppu.renderScanline(ppu_scanline + 2);
         else ppu.fakeSpriteHit(ppu_scanline + 2);
     }
@@ -82,15 +83,25 @@ IRAM_ATTR void Bus::clock(bool render_frame)
     // Setup for the next frame
     // Same reason as scanlines 0-239, 2/3 of scanlines will have an extra CPU clock.
     // Scanline 240
-    cpu.clock(113);
+    clockCpu(113);
 
-    // Scanline 241-261
+    // VBlank scanlines 241-260 (20 scanlines).
     ppu.setVBlank();
-    cpu.clock(2501);
+    clockCpu(2274);
 
+    // Pre-render scanline 261.
     ppu.clearVBlank();
-    cpu.clock(114);
+    clockCpu(114);
 
+}
+
+IRAM_ATTR void Bus::clockCpu(uint16_t cycles)
+{
+    cpu.clock(cycles);
+    cpu.apu.clockCpuCycles(cycles);
+    if (cpu.apu.IRQ) {
+        cpu.IRQ();
+    }
 }
 
 IRAM_ATTR void Bus::setPPUMirrorMode(Cartridge::MIRROR mirror)

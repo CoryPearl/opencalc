@@ -13,6 +13,7 @@
 #include "esp_timer.h"
 
 #include "components/board_init.h"
+#include "components/opencalc_audio.h"
 #include "components/opencalc_config.h"
 #include "components/opencalc_persist.h"
 #include "components/opencalc_power.h"
@@ -159,6 +160,7 @@ void app_main(void) {
     storage_set_label();
 
     board_init();
+    opencalc_audio_init();
 
 #if OPENCALC_ENABLE_SERIAL_BUTTON_INPUT
     BaseType_t serial_ok = xTaskCreatePinnedToCore(

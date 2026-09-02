@@ -8,15 +8,52 @@
 #define OPENCALC_ENABLE_BLUETOOTH 0
 #define OPENCALC_ENABLE_WIFI 0
 #define OPENCALC_ENABLE_DOOM 1
+#define OPENCALC_ENABLE_GAME_AUDIO 0 // Master switch for game sound
+#define OPENCALC_USE_NEW_AUDIO_PCB 0 // 0 = old PCB; 1 = write-only LCD + PAM8302A audio PCB
 #define OPENCALC_ENABLE_USB_CDC_CONSOLE 1 // Same USB-C cable shows storage + serial monitor
+#define OPENCALC_ENABLE_POWER_STATUS_LED 0 // Active-high status LED on PCB GPIO21
+#define OPENCALC_USE_AO3401A_BACKLIGHT 0 // 0 = old TPS22918 active-high; 1 = new AO3401A active-low
 #define OPENCALC_EXPORT_USB_STORAGE_TO_HOST 0 // 0 keeps /data mounted for app/game testing; 1 shows flash drive on the laptop
-#define OPENCALC_USB_CDC_STARTUP_BANNER_DELAY_MS 2500
+#define OPENCALC_USB_CDC_STARTUP_BANNER_DELAY_MS 100
 #define OPENCALC_DEBUG_LOG_KEYPAD_PRESSES 1 // Print physical keypad presses to USB serial
 #define OPENCALC_DEBUG_LOG_FPS 1 // Print UI/game tick FPS to USB serial once per second
+#define OPENCALC_DEBUG_TETRIS_HEALTH 1 // Log Tetris heap/stack health every 5 seconds
 #define OPENCALC_KEYPAD_POLL_WHEN_NO_INTERRUPT 0 // Use row GPIO interrupts; only scan after a key edge
 #define OPENCALC_DEBUG_LOG_RAW_KEYPAD_LEVELS 0 // Print raw row/column GPIO levels during keypad bring-up
 #define OPENCALC_ENABLE_SERIAL_BUTTON_INPUT 0 // For debugging without having to use a physical button matrix
 #define OPENCALC_FLASH_STORAGE_IMAGE 1 // Flash firmware/storage_image into the storage partition
+
+/*
+ * New PCB game audio.
+ *
+ * GPIO13 -> PAM8302A SD (active low: 0 shuts down, 1 enables)
+ * GPIO41 -> I2S PDM audio output -> low-pass filter -> AC-coupled PAM8302A input
+ *
+ * The ESP32-S3 has no analog DAC. GPIO41 therefore emits a high-rate PDM bit
+ * stream, not analog audio. The PCB must low-pass filter it before the amp.
+ * GPIO13 was LCD MISO and GPIO41 was CHG_STAT on the old PCB; selecting the
+ * new PCB makes the LCD write-only and reserves both pins for audio.
+ */
+#define OPENCALC_AUDIO_SAMPLE_RATE 16000
+#define OPENCALC_AUDIO_VOLUME_PERCENT 45
+#define OPENCALC_GAME_AUDIO_ENABLED \
+    (OPENCALC_ENABLE_GAME_AUDIO && OPENCALC_USE_REAL_PCB && OPENCALC_USE_NEW_AUDIO_PCB)
+
+#if OPENCALC_ENABLE_GAME_AUDIO != 0 && OPENCALC_ENABLE_GAME_AUDIO != 1
+#error "OPENCALC_ENABLE_GAME_AUDIO must be 0 or 1"
+#endif
+
+#if OPENCALC_USE_NEW_AUDIO_PCB != 0 && OPENCALC_USE_NEW_AUDIO_PCB != 1
+#error "OPENCALC_USE_NEW_AUDIO_PCB must be 0 or 1"
+#endif
+
+#if OPENCALC_AUDIO_SAMPLE_RATE < 8000 || OPENCALC_AUDIO_SAMPLE_RATE > 48000
+#error "OPENCALC_AUDIO_SAMPLE_RATE must be 8000..48000"
+#endif
+
+#if OPENCALC_AUDIO_VOLUME_PERCENT < 0 || OPENCALC_AUDIO_VOLUME_PERCENT > 100
+#error "OPENCALC_AUDIO_VOLUME_PERCENT must be 0..100"
+#endif
 
 /*
  * Dual-core task layout.

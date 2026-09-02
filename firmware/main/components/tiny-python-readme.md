@@ -15,7 +15,7 @@ This is not CPython. It is a compact interpreter for running simple scripts on d
 - Dynamic lists with `[]`, list literals, nested storage, indexing, item assignment, slicing with steps, `append(...)`, `len(...)`, and printing
 - Tuples with literals, nested storage, indexing, slicing with steps, `len(...)`, and printing
 - Dictionaries with literals, nested storage, key lookup, assignment after creation, `len(...)`, and printing
-- Simple functions with parameters
+- Simple functions with parameters, return values, and recursion
 - `if`, `elif`, and `else`
 - `while`
 - `for ... in range(...)`
@@ -558,6 +558,8 @@ Additional implementation limits in `tiny-python.c`:
 #define PY_MAX_TOKENS 512
 #define PY_MAX_LINE 160
 ```
+
+OpenCalc OS may override these with compiler defines from its ESP-IDF build.
 
 ## Limitations
 

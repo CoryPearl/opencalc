@@ -4,6 +4,7 @@ extern "C" {
 #include "board_init.h"
 #include "opencalc_config.h"
 #include "opencalc_persist.h"
+#include "opencalc_power.h"
 }
 
 #include "esp_heap_caps.h"
@@ -20,16 +21,14 @@ extern "C" {
 
 #define NES_W 256
 #define NES_H 240
-#define LCD_W 320
-#define LCD_H 240
 #define INPUT_HOLD_US 180000
 #define NES_FRAME_PERIOD_US 16639LL
 #define NES_MAX_CATCHUP_FRAMES 3
+#define NES_MAX_BACKLOG_FRAMES 6
 
 static Bus *s_bus = nullptr;
 static Cartridge *s_cart = nullptr;
 static uint8_t *s_nes_frame = nullptr;
-static uint32_t *s_lcd_frame = nullptr;
 static bool s_active = false;
 static int64_t s_started_us = 0;
 static int64_t s_last_emu_tick_us = 0;
@@ -37,6 +36,12 @@ static int64_t s_emu_time_accumulator_us = 0;
 static int64_t s_input_until_us[50];
 static uint32_t s_high_score = 0;
 static uint32_t s_score = 0;
+static uint32_t s_emu_frames_since_log = 0;
+static uint32_t s_display_frames_since_log = 0;
+static uint64_t s_tick_work_us_since_log = 0;
+static uint32_t s_tick_count_since_log = 0;
+static uint64_t s_dropped_time_us_since_log = 0;
+static int64_t s_last_timing_log_us = 0;
 
 static const uint32_t s_nes_palette[64] = {
     0x626262, 0x001FB2, 0x2404C8, 0x5200B2, 0x730076, 0x800024, 0x730B00, 0x522800,
@@ -87,11 +92,7 @@ static bool ensure_buffers(void)
         s_nes_frame = (uint8_t *)heap_caps_calloc(NES_W * NES_H, sizeof(uint8_t),
                                                   MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     }
-    if (s_lcd_frame == nullptr) {
-        s_lcd_frame = (uint32_t *)heap_caps_malloc(LCD_W * LCD_H * sizeof(uint32_t),
-                                                   MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    }
-    return s_nes_frame != nullptr && s_lcd_frame != nullptr;
+    return s_nes_frame != nullptr;
 }
 
 static uint8_t controller_state(void)
@@ -115,18 +116,52 @@ static uint8_t controller_state(void)
 
 static void draw_frame(void)
 {
-    if (!s_nes_frame || !s_lcd_frame) {
+    if (!s_nes_frame) {
+        return;
+    }
+    board_draw_indexed8_frame_256x240(s_nes_frame, s_nes_palette);
+}
+
+static void reset_timing_stats(int64_t now_us)
+{
+    s_emu_frames_since_log = 0;
+    s_display_frames_since_log = 0;
+    s_tick_work_us_since_log = 0;
+    s_tick_count_since_log = 0;
+    s_dropped_time_us_since_log = 0;
+    s_last_timing_log_us = now_us;
+}
+
+static void log_timing_stats(int64_t now_us)
+{
+#if OPENCALC_DEBUG_LOG_FPS
+    int64_t interval_us = now_us - s_last_timing_log_us;
+    if (interval_us < 1000000) {
         return;
     }
 
-    for (int y = 0; y < LCD_H; y++) {
-        const uint8_t *src = &s_nes_frame[y * NES_W];
-        uint32_t *dst = &s_lcd_frame[y * LCD_W];
-        for (int x = 0; x < LCD_W; x++) {
-            dst[x] = s_nes_palette[src[(x * NES_W) / LCD_W] & 0x3F];
-        }
-    }
-    board_draw_rgb888_frame_320x240(s_lcd_frame);
+    uint32_t emu_fps_x10 = (uint32_t)(((uint64_t)s_emu_frames_since_log * 10000000ULL) /
+                                      (uint64_t)interval_us);
+    uint32_t display_fps_x10 =
+        (uint32_t)(((uint64_t)s_display_frames_since_log * 10000000ULL) /
+                   (uint64_t)interval_us);
+    uint32_t average_tick_us = s_tick_count_since_log > 0
+        ? (uint32_t)(s_tick_work_us_since_log / s_tick_count_since_log)
+        : 0;
+
+    printf("mario emu=%lu.%lu fps display=%lu.%lu fps avg_tick=%luus backlog=%lldus dropped=%lluus\n",
+           (unsigned long)(emu_fps_x10 / 10),
+           (unsigned long)(emu_fps_x10 % 10),
+           (unsigned long)(display_fps_x10 / 10),
+           (unsigned long)(display_fps_x10 % 10),
+           (unsigned long)average_tick_us,
+           (long long)s_emu_time_accumulator_us,
+           (unsigned long long)s_dropped_time_us_since_log);
+    fflush(stdout);
+    reset_timing_stats(now_us);
+#else
+    (void)now_us;
+#endif
 }
 
 static void destroy_emu(void)
@@ -135,6 +170,7 @@ static void destroy_emu(void)
     delete s_cart;
     s_bus = nullptr;
     s_cart = nullptr;
+    opencalc_power_set_performance_required(false);
 }
 
 bool opencalc_mario_rom_available(void)
@@ -155,7 +191,6 @@ void opencalc_mario_enter(void)
     memset(s_input_until_us, 0, sizeof(s_input_until_us));
     s_score = 0;
     s_started_us = esp_timer_get_time();
-    s_last_emu_tick_us = s_started_us;
     s_emu_time_accumulator_us = NES_FRAME_PERIOD_US;
 
     board_display_lock();
@@ -185,6 +220,9 @@ void opencalc_mario_enter(void)
     s_bus->insertCartridge(s_cart);
     s_bus->connectFramebuffer(s_nes_frame);
     s_bus->reset();
+    opencalc_power_set_performance_required(true);
+    s_last_emu_tick_us = esp_timer_get_time();
+    reset_timing_stats(s_last_emu_tick_us);
     s_active = true;
     board_draw_text_screen("Mario\nNES loading");
     board_display_unlock();
@@ -201,17 +239,22 @@ void opencalc_mario_tick(void)
         return;
     }
 
-    int64_t now = esp_timer_get_time();
+    int64_t tick_started_us = esp_timer_get_time();
+    int64_t now = tick_started_us;
     s_score = (uint32_t)((now - s_started_us) / 1000000);
 
     int64_t elapsed_us = now - s_last_emu_tick_us;
     s_last_emu_tick_us = now;
     if (elapsed_us < 0) {
         elapsed_us = 0;
-    } else if (elapsed_us > NES_FRAME_PERIOD_US * NES_MAX_CATCHUP_FRAMES) {
-        elapsed_us = NES_FRAME_PERIOD_US * NES_MAX_CATCHUP_FRAMES;
     }
     s_emu_time_accumulator_us += elapsed_us;
+    int64_t max_backlog_us = NES_FRAME_PERIOD_US * NES_MAX_BACKLOG_FRAMES;
+    if (s_emu_time_accumulator_us > max_backlog_us) {
+        s_dropped_time_us_since_log +=
+            (uint64_t)(s_emu_time_accumulator_us - max_backlog_us);
+        s_emu_time_accumulator_us = max_backlog_us;
+    }
 
     int frames_due = (int)(s_emu_time_accumulator_us / NES_FRAME_PERIOD_US);
     if (frames_due < 1) {
@@ -228,10 +271,15 @@ void opencalc_mario_tick(void)
          * in a catch-up batch spends time rendering all 240 PPU scanlines. */
         s_bus->clock(frame == frames_due - 1);
     }
+    s_emu_frames_since_log += (uint32_t)frames_due;
 
     board_display_lock();
     draw_frame();
     board_display_unlock();
+    s_display_frames_since_log++;
+    s_tick_work_us_since_log += (uint64_t)(esp_timer_get_time() - tick_started_us);
+    s_tick_count_since_log++;
+    log_timing_stats(esp_timer_get_time());
 }
 
 bool opencalc_mario_press_button_number(int number)

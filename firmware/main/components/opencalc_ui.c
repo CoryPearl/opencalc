@@ -18,6 +18,7 @@
 #include "opencalc_breakout.h"
 #include "opencalc_config.h"
 #include "opencalc_doom.h"
+#include "opencalc_audio.h"
 #include "opencalc_mario.h"
 #include "opencalc_math.h"
 #include "opencalc_persist.h"
@@ -415,7 +416,7 @@ static char s_calc_history_result[CALC_HISTORY_MAX][96];
 static int s_calc_history_count = 0;
 static int s_calc_history_selected = -1;
 static bool s_calc_history_select_answer = false;
-static double s_lists[LIST_COUNT][LIST_MAX_VALUES];
+static EXT_RAM_BSS_ATTR double s_lists[LIST_COUNT][LIST_MAX_VALUES];
 static int s_list_counts[LIST_COUNT];
 static int s_list_index = 0;
 static int s_list_cursor = 0;
@@ -498,6 +499,7 @@ static bool submit_calc_eval_job(void);
 static bool submit_solver_solve_job(void);
 static bool submit_graph_calc_job(void);
 static void ui_work_apply_result(const ui_work_result_t *result);
+static void ui_work_poll_results(void);
 
 static void ui_draw_current(void);
 static void status_message(const char *text);
@@ -3998,6 +4000,8 @@ static void close_active_game_to_menu(void)
     if (s_active_game == GAME_BREAKOUT) opencalc_breakout_press_button_number(46);
     if (s_active_game == GAME_MARIO) opencalc_mario_press_button_number(46);
 
+    opencalc_audio_game_end();
+
     s_active_game = GAME_NONE;
     vTaskDelay(pdMS_TO_TICKS(30));
 #if OPENCALC_EXPORT_USB_STORAGE_TO_HOST
@@ -4023,18 +4027,21 @@ static void launch_selected_game(void)
     game_id_t game = selected_game_id();
 
     if (game == GAME_TETRIS) {
+        opencalc_audio_game_begin();
         opencalc_tetris_enter();
         s_active_game = GAME_TETRIS;
         printf("tetris on\n");
         return;
     }
     if (game == GAME_SNAKE) {
+        opencalc_audio_game_begin();
         opencalc_snake_enter();
         s_active_game = GAME_SNAKE;
         printf("snake on\n");
         return;
     }
     if (game == GAME_BREAKOUT) {
+        opencalc_audio_game_begin();
         opencalc_breakout_enter();
         s_active_game = GAME_BREAKOUT;
         printf("breakout on\n");
@@ -4058,12 +4065,14 @@ static void launch_selected_game(void)
 #endif
             return;
         }
+        opencalc_audio_game_begin();
         if (opencalc_doom_start()) {
             s_active_game = GAME_DOOM;
             printf("doom on\n");
             return;
         }
         printf("Doom initialization failed; see resource logs above\n");
+        opencalc_audio_game_end();
         s_page = PAGE_GAME_MENU;
         ui_draw_current();
 #if OPENCALC_EXPORT_USB_STORAGE_TO_HOST
@@ -4086,7 +4095,14 @@ static void launch_selected_game(void)
 #endif
             return;
         }
+        opencalc_audio_game_begin();
         opencalc_mario_enter();
+        if (!opencalc_mario_active()) {
+            opencalc_audio_game_end();
+            s_page = PAGE_GAME_MENU;
+            ui_draw_current();
+            return;
+        }
         s_active_game = GAME_MARIO;
         printf("mario on\n");
         return;
@@ -4096,6 +4112,7 @@ static void launch_selected_game(void)
 static void power_off_calculator(void)
 {
     printf("software off\n");
+    opencalc_audio_game_end();
     board_enter_deep_sleep();
     ui_draw_current();
 }
@@ -6035,9 +6052,10 @@ static void run_calc_eval_synchronously(const ui_work_job_t *job)
 static bool submit_calc_eval_job(void)
 {
     if (s_calc_eval_pending) {
-        snprintf(s_calc_output, sizeof(s_calc_output), "busy");
-        ui_draw_current();
-        return false;
+        ui_work_poll_results();
+        if (s_calc_eval_pending) {
+            s_calc_eval_pending = false;
+        }
     }
 
     ui_work_job_t job;
@@ -6047,14 +6065,7 @@ static bool submit_calc_eval_job(void)
     snprintf(job.calc.expr, sizeof(job.calc.expr), "%s", s_calc_input);
     snprintf(job.calc.ans, sizeof(job.calc.ans), "%s", s_calc_ans);
 
-    if (!ui_work_submit(&job)) {
-        run_calc_eval_synchronously(&job);
-        return true;
-    }
-
-    s_calc_eval_pending = true;
-    snprintf(s_calc_output, sizeof(s_calc_output), "working...");
-    ui_draw_current();
+    run_calc_eval_synchronously(&job);
     return true;
 }
 

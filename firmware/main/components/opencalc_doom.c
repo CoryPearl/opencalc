@@ -1,6 +1,7 @@
 #include "opencalc_doom.h"
 
 #include "board_init.h"
+#include "opencalc_config.h"
 #include "doomgeneric/d_main.h"
 #include "doomgeneric/doomgeneric.h"
 #include "doomgeneric/doomkeys.h"
@@ -39,7 +40,9 @@ static char *s_doom_argv[] = {
     "opencalc-doom",
     "-iwad",
     "/data/doom1.wad",
+#if !OPENCALC_GAME_AUDIO_ENABLED
     "-nosound",
+#endif
     "-nomusic",
     "-nogui",
     "-mb",
@@ -130,7 +133,7 @@ static unsigned char doom_key_for_matrix_position(int row, int col)
     if (row == 2 && col == 2) {
         return KEY_ESCAPE;
     }
-    if (row == 3 && col == 4) {
+    if (row == 1 && col == 2) {
         return (unsigned char)key_strafe;
     }
     if (row == 1 && col == 3) {

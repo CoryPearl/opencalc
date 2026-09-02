@@ -42,3 +42,4 @@ CONFIG_FATFS_USE_LABEL=y
 
 # Allows firmware to lower CPU frequency in the Settings power-save mode.
 CONFIG_PM_ENABLE=y
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y

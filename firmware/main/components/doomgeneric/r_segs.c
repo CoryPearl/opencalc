@@ -396,9 +396,12 @@ R_StoreWallRange
     
     // calculate rw_distance for scale calculation
     rw_normalangle = curline->angle + ANG90;
-    offsetangle = rw_normalangle > rw_angle1
-                ? rw_normalangle - rw_angle1
-                : rw_angle1 - rw_normalangle;
+    /* Angles wrap at 2^32.  A normal unsigned absolute difference breaks
+     * whenever the two angles straddle zero and makes walls stretch or bend.
+     * Fold the modular delta into the shortest half-circle distance. */
+    offsetangle = rw_normalangle - rw_angle1;
+    if (offsetangle > ANG180)
+	offsetangle = 0u - offsetangle;
     
     if (offsetangle > ANG90)
 	offsetangle = ANG90;

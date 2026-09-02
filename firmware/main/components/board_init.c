@@ -45,12 +45,13 @@ static bool s_battery_adc_calibrated = false;
 
 static void log_wakeup_reason(void)
 {
-    ESP_LOGI(TAG,
-             "Reset reason=%d, sleep wake cause=%d",
-             (int)esp_reset_reason(),
-             (int)esp_sleep_get_wakeup_cause());
-
     uint32_t causes = esp_sleep_get_wakeup_causes();
+
+    ESP_LOGI(TAG,
+             "Reset reason=%d, sleep wake mask=0x%08" PRIx32,
+             (int)esp_reset_reason(),
+             causes);
+
     if (causes == 0) {
         ESP_LOGI(TAG, "Wake reason: power-on/reset");
         return;
@@ -68,17 +69,19 @@ static void log_wakeup_reason(void)
 /* ── Pin map ─────────────────────────────────────────────────── */
 // Screen.
 //
-// OpenCalc V3 EasyEDA schematic wiring.
-// Source: hardware/pcb/V3/SCH_Schematic1_1-P1_2026-06-03.png
+// OpenCalc PCB wiring.
 //
 // ESP32-S3 module nets:
-//   ROW0..ROW9          -> GPIO1,2,42,4,5,6,48,8,9,16
-//   COL0..COL4          -> GPIO17,18,38,39,40, pulled up to 3V3
+//   ROW0..ROW9          -> GPIO1,2,42,4,5,6,48,8,9,16, pulled up to 3V3
+//   COL0..COL4          -> GPIO17,18,38,39,40, driven by keypad scanner
 //   USB_DM / USB_DP     -> GPIO19 / GPIO20
 //   UART_TX / UART_RX   -> TXD0 / RXD0
 //   VBAT_DIV            -> GPIO7 / ADC1 channel 6
-//   CHG_STAT            -> GPIO41, active low from BQ24074 CHG#
-//   LCD_BACKL           -> GPIO47, drives TPS22918 ON pin
+//   CHG_STAT            -> Old PCB: GPIO41; removed from new audio PCB
+//   GAME_AUDIO_PDM      -> New audio PCB: GPIO41, filtered PDM audio output
+//   GAME_AUDIO_SD       -> New audio PCB: GPIO13, PAM8302A active-low shutdown
+//   LCD_BACKL           -> GPIO47, backlight polarity selected in config.h
+//   POWER_STATUS_LED    -> GPIO21, active high while OpenCalc is awake
 //
 // LCD touch is not wired on this PCB revision, so ENABLE_TOUCH_INPUT is 0.
 //
@@ -89,10 +92,12 @@ static void log_wakeup_reason(void)
 //   LCD_DC / RS          -> GPIO14
 //   LCD_SDI / LCD_MOSI   -> GPIO11
 //   LCD_SCK / LCD_SCLK   -> GPIO12
-//   LCD_LED / backlight  -> TPS22918 load-switch output through 33 ohm.
-//                            TPS22918 ON/EN is driven by GPIO47.
+//   LCD_LED / backlight  -> Old PCB: TPS22918 output through 33 ohm.
+//                            New PCB: AO3401A drain through 33 ohm; source is
+//                            3V3 and gate is driven by GPIO47 through 100 ohm
+//                            with a 100k pull-up to 3V3.
 //                            Do not feed the LCD LED pin with 5V.
-//   LCD_SDO / LCD_MISO   -> GPIO13
+//   LCD_SDO / LCD_MISO   -> Old PCB: GPIO13; new audio PCB: unwired/write-only
 //   Touch pins           -> unwired
 #ifndef OPENCALC_HARDWARE_PROFILE_DEV_BOARD
 #define OPENCALC_HARDWARE_PROFILE_DEV_BOARD 0
@@ -116,7 +121,11 @@ static void log_wakeup_reason(void)
 #define ENABLE_TOUCH_INPUT 0
 #define PIN_NUM_LCD_SCLK 12
 #define PIN_NUM_LCD_MOSI 11
-#define PIN_NUM_LCD_MISO 13
+#if OPENCALC_USE_NEW_AUDIO_PCB
+#define PIN_NUM_LCD_MISO GPIO_NUM_NC
+#else
+#define PIN_NUM_LCD_MISO GPIO_NUM_13
+#endif
 #define PIN_NUM_LCD_DC   14
 #define PIN_NUM_LCD_RST  15
 #define PIN_NUM_LCD_CS   10
@@ -130,13 +139,14 @@ static void log_wakeup_reason(void)
 #define PIN_NUM_TOUCH_DO  GPIO_NUM_NC
 #define PIN_NUM_TOUCH_CS  GPIO_NUM_NC
 #define PIN_NUM_TOUCH_IRQ GPIO_NUM_NC
-#define ONBOARD_RGB_LED_ENABLED 0
-#define PIN_NUM_ONBOARD_RGB_LED GPIO_NUM_NC
+#define POWER_STATUS_LED_ENABLED (OPENCALC_HARDWARE_IS_PCB_V3 && OPENCALC_ENABLE_POWER_STATUS_LED)
+#define PIN_NUM_POWER_STATUS_LED GPIO_NUM_21
 #define LCD_BCKL_LEDC_MODE LEDC_LOW_SPEED_MODE
 #define LCD_BCKL_LEDC_TIMER LEDC_TIMER_0
 #define LCD_BCKL_LEDC_CHANNEL LEDC_CHANNEL_0
 #define LCD_BCKL_LEDC_RES LEDC_TIMER_10_BIT
 #define LCD_BCKL_LEDC_MAX_DUTY 1023
+#define LCD_BCKL_ACTIVE_LOW OPENCALC_USE_AO3401A_BACKLIGHT
 #define POWER_BUTTON_ENABLED 0
 #define PIN_NUM_POWER_BUTTON GPIO_NUM_NC
 #define POWER_HOLD_ENABLED 0
@@ -151,7 +161,11 @@ static void log_wakeup_reason(void)
 #define BATTERY_EMPTY_MV 3300
 #define BATTERY_FULL_MV 4200
 #define BATTERY_CHARGE_STATUS_ENABLED 0
+#if OPENCALC_USE_NEW_AUDIO_PCB
+#define PIN_NUM_BATTERY_CHARGE_STATUS GPIO_NUM_NC
+#else
 #define PIN_NUM_BATTERY_CHARGE_STATUS GPIO_NUM_41
+#endif
 #define BATTERY_CHARGE_STATUS_ACTIVE_LOW 1
  
 // Button matrix
@@ -420,18 +434,27 @@ void board_display_unlock(void)
     }
 }
 
-static void onboard_led_off(void)
+#if POWER_STATUS_LED_ENABLED
+static void power_status_led_set(bool on)
 {
-#if ONBOARD_RGB_LED_ENABLED
+    gpio_set_level(PIN_NUM_POWER_STATUS_LED, on ? 1 : 0);
+}
+#endif
+
+static void power_status_led_init(void)
+{
+#if POWER_STATUS_LED_ENABLED
+    (void)gpio_sleep_sel_dis(PIN_NUM_POWER_STATUS_LED);
     gpio_config_t cfg = {
-        .pin_bit_mask = 1ULL << PIN_NUM_ONBOARD_RGB_LED,
+        .pin_bit_mask = 1ULL << PIN_NUM_POWER_STATUS_LED,
         .mode = GPIO_MODE_OUTPUT,
         .pull_up_en = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_ENABLE,
         .intr_type = GPIO_INTR_DISABLE,
     };
-    gpio_config(&cfg);
-    gpio_set_level(PIN_NUM_ONBOARD_RGB_LED, 0);
+    ESP_ERROR_CHECK(gpio_config(&cfg));
+    power_status_led_set(true);
+    ESP_LOGI(TAG, "Power status LED active on GPIO%d", PIN_NUM_POWER_STATUS_LED);
 #endif
 }
 
@@ -488,10 +511,10 @@ static void keypad_set_idle(void)
 }
 
 #if OPENCALC_WAKE_FROM_KEYPAD_IN_SOFTWARE_OFF && ENABLE_KEYPAD_MATRIX_INPUT
-static void keypad_prepare_for_deep_sleep(gpio_num_t wake_pin)
+static void keypad_prepare_on_key_wakeup(gpio_num_t wake_pin)
 {
-    /* Only COL0 is active in deep sleep, so the row-9 ON/HOME switch is the
-     * only key that can pull the wake row low. Keep the other columns high. */
+    /* Only COL0 is active during software off, so the row-9 ON/HOME switch is
+     * the only key that can pull the wake row low. Keep the other columns high. */
     for (int col = 0; col < BOARD_KEYPAD_COLS; col++) {
         gpio_num_t pin = KEYPAD_COL_PINS[col];
         ESP_ERROR_CHECK(gpio_set_direction(pin, GPIO_MODE_OUTPUT));
@@ -504,8 +527,8 @@ static void keypad_prepare_for_deep_sleep(gpio_num_t wake_pin)
         gpio_set_pull_mode(KEYPAD_ROW_PINS[row], GPIO_PULLUP_ONLY);
     }
 
-    /* GPIO16 is an RTC IO on ESP32-S3. Configure its deep-sleep input and
-     * pull-up in the RTC domain rather than relying on light-sleep GPIO state. */
+    /* GPIO16 is an RTC IO on ESP32-S3. Configure its sleep input and pull-up
+     * in the RTC domain so the ON/HOME level remains valid while sleeping. */
     ESP_ERROR_CHECK(rtc_gpio_init(wake_pin));
     ESP_ERROR_CHECK(rtc_gpio_set_direction(wake_pin, RTC_GPIO_MODE_INPUT_ONLY));
     ESP_ERROR_CHECK(rtc_gpio_set_direction_in_sleep(wake_pin, RTC_GPIO_MODE_INPUT_ONLY));
@@ -514,7 +537,7 @@ static void keypad_prepare_for_deep_sleep(gpio_num_t wake_pin)
 }
 #endif
 
-static void keypad_release_deep_sleep_holds(void)
+static void keypad_release_sleep_holds(void)
 {
 #if OPENCALC_WAKE_FROM_KEYPAD_IN_SOFTWARE_OFF && ENABLE_KEYPAD_MATRIX_INPUT
     gpio_deep_sleep_hold_dis();
@@ -528,6 +551,20 @@ static void keypad_release_deep_sleep_holds(void)
 #endif
 }
 
+#if OPENCALC_SOFTWARE_OFF_USE_LIGHT_SLEEP
+static void keypad_restore_after_light_sleep(void)
+{
+#if OPENCALC_WAKE_FROM_KEYPAD_IN_SOFTWARE_OFF && ENABLE_KEYPAD_MATRIX_INPUT
+    keypad_release_sleep_holds();
+    (void)gpio_set_direction(PIN_NUM_KEYPAD_ROW9, GPIO_MODE_INPUT);
+    (void)gpio_set_pull_mode(PIN_NUM_KEYPAD_ROW9, GPIO_PULLUP_ONLY);
+    (void)gpio_set_intr_type(PIN_NUM_KEYPAD_ROW9, GPIO_INTR_NEGEDGE);
+    keypad_set_idle();
+    s_keypad_interrupt_pending = false;
+#endif
+}
+#endif
+
 /* ── Backlight ────────────────────────────────────────────────── */
 static void backlight_on(void)
 {
@@ -535,7 +572,11 @@ static void backlight_on(void)
         return;
     }
 
-    ESP_LOGI(TAG, "Backlight PWM GPIO=%d. Drive/control this from 3V3 only, never 5V.", PIN_NUM_LCD_BCKL);
+    ESP_LOGI(TAG,
+             "Backlight PWM GPIO=%d active_%s (%s circuit). Control rail must be 3V3, never 5V.",
+             PIN_NUM_LCD_BCKL,
+             LCD_BCKL_ACTIVE_LOW ? "low" : "high",
+             OPENCALC_USE_AO3401A_BACKLIGHT ? "AO3401A" : "TPS22918");
 
     ledc_timer_config_t timer_cfg = {
         .speed_mode = LCD_BCKL_LEDC_MODE,
@@ -552,7 +593,7 @@ static void backlight_on(void)
         .channel = LCD_BCKL_LEDC_CHANNEL,
         .intr_type = LEDC_INTR_DISABLE,
         .timer_sel = LCD_BCKL_LEDC_TIMER,
-        .duty = 0,
+        .duty = LCD_BCKL_ACTIVE_LOW ? LCD_BCKL_LEDC_MAX_DUTY : 0,
         .hpoint = 0,
     };
     ESP_ERROR_CHECK(ledc_channel_config(&channel_cfg));
@@ -565,7 +606,9 @@ static void backlight_off(void)
         return;
     }
 
-    ledc_set_duty(LCD_BCKL_LEDC_MODE, LCD_BCKL_LEDC_CHANNEL, 0);
+    ledc_set_duty(LCD_BCKL_LEDC_MODE,
+                  LCD_BCKL_LEDC_CHANNEL,
+                  LCD_BCKL_ACTIVE_LOW ? LCD_BCKL_LEDC_MAX_DUTY : 0);
     ledc_update_duty(LCD_BCKL_LEDC_MODE, LCD_BCKL_LEDC_CHANNEL);
 }
 
@@ -605,11 +648,8 @@ static void lcd_prepare_for_deep_sleep(void)
         (void)esp_lcd_panel_disp_on_off(s_panel_handle, false);
     }
 
-    /*
-     * The PCB V3 backlight uses GPIO47 to drive the TPS22918 ON pin.
-     * Put that pin back under GPIO control and hold it low for deep sleep.
-     */
-    sleep_drive_output(PIN_NUM_LCD_BCKL, 0);
+    /* Hold the AO3401A gate high so its active-low backlight stays off. */
+    sleep_drive_output(PIN_NUM_LCD_BCKL, LCD_BCKL_ACTIVE_LOW ? 1 : 0);
 
     sleep_drive_output(PIN_NUM_LCD_CS, 1);
     sleep_drive_output(PIN_NUM_LCD_DC, 0);
@@ -617,24 +657,71 @@ static void lcd_prepare_for_deep_sleep(void)
     sleep_drive_output(PIN_NUM_LCD_SCLK, 0);
     sleep_drive_output(PIN_NUM_LCD_MOSI, 0);
     sleep_drive_input_pulldown(PIN_NUM_LCD_MISO);
+#if OPENCALC_USE_NEW_AUDIO_PCB
+    sleep_drive_output(GPIO_NUM_13, 0);
+    sleep_drive_input_pulldown(GPIO_NUM_41);
+#endif
 }
 
 static void lcd_prepare_for_light_sleep(void)
 {
     backlight_off();
 
+    esp_err_t err = lcd_wait_for_pending_full_frame();
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "LCD DMA did not drain before light sleep: %s", esp_err_to_name(err));
+    }
+
     if (s_panel_handle != NULL) {
-        (void)esp_lcd_panel_disp_on_off(s_panel_handle, false);
+        err = esp_lcd_panel_disp_on_off(s_panel_handle, false);
+        if (err != ESP_OK) {
+            ESP_LOGW(TAG, "Failed to turn LCD off before light sleep: %s", esp_err_to_name(err));
+        }
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
 }
 
 static void lcd_resume_from_light_sleep(void)
 {
+    bool restored = false;
+
     if (s_panel_handle != NULL) {
-        (void)esp_lcd_panel_disp_on_off(s_panel_handle, true);
+        /* Light sleep can reset or isolate the ILI9341 control pins. Restore
+         * the complete panel state instead of assuming a display-on command
+         * is sufficient. Keep the backlight off until valid pixels exist. */
+        esp_err_t err = esp_lcd_panel_reset(s_panel_handle);
+        if (err == ESP_OK) {
+            err = esp_lcd_panel_init(s_panel_handle);
+        }
+        if (err == ESP_OK) {
+            err = esp_lcd_panel_swap_xy(s_panel_handle, true);
+        }
+        if (err == ESP_OK) {
+            err = esp_lcd_panel_mirror(s_panel_handle, true, true);
+        }
+        if (err == ESP_OK) {
+            err = esp_lcd_panel_set_gap(s_panel_handle, LCD_X_GAP, LCD_Y_GAP);
+        }
+        if (err == ESP_OK && s_full_frame_565 != NULL) {
+            err = lcd_draw_bitmap_sync(
+                s_panel_handle, 0, 0, LCD_H_RES, LCD_V_RES, s_full_frame_565);
+        }
+        if (err == ESP_OK) {
+            err = esp_lcd_panel_disp_on_off(s_panel_handle, true);
+        }
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to restore LCD after light sleep: %s", esp_err_to_name(err));
+        } else {
+            restored = true;
+        }
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
 
-    backlight_on();
+    if (restored) {
+        backlight_on();
+    } else {
+        backlight_off();
+    }
 }
 
 static void keypad_init(void)
@@ -836,8 +923,8 @@ static void touch_init(void)
 void board_init(void)
 {
     log_wakeup_reason();
-    keypad_release_deep_sleep_holds();
-    onboard_led_off();
+    keypad_release_sleep_holds();
+    power_status_led_init();
 
     if (s_display_mutex == NULL) {
         s_display_mutex = xSemaphoreCreateMutex();
@@ -927,7 +1014,6 @@ void board_init(void)
     s_panel_handle = panel_handle;
     keypad_init();
     touch_init();
-    onboard_led_off();
     power_button_init();
     battery_monitor_init();
     ESP_LOGI(TAG, "Display ready");
@@ -1129,31 +1215,37 @@ bool board_touch_take_interrupt(void)
 void board_enter_deep_sleep(void)
 {
 #if OPENCALC_SOFTWARE_OFF_USE_LIGHT_SLEEP
+    {
     ESP_LOGI(TAG, "Entering software off (light sleep)");
 
     lcd_prepare_for_light_sleep();
-    onboard_led_off();
+#if POWER_STATUS_LED_ENABLED
+    power_status_led_set(false);
+    sleep_drive_output(PIN_NUM_POWER_STATUS_LED, 0);
+#endif
     ESP_ERROR_CHECK(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL));
 
 #if OPENCALC_WAKE_FROM_KEYPAD_IN_SOFTWARE_OFF && ENABLE_KEYPAD_MATRIX_INPUT
     const gpio_num_t wake_pin = PIN_NUM_KEYPAD_ROW9;
-    keypad_set_idle();
-    ESP_ERROR_CHECK(gpio_set_pull_mode(wake_pin, GPIO_PULLUP_ONLY));
+    keypad_prepare_on_key_wakeup(wake_pin);
 
     ESP_LOGI(TAG, "Waiting for ON/HOME key release before light sleep");
-    while (gpio_get_level(wake_pin) == 0) {
+    while (rtc_gpio_get_level(wake_pin) == 0) {
         vTaskDelay(pdMS_TO_TICKS(20));
     }
 
     int stable_high_ms = 0;
     while (stable_high_ms < 120) {
         vTaskDelay(pdMS_TO_TICKS(10));
-        stable_high_ms = gpio_get_level(wake_pin) == 0 ? 0 : stable_high_ms + 10;
+        stable_high_ms = rtc_gpio_get_level(wake_pin) == 0 ? 0 : stable_high_ms + 10;
     }
 
-    ESP_ERROR_CHECK(gpio_wakeup_enable(wake_pin, GPIO_INTR_LOW_LEVEL));
-    ESP_ERROR_CHECK(esp_sleep_enable_gpio_wakeup());
-    ESP_LOGI(TAG, "Light-sleep GPIO wake armed on ON/HOME GPIO%d", wake_pin);
+    ESP_ERROR_CHECK(esp_sleep_enable_ext0_wakeup(wake_pin, 0));
+    (void)esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+    ESP_LOGI(TAG,
+             "Light-sleep EXT0 wake armed on ON/HOME GPIO%d, level=%lu",
+             wake_pin,
+             (unsigned long)rtc_gpio_get_level(wake_pin));
 #else
     keypad_set_idle();
     ESP_LOGI(TAG, "Keypad wake disabled for software off; light sleep will need reset/power cycle");
@@ -1165,25 +1257,30 @@ void board_enter_deep_sleep(void)
     esp_err_t err = esp_light_sleep_start();
 
 #if OPENCALC_WAKE_FROM_KEYPAD_IN_SOFTWARE_OFF && ENABLE_KEYPAD_MATRIX_INPUT
-    (void)gpio_wakeup_disable(PIN_NUM_KEYPAD_ROW9);
+    keypad_restore_after_light_sleep();
 #endif
     (void)esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
     lcd_resume_from_light_sleep();
+    power_status_led_init();
 
     ESP_LOGI(TAG, "Woke from software off (light sleep), err=%s", esp_err_to_name(err));
     return;
+    }
 #endif
 
     ESP_LOGI(TAG, "Entering software off (deep sleep)");
 
     lcd_prepare_for_deep_sleep();
-    onboard_led_off();
+#if POWER_STATUS_LED_ENABLED
+    power_status_led_set(false);
+    sleep_drive_output(PIN_NUM_POWER_STATUS_LED, 0);
+#endif
 
     ESP_ERROR_CHECK(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL));
 
 #if OPENCALC_WAKE_FROM_KEYPAD_IN_SOFTWARE_OFF && ENABLE_KEYPAD_MATRIX_INPUT
     const gpio_num_t wake_pin = PIN_NUM_KEYPAD_ROW9;
-    keypad_prepare_for_deep_sleep(wake_pin);
+    keypad_prepare_on_key_wakeup(wake_pin);
 
     ESP_LOGI(TAG, "Waiting for ON/HOME key release before deep sleep");
     while (rtc_gpio_get_level(wake_pin) == 0) {
@@ -1249,7 +1346,10 @@ void board_set_backlight_brightness(int percent)
         return;
     }
 
-    uint32_t duty = (uint32_t)(LCD_BCKL_LEDC_MAX_DUTY * percent / 100);
+    uint32_t on_duty = (uint32_t)(LCD_BCKL_LEDC_MAX_DUTY * percent / 100);
+    uint32_t duty = LCD_BCKL_ACTIVE_LOW
+        ? LCD_BCKL_LEDC_MAX_DUTY - on_duty
+        : on_duty;
     ledc_set_duty(LCD_BCKL_LEDC_MODE, LCD_BCKL_LEDC_CHANNEL, duty);
     ledc_update_duty(LCD_BCKL_LEDC_MODE, LCD_BCKL_LEDC_CHANNEL);
 }
@@ -1623,4 +1723,44 @@ void board_draw_rgb888_frame_320x240(const uint32_t *pixels)
 
         ESP_ERROR_CHECK(lcd_draw_bitmap_sync(s_panel_handle, 0, y, FRAME_W, y + h, line_buf));
     }
+}
+
+void board_draw_indexed8_frame_256x240(const uint8_t *pixels, const uint32_t *palette_rgb888)
+{
+    enum {
+        SRC_W = 256,
+        FRAME_W = 320,
+        FRAME_H = 240,
+        PALETTE_SIZE = 64,
+    };
+
+    uint16_t palette_565[PALETTE_SIZE];
+
+    if (s_panel_handle == NULL || s_full_frame_565 == NULL || pixels == NULL ||
+        palette_rgb888 == NULL) {
+        return;
+    }
+
+    for (int i = 0; i < PALETTE_SIZE; i++) {
+        palette_565[i] = lcd_rgb888_to_rgb565(palette_rgb888[i]);
+    }
+
+    ESP_ERROR_CHECK(lcd_wait_for_pending_full_frame());
+    for (int y = 0; y < FRAME_H; y++) {
+        const uint8_t *src = pixels + y * SRC_W;
+        uint16_t *dst = s_full_frame_565 + y * FRAME_W;
+
+        /* Exact 5:4 nearest-neighbor expansion: each group of four NES
+         * pixels becomes five LCD pixels, with the first one repeated. */
+        for (int sx = 0, dx = 0; sx < SRC_W; sx += 4, dx += 5) {
+            uint16_t first = palette_565[src[sx] & 0x3f];
+            dst[dx] = first;
+            dst[dx + 1] = first;
+            dst[dx + 2] = palette_565[src[sx + 1] & 0x3f];
+            dst[dx + 3] = palette_565[src[sx + 2] & 0x3f];
+            dst[dx + 4] = palette_565[src[sx + 3] & 0x3f];
+        }
+    }
+
+    ESP_ERROR_CHECK(lcd_draw_full_frame_async(s_full_frame_565));
 }

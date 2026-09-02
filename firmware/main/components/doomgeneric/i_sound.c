@@ -33,6 +33,11 @@
 #include "i_video.h"
 #include "m_argv.h"
 #include "m_config.h"
+#include "opencalc_config.h"
+
+#if OPENCALC_GAME_AUDIO_ENABLED
+extern sound_module_t DG_sound_module;
+#endif
 
 // Sound sample rate to use for digital output (Hz)
 
@@ -73,9 +78,9 @@ static int snd_mport = 0;
 
 static sound_module_t *sound_modules[] = 
 {
-    #ifdef FEATURE_SOUND
+#if OPENCALC_GAME_AUDIO_ENABLED
     &DG_sound_module,
-    #endif
+#endif
     NULL,
 };
 
@@ -417,4 +422,3 @@ void I_BindSoundVariables(void)
     // to crash when it looped.  If this is an old SDL_mixer version,
     // disable MIDI.
 }
-

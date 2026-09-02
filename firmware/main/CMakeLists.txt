@@ -3,6 +3,7 @@ idf_component_register(
         "main.c"
         "components/board_init.c"
         "components/SD.cpp"
+        "components/opencalc_audio.c"
         "components/opencalc_breakout.c"
         "components/opencalc_doom.c"
         "components/opencalc_mario.cpp"
@@ -16,6 +17,7 @@ idf_component_register(
         "components/usb_msc.c"
         "components/tiny-python.c"
         "components/mario/bus.cpp"
+        "components/mario/apu2A03.cpp"
         "components/mario/cartridge.cpp"
         "components/mario/cpu6502.cpp"
         "components/mario/mapper.cpp"
@@ -44,6 +46,7 @@ idf_component_register(
         "components/doomgeneric/i_input.c"
         "components/doomgeneric/i_joystick.c"
         "components/doomgeneric/i_scale.c"
+        "components/doomgeneric/i_opencalc_sound.c"
         "components/doomgeneric/i_sound.c"
         "components/doomgeneric/i_system.c"
         "components/doomgeneric/i_timer.c"
@@ -107,6 +110,7 @@ idf_component_register(
     REQUIRES
         driver
         esp_driver_ledc
+        esp_driver_i2s
         esp_adc
         esp_timer
         esp_lcd

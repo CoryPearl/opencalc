@@ -6,6 +6,10 @@
 #include "esp_log.h"
 #include "sdkconfig.h"
 
+#if CONFIG_PM_ENABLE && OPENCALC_CPU_MAX_MHZ > CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ
+#error "OPENCALC_CPU_MAX_MHZ cannot exceed CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ"
+#endif
+
 #if CONFIG_PM_ENABLE
 #include "esp_pm.h"
 #endif
@@ -20,6 +24,10 @@
 
 static const char *TAG = "power";
 static bool s_power_save = false;
+#if CONFIG_PM_ENABLE
+static esp_pm_lock_handle_t s_performance_lock = NULL;
+static bool s_performance_lock_held = false;
+#endif
 
 static void stop_wireless_if_disabled(void)
 {
@@ -56,6 +64,14 @@ void opencalc_power_init(void)
 {
     stop_wireless_if_disabled();
     opencalc_power_set_power_save(false);
+#if CONFIG_PM_ENABLE
+    esp_err_t err = esp_pm_lock_create(
+        ESP_PM_CPU_FREQ_MAX, 0, "opencalc_performance", &s_performance_lock);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "performance lock create failed: %s", esp_err_to_name(err));
+        s_performance_lock = NULL;
+    }
+#endif
 }
 
 void opencalc_power_set_power_save(bool enabled)
@@ -80,4 +96,32 @@ void opencalc_power_set_power_save(bool enabled)
 bool opencalc_power_get_power_save(void)
 {
     return s_power_save;
+}
+
+void opencalc_power_set_performance_required(bool required)
+{
+#if CONFIG_PM_ENABLE
+    if (s_performance_lock == NULL || required == s_performance_lock_held) {
+        return;
+    }
+
+    esp_err_t err = required
+        ? esp_pm_lock_acquire(s_performance_lock)
+        : esp_pm_lock_release(s_performance_lock);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG,
+                 "performance lock %s failed: %s",
+                 required ? "acquire" : "release",
+                 esp_err_to_name(err));
+        return;
+    }
+
+    s_performance_lock_held = required;
+    ESP_LOGI(TAG,
+             "Performance CPU lock %s (max %d MHz)",
+             required ? "acquired" : "released",
+             s_power_save ? OPENCALC_POWER_SAVE_CPU_MAX_MHZ : OPENCALC_CPU_MAX_MHZ);
+#else
+    (void)required;
+#endif
 }

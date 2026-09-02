@@ -38,6 +38,7 @@ void board_display_unlock(void);
 void board_draw_rgb888_frame_320x200(const uint32_t *pixels);
 void board_draw_rgb888_frame_320x240(const uint32_t *pixels);
 void board_draw_rgb565_frame_320x200(const uint16_t *pixels);
+void board_draw_indexed8_frame_256x240(const uint8_t *pixels, const uint32_t *palette_rgb888);
 void board_set_backlight_brightness(int percent);
 int board_get_backlight_brightness(void);
 bool board_battery_get_percent(int *percent);

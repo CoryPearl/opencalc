@@ -4,19 +4,19 @@ OpenCalc OS is the open-source ESP-IDF operating environment for the OpenCalc ES
 
 ## Current Firmware Status
 
-Current target: ESP32-S3 with 16 MB flash, 8 MB PSRAM, ILI9341 320x240 LCD, 10x5 diode-isolated keypad matrix, one USB-C data/power connection, LiPo battery support, PWM backlight control, battery ADC, and charger-status input.
+Current target: ESP32-S3 with 16 MB flash, 8 MB PSRAM, ILI9341 320x240 LCD, 10x5 diode-isolated keypad matrix, one USB-C data/power connection, LiPo battery support, PWM backlight control, battery ADC, and optional game audio on the new PCB.
 
 The firmware is now split across both ESP32-S3 cores:
 
 - UI, LCD drawing, keypad dispatch, and game drawing run on `OPENCALC_UI_CORE`.
 - Serial button simulation and async graph/math jobs run on `OPENCALC_WORKER_CORE`.
-- Calculator evaluation, numeric solver solving, and graph Calc tools are queued as worker jobs so long math work does not directly block or mutate the UI state.
+- Calculator Enter evaluates inline for predictable key response; numeric solver solving and graph Calc tools use worker jobs so longer math work does not directly block drawing.
 - Continuous UI/game pacing is capped by `OPENCALC_TARGET_FPS` in `main/config.h`.
 - Power-save mode lowers CPU max frequency and caps brightness using values in `main/config.h`.
 
-Latest verified build status:
+Recent local build status:
 
-- `idf.py build` passes.
+- `idf.py build` passed during the last firmware check. Rebuild after code changes before trusting crash backtraces.
 - App binary size: about `0xdbb10`.
 - Factory app partition: `0x400000` bytes.
 - Free app partition space: about `0x3244f0` bytes, roughly 79%.
@@ -57,6 +57,8 @@ Important current toggles:
 #define OPENCALC_ENABLE_BLUETOOTH 0
 #define OPENCALC_ENABLE_WIFI 0
 #define OPENCALC_ENABLE_DOOM 1
+#define OPENCALC_ENABLE_GAME_AUDIO 1
+#define OPENCALC_USE_NEW_AUDIO_PCB 0
 #define OPENCALC_ENABLE_SERIAL_BUTTON_INPUT 0
 #define OPENCALC_FLASH_STORAGE_IMAGE 1
 #define OPENCALC_TARGET_FPS 45
@@ -88,34 +90,31 @@ storage_image/
     fib.py
 ```
 
-On boot the volume label is set to `opencalc`, and the USB device strings are set to OpenCalc. The COM port is for flashing/monitoring; the USB port is the one that appears as storage on a computer.
+On the current single USB-C hardware, TinyUSB exposes CDC serial and MSC storage on the same connector. On macOS, monitor the CDC port that appears as something like `/dev/cu.usbmodemopencalc1`. Older ESP32-S3 dev boards may still expose separate COM and native-USB ports.
 
-## User And Debug Header
+## Current PCB Pin Map
 
-The V3 PCB target includes a back-side `1x16` unpopulated 2.54 mm user/debug header. It should expose:
+Set `OPENCALC_USE_NEW_AUDIO_PCB` to `0` for the existing board or `1` for the new board that removes LCD MISO and charger status. The two profiles use these assignments:
 
-| Pin | Net                  | Use                                                                                   |
-| --: | -------------------- | ------------------------------------------------------------------------------------- |
-|   1 | `GND`                | Ground reference                                                                      |
-|   2 | `3V3`                | Regulated 3.3 V rail for low-current add-ons                                          |
-|   3 | `5V/VBUS`            | USB-C VBUS when plugged in                                                            |
-|   4 | `VBAT`               | Raw protected LiPo battery rail                                                       |
-|   5 | `EN / RESET`         | Pull to `GND` to reset                                                                |
-|   6 | `GPIO0 / BOOT`       | Pull to `GND` during reset for ROM bootloader                                         |
-|   7 | `GPIO43 / TX0`       | Serial console TX                                                                     |
-|   8 | `GPIO44 / RX0`       | Serial console RX                                                                     |
-|   9 | `USB D+`             | USB debug only, not general GPIO                                                      |
-|  10 | `USB D-`             | USB debug only, not general GPIO                                                      |
-|  11 | Reserved / DNP       | Optional future power-control or debug net; not used by current software-off firmware |
-|  12 | `GPIO33`             | User-usable spare GPIO                                                                |
-|  13 | `GPIO34`             | User-usable spare GPIO                                                                |
-|  14 | `GPIO35 / VBAT_DIV`  | Battery voltage divider ADC input                                                     |
-|  15 | `GPIO36 / LCD_BACKL` | LCD backlight load-switch enable/PWM                                                  |
-|  16 | `GPIO37 / CHG_STAT`  | Charger status input, active-low                                                      |
+| Function | Old PCB | New audio PCB |
+| -------- | ------- | ------------- |
+| LCD SCLK / MOSI / MISO | `12` / `11` / `13` | `12` / `11` / unwired |
+| LCD CS / DC / RST | `10` / `14` / `15` | `10` / `14` / `15` |
+| LCD backlight PWM/load-switch enable | `47` | `47` |
+| USB D- / D+ | `19` / `20` | `19` / `20` |
+| Battery ADC divider | `7` | `7` |
+| Charger status input | `41` | removed |
+| PAM8302A shutdown / PDM audio | none | `13` / `41` |
+| Keypad rows 0-9 | `1`, `2`, `42`, `4`, `5`, `6`, `48`, `8`, `9`, `16` | same |
+| Keypad columns 0-4 | `17`, `18`, `38`, `39`, `40` | same |
 
-The preferred general expansion pins are `GPIO33` and `GPIO34`. The LCD, touch, keypad, battery ADC, backlight control, charger status, native USB, and console UART pins are already assigned.
+GPIO41 emits PDM rather than analog audio. The new PCB must low-pass filter and AC-couple that signal before the PAM8302A input. GPIO13 drives the amplifier `SD` pin and should have an external pull-down so the amplifier remains shut down during reset and sleep.
 
-Power off is software-only in the current firmware. `2nd` + `On` turns off the display/backlight and enters ESP32-S3 deep sleep; it does not drive a `POWER_HOLD` latch or cut the battery rail.
+Touch pins are intentionally unwired and disabled during bring-up.
+
+Expose test pads or a small header for `GND`, `3V3`, `5V/VBUS`, `VBAT`, `RESET/EN`, `GPIO0/BOOT`, `UART0 TX/RX`, and `USB D+/D-`. Any spare GPIO exposed for user hardware should not share LCD, keypad, battery ADC, charger status, native USB, or console UART nets.
+
+Power off is software-only in the current firmware. `2nd` + `On` turns off the display/backlight and enters the configured low-power sleep path; it does not drive a `POWER_HOLD` latch or cut the battery rail.
 
 ## Controls
 
@@ -183,7 +182,7 @@ If monitor output says the flashed app checksum does not match the built app, re
 
 ## Games
 
-Press `Alpha` then `2nd` to open the game menu. The current menu includes Tetris, Doom, Snake, Breakout, and Mario. High scores are saved in on-chip NVS, so they survive power off and do not depend on USB storage.
+Press `Alpha` then `2nd` to open the game menu. The current menu includes Tetris, Doom, Snake, Breakout, and Mario. High scores are saved in on-chip NVS, so they survive power off and do not depend on USB storage. On the new audio PCB, Tetris, Snake, and Breakout use synthesized effects, Doom uses its game sound events, and Mario runs its NES APU channels. The amplifier is shut down outside games.
 
 Doom is optional and uses the shareware IWAD at:
 
@@ -226,10 +225,19 @@ Mario controls are mapped to match Doom-style play:
 
 Mario loads `storage_image/mario.nes` through the real NES path: iNES cartridge loader, mapper 0 cartridge support, 6502 CPU, NES bus, controller state, PPU 2C02 framebuffer, then the ILI9341 display driver. Audio is disabled. For now, use a mapper 0 `.nes` ROM such as the standard Super Mario Bros cartridge format.
 
-The production 10x5 keypad expects one series diode per key. With columns
-pulled high and rows scanned low, diode anodes face the columns and diode
-cathodes/bars face the rows. This enables simultaneous movement, sprint,
-strafe, fire, and use inputs without matrix ghosting.
+Tetris controls:
+
+| Calculator button        | Tetris action                  |
+| ------------------------ | ------------------------------ |
+| Left / Right             | Move piece                     |
+| Down                     | Soft drop                      |
+| `Y=`                     | Hard drop                      |
+| `Window`                 | Hold piece                     |
+| Up                       | Rotate                         |
+| `Back`                   | Pause/back                     |
+| `On (Home)`              | Quit Tetris and return menu    |
+
+The production 10x5 keypad expects one series diode per key. The firmware scans by driving one column low at a time and reading rows with pull-ups. The diode direction must allow a pressed key to pull its row low only through the selected low column. This enables simultaneous movement, sprint, strafe, fire, and use inputs without matrix ghosting.
 
 ## Notes
 

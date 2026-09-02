@@ -26,12 +26,15 @@
 #include "freertos/task.h"
 
 #include "esp_attr.h"
+#include "esp_heap_caps.h"
 #include "esp_timer.h"
 
 #include <stdio.h>
 #include <string.h>
 
 #include "board_init.h"
+#include "opencalc_audio.h"
+#include "opencalc_config.h"
 #include "opencalc_persist.h"
 #include "opencalc_tetris.h"
 #include "tetris_core.h"
@@ -203,9 +206,62 @@ static int64_t s_left_repeat_us = 0;
 static int64_t s_right_repeat_us = 0;
 static long s_high_score = 0;
 static bool s_high_score_dirty = false;
+static int64_t s_last_health_log_us = 0;
 
 #define TETRIS_HORIZONTAL_DAS_US 180000
 #define TETRIS_HORIZONTAL_ARR_US 70000
+
+static bool tetris_state_valid(const tetris_t *game)
+{
+    if (game->bag_pos < 0 || game->bag_pos > T_PIECE_COUNT ||
+        game->cur_piece < T_PIECE_I || game->cur_piece >= T_PIECE_COUNT ||
+        game->cur_rot < 0 || game->cur_rot > 3 ||
+        game->clear_count < 0 || game->clear_count > 4 || game->level < 1) {
+        return false;
+    }
+
+    for (int i = 0; i < T_NEXT_COUNT; i++) {
+        if (game->next_queue[i] < T_PIECE_I || game->next_queue[i] >= T_PIECE_COUNT) {
+            return false;
+        }
+    }
+    if (game->has_hold &&
+        (game->hold_piece < T_PIECE_I || game->hold_piece >= T_PIECE_COUNT)) {
+        return false;
+    }
+    for (int row = 0; row < T_BOARD_H; row++) {
+        for (int col = 0; col < T_BOARD_W; col++) {
+            if (game->board[row][col] < 0 || game->board[row][col] > T_PIECE_COUNT) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+static void tetris_log_health(int64_t now_us)
+{
+#if OPENCALC_DEBUG_TETRIS_HEALTH
+    if (now_us - s_last_health_log_us < 5000000) {
+        return;
+    }
+
+    bool heap_ok = heap_caps_check_integrity_all(false);
+    size_t internal_free = heap_ok ? heap_caps_get_free_size(MALLOC_CAP_INTERNAL) : 0;
+    size_t largest_block = heap_ok
+        ? heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT)
+        : 0;
+    printf("tetris health heap=%s internal_free=%lu largest=%lu stack_free=%lu\n",
+           heap_ok ? "ok" : "CORRUPT",
+           (unsigned long)internal_free,
+           (unsigned long)largest_block,
+           (unsigned long)uxTaskGetStackHighWaterMark(NULL));
+    fflush(stdout);
+    s_last_health_log_us = now_us;
+#else
+    (void)now_us;
+#endif
+}
 
 static void tetris_note_score(void)
 {
@@ -228,6 +284,9 @@ static void tetris_save_high_score(void)
 
 static void draw_mini_piece(int x, int y, tetris_piece_t p, int cell)
 {
+    if (p < T_PIECE_I || p >= T_PIECE_COUNT) {
+        return;
+    }
     uint16_t shape = tetris_shape(p, 0);
     int minc = 4, maxc = -1, minr = 4, maxr = -1;
     for (int r = 0; r < 4; r++) {
@@ -281,7 +340,7 @@ static void draw_tetris_frame(void)
                          (((int)(s_game.clear_timer_ms / 60)) % 2 == 0);
         for (int c = 0; c < T_BOARD_W; c++) {
             int8_t v = s_game.board[r][c];
-            if (v == 0) continue;
+            if (v < 1 || v > T_PIECE_COUNT) continue;
             int sx = BOARD_X + c * CELL;
             draw_block(sx, sy, CELL, flashing ? T_TEXT : PIECE_COLOR[v - 1]);
         }
@@ -411,6 +470,8 @@ void opencalc_tetris_enter(void)
     s_right_was_held = false;
     s_left_repeat_us = 0;
     s_right_repeat_us = 0;
+    s_last_health_log_us = esp_timer_get_time();
+    opencalc_audio_play_tone(523, 70, 65);
     draw_tetris_frame();
 }
 
@@ -425,6 +486,13 @@ void opencalc_tetris_tick(void)
         return;
     }
     int64_t now = esp_timer_get_time();
+    if (!tetris_state_valid(&s_game)) {
+        printf("ERROR: Tetris state corruption detected; resetting game safely\n");
+        fflush(stdout);
+        tetris_init(&s_game, (uint32_t)now);
+        s_last_us = now;
+    }
+    tetris_log_health(now);
     float dt_ms = (float)(now - s_last_us) / 1000.0f;
     s_last_us = now;
     if (dt_ms > 200.0f) {
@@ -466,7 +534,18 @@ void opencalc_tetris_tick(void)
     s_left_was_held = left_held;
     s_right_was_held = right_held;
 
+    int previous_lines = s_game.lines;
+    bool was_game_over = s_game.game_over;
     tetris_step(&s_game, dt_ms, soft_drop);
+    if (s_game.lines > previous_lines) {
+        int cleared = s_game.lines - previous_lines;
+        opencalc_audio_play_tone((uint16_t)(620 + cleared * 130),
+                                 (uint16_t)(70 + cleared * 25),
+                                 85);
+    }
+    if (!was_game_over && s_game.game_over) {
+        opencalc_audio_play_tone(130, 350, 90);
+    }
     tetris_note_score();
     if (s_game.game_over) {
         tetris_save_high_score();
@@ -501,19 +580,30 @@ bool opencalc_tetris_press_button_number(int number)
         }
         break;
     case 10: /* up -> rotate clockwise */
-        tetris_try_rotate(&s_game, 1);
+        if (tetris_try_rotate(&s_game, 1)) {
+            opencalc_audio_play_tone(700, 28, 45);
+        }
         break;
     case 6: /* 2nd -> rotate counter-clockwise */
-        tetris_try_rotate(&s_game, -1);
+        if (tetris_try_rotate(&s_game, -1)) {
+            opencalc_audio_play_tone(620, 28, 45);
+        }
         break;
-    case 41: /* sto -> hold */
+    case 2: /* window -> hold */
         tetris_hold(&s_game);
+        opencalc_audio_play_tone(420, 45, 50);
         break;
-    case 50: /* enter -> hard drop, or restart on game over */
+    case 1: /* y= -> hard drop, or restart on game over */
         if (s_game.game_over) {
             opencalc_tetris_enter();
         } else {
             tetris_hard_drop(&s_game);
+            opencalc_audio_play_tone(190, 55, 75);
+        }
+        break;
+    case 50: /* enter -> restart on game over */
+        if (s_game.game_over) {
+            opencalc_tetris_enter();
         }
         break;
     default:
@@ -524,6 +614,7 @@ bool opencalc_tetris_press_button_number(int number)
     if (s_game.game_over) {
         tetris_save_high_score();
     }
-    draw_tetris_frame();
+    /* The continuously paced tick redraws the game. Avoid presenting a second
+     * full LCD frame from the key edge handler in the same UI iteration. */
     return true;
 }

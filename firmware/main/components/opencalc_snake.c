@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include "board_init.h"
+#include "opencalc_audio.h"
 #include "opencalc_persist.h"
 #include "opencalc_snake.h"
 #include "snake_core.h"
@@ -257,6 +258,7 @@ void opencalc_snake_enter(void)
     snake_init(&s_game, (uint32_t)esp_timer_get_time());
     s_active = true;
     s_last_us = esp_timer_get_time();
+    opencalc_audio_play_tone(523, 70, 65);
     draw_frame();
 }
 
@@ -270,7 +272,18 @@ void opencalc_snake_tick(void)
     s_last_us = now;
     if (dt_ms > 200.0f) dt_ms = 200.0f;
 
+    long previous_score = s_game.score;
+    int previous_level = s_game.level;
+    bool was_game_over = s_game.game_over;
     snake_step(&s_game, dt_ms);
+    if (s_game.score > previous_score) {
+        opencalc_audio_play_tone(s_game.level > previous_level ? 1047 : 880,
+                                 s_game.level > previous_level ? 140 : 55,
+                                 80);
+    }
+    if (!was_game_over && s_game.game_over) {
+        opencalc_audio_play_tone(120, 350, 90);
+    }
     snake_note_score();
     if (s_game.game_over) snake_save_high_score();
     draw_frame();

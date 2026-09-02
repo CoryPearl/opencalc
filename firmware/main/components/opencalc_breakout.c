@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include "board_init.h"
+#include "opencalc_audio.h"
 #include "opencalc_persist.h"
 #include "opencalc_breakout.h"
 #include "breakout_core.h"
@@ -321,6 +322,7 @@ void opencalc_breakout_enter(void)
     breakout_init(&s_game, (uint32_t)esp_timer_get_time());
     s_active = true;
     s_last_us = esp_timer_get_time();
+    opencalc_audio_play_tone(523, 70, 65);
     draw_frame();
 }
 
@@ -344,7 +346,22 @@ void opencalc_breakout_tick(void)
                              direction * BREAKOUT_PADDLE_SPEED * (dt_ms / 1000.0f));
     }
 
+    long previous_score = s_game.score;
+    int previous_lives = s_game.lives;
+    int previous_level = s_game.level;
+    bool was_game_over = s_game.game_over;
     breakout_step(&s_game, dt_ms);
+    if (s_game.score > previous_score) {
+        opencalc_audio_play_tone(760, 28, 55);
+    }
+    if (s_game.level > previous_level) {
+        opencalc_audio_play_tone(1047, 150, 85);
+    } else if (s_game.lives < previous_lives) {
+        opencalc_audio_play_tone(150, 220, 85);
+    }
+    if (!was_game_over && s_game.game_over) {
+        opencalc_audio_play_tone(110, 400, 90);
+    }
     breakout_note_score();
     if (s_game.game_over) breakout_save_high_score();
     draw_frame();
@@ -364,6 +381,7 @@ bool opencalc_breakout_press_button_number(int number)
             opencalc_breakout_enter();
         } else {
             breakout_launch(&s_game);
+            opencalc_audio_play_tone(440, 60, 65);
         }
         break;
     default:
