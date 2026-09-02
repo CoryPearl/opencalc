@@ -11,9 +11,11 @@ This project was partially funded by [PCBWay](https://pcbway.com).
 Blog: [https://corypearl.github.io/opencalc/blog.html](https://corypearl.github.io/opencalc/blog.html)
 
 <p align="center">
-  <img src="hardware/pcb/opencalc_pcb_V5/img/opencalc_pcb_V5_full.png" alt="OpenCalc V5 PCB" height="210">
-  <img src="hardware/pcb/opencalc_pcb_V5/img/opencalc_case_spin.gif" alt="OpenCalc rotating case render" height="210">
-  <img src="firmware/open_calc_ui_calculator_demo.gif" alt="OpenCalc OS demo" height="210">
+  <a href="hardware/pcb/opencalc_pcb_V5/img/opencalc_pcb_V5_full.png"><img src="hardware/pcb/opencalc_pcb_V5/img/opencalc_pcb_V5_full.png" alt="OpenCalc V5 PCB" height="210"></a>
+  <a href="hardware/pcb/opencalc_pcb_V5/img/opencalc_case_spin.gif"><img src="hardware/pcb/opencalc_pcb_V5/img/opencalc_case_spin.gif" alt="OpenCalc rotating case render" height="210"></a>
+  <a href="firmware/open_calc_ui_calculator_demo.gif"><img src="firmware/open_calc_ui_calculator_demo.gif" alt="OpenCalc OS demo" height="210"></a>
+  <br>
+  <sub>Click an image to enlarge it.</sub>
 </p>
 
 ## Highlights
