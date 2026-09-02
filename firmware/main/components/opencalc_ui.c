@@ -44,7 +44,7 @@ static bool s_light_mode = false;
 #define UI_HOME_GRID_STEP_Y 50
 #define SCRIPT_MAX 12
 #define SCRIPT_EDITOR_MAX 2048
-#define SETTINGS_COUNT 5
+#define SETTINGS_COUNT 6
 #define PROGRAM_MENU_COUNT 4
 #define CALC_HISTORY_MAX 16
 #define LIST_COUNT 6
@@ -459,6 +459,7 @@ static bool s_usb_storage_enabled = OPENCALC_EXPORT_USB_STORAGE_TO_HOST != 0;
 static bool s_sleep_enabled = true;
 static bool s_power_save_enabled = false;
 static int s_power_save_saved_brightness = 80;
+static int s_audio_volume_percent = OPENCALC_AUDIO_VOLUME_PERCENT;
 static int s_mode_selection = 0;
 static int s_display_format = 0;
 static int s_print_mode = 0;
@@ -1509,7 +1510,7 @@ static void ui_text_centered_in_box(int x, int y, int w, const char *text, uint3
 
 static void ui_battery_indicator(int x, int y)
 {
-    int percent = 100;
+    int percent = 0;
     bool has_battery_info = board_battery_get_percent(&percent);
     if (percent < 0) {
         percent = 0;
@@ -1518,13 +1519,15 @@ static void ui_battery_indicator(int x, int y)
     }
 
     int bars = 0;
-    if (percent > 75) {
+    if (!has_battery_info) {
+        bars = 0;
+    } else if (percent > 75) {
         bars = 4;
     } else if (percent > 50) {
         bars = 3;
     } else if (percent > 25) {
         bars = 2;
-    } else if (percent > 0) {
+    } else {
         bars = 1;
     }
 
@@ -1535,7 +1538,7 @@ static void ui_battery_indicator(int x, int y)
         fill = THEME_BATTERY_YELLOW;
     }
 
-    bool flash_off = percent > 0 && percent <= 10 &&
+    bool flash_off = has_battery_info && percent <= 10 &&
         ((esp_timer_get_time() / 500000) % 2) == 0;
 
     ui_border(x, y, 24, 10, THEME_HEADER_TEXT);
@@ -2610,12 +2613,14 @@ static void ui_draw_settings(void)
     char sleep[40];
     char power_save[40];
     char theme[40];
+    char audio[40];
     char reset[40];
 
     snprintf(brightness, sizeof(brightness), "Brightness %d%%", board_get_backlight_brightness());
     snprintf(sleep, sizeof(sleep), "Auto sleep %s", s_sleep_enabled ? "on" : "off");
     snprintf(power_save, sizeof(power_save), "Power save %s", s_power_save_enabled ? "on" : "off");
     snprintf(theme, sizeof(theme), "Theme %s", s_light_mode ? "light" : "dark");
+    snprintf(audio, sizeof(audio), "Audio %d%%", s_audio_volume_percent);
     snprintf(reset, sizeof(reset), "Reset to factory");
 
     const char *items[SETTINGS_COUNT] = {
@@ -2623,6 +2628,7 @@ static void ui_draw_settings(void)
         sleep,
         power_save,
         theme,
+        audio,
         reset,
     };
 
@@ -2636,6 +2642,8 @@ static void ui_draw_settings(void)
     const char *footer = "enter - toggle";
     if (s_script_selection == 0) {
         footer = "left, right - brightness";
+    } else if (s_script_selection == 4) {
+        footer = "left, right - audio";
     } else if (s_script_selection == SETTINGS_COUNT - 1) {
         footer = "enter - reset";
     }
@@ -3549,6 +3557,8 @@ static void factory_reset_runtime_state(void)
     s_sleep_enabled = true;
     s_power_save_enabled = false;
     s_light_mode = false;
+    s_audio_volume_percent = OPENCALC_AUDIO_VOLUME_PERCENT;
+    opencalc_audio_set_volume_percent(s_audio_volume_percent);
     s_doom_high_score = 0;
     s_doom_last_saved_high_score = 0;
     opencalc_persist_factory_reset();
@@ -3557,6 +3567,7 @@ static void factory_reset_runtime_state(void)
     opencalc_persist_set_u32("auto_sleep", 1);
     opencalc_persist_set_u32("power_save", 0);
     opencalc_persist_set_u32("light_mode", 0);
+    opencalc_persist_set_u32("audio_volume", (uint32_t)s_audio_volume_percent);
     opencalc_power_set_power_save(false);
     s_page = PAGE_CALCULATOR;
     printf("factory reset runtime state\n");
@@ -4153,6 +4164,19 @@ static void adjust_brightness(int delta)
     }
     opencalc_persist_set_u32("brightness", (uint32_t)board_get_backlight_brightness());
     printf("brightness %d%%\n", board_get_backlight_brightness());
+    ui_draw_current();
+}
+
+static void adjust_audio_volume(int delta)
+{
+    int next = s_audio_volume_percent + delta;
+    if (next < 0) next = 0;
+    if (next > 100) next = 100;
+    next = (next / 5) * 5;
+    s_audio_volume_percent = next;
+    opencalc_audio_set_volume_percent(s_audio_volume_percent);
+    opencalc_persist_set_u32("audio_volume", (uint32_t)s_audio_volume_percent);
+    printf("audio volume %d%%\n", s_audio_volume_percent);
     ui_draw_current();
 }
 
@@ -6471,6 +6495,8 @@ static void key_enter(void)
             opencalc_persist_set_u32("light_mode", s_light_mode ? 1 : 0);
             ui_draw_current();
         } else if (s_script_selection == 4) {
+            adjust_audio_volume(5);
+        } else if (s_script_selection == 5) {
             factory_reset_runtime_state();
         }
     } else if (s_page == PAGE_APP) {
@@ -6673,6 +6699,8 @@ static void key_left(void)
         ui_draw_current();
     } else if (s_page == PAGE_SETTINGS && s_script_selection == 0) {
         adjust_brightness(-10);
+    } else if (s_page == PAGE_SETTINGS && s_script_selection == 4) {
+        adjust_audio_volume(-5);
     } else if (s_page == PAGE_LIST_EDITOR) {
         s_list_index = (s_list_index + LIST_COUNT - 1) % LIST_COUNT;
         if (s_list_cursor > s_list_counts[s_list_index]) s_list_cursor = s_list_counts[s_list_index];
@@ -6726,6 +6754,8 @@ static void key_right(void)
         ui_draw_current();
     } else if (s_page == PAGE_SETTINGS && s_script_selection == 0) {
         adjust_brightness(10);
+    } else if (s_page == PAGE_SETTINGS && s_script_selection == 4) {
+        adjust_audio_volume(5);
     } else if (s_page == PAGE_LIST_EDITOR) {
         s_list_index = (s_list_index + 1) % LIST_COUNT;
         if (s_list_cursor > s_list_counts[s_list_index]) s_list_cursor = s_list_counts[s_list_index];
@@ -7457,6 +7487,8 @@ void opencalc_ui_init(void)
     s_light_mode = opencalc_persist_get_u32("light_mode", 0) != 0;
     s_sleep_enabled = opencalc_persist_get_u32("auto_sleep", 1) != 0;
     board_set_backlight_brightness((int)opencalc_persist_get_u32("brightness", 80));
+    s_audio_volume_percent = (int)opencalc_persist_get_u32("audio_volume", OPENCALC_AUDIO_VOLUME_PERCENT);
+    opencalc_audio_set_volume_percent(s_audio_volume_percent);
     s_power_save_saved_brightness = board_get_backlight_brightness();
     apply_power_save_mode(opencalc_persist_get_u32("power_save", 0) != 0);
     s_doom_high_score = opencalc_persist_get_u32("hs_doom", 0);

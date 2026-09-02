@@ -15,9 +15,9 @@
 #define OPENCALC_USE_AO3401A_BACKLIGHT 0 // 0 = old TPS22918 active-high; 1 = new AO3401A active-low
 #define OPENCALC_EXPORT_USB_STORAGE_TO_HOST 0 // 0 keeps /data mounted for app/game testing; 1 shows flash drive on the laptop
 #define OPENCALC_USB_CDC_STARTUP_BANNER_DELAY_MS 100
-#define OPENCALC_DEBUG_LOG_KEYPAD_PRESSES 1 // Print physical keypad presses to USB serial
-#define OPENCALC_DEBUG_LOG_FPS 1 // Print UI/game tick FPS to USB serial once per second
-#define OPENCALC_DEBUG_TETRIS_HEALTH 1 // Log Tetris heap/stack health every 5 seconds
+#define OPENCALC_DEBUG_LOG_KEYPAD_PRESSES 0 // Print physical keypad presses to USB serial
+#define OPENCALC_DEBUG_LOG_FPS 0 // Print UI/game tick FPS to USB serial once per second
+#define OPENCALC_DEBUG_TETRIS_HEALTH 0 // Log Tetris heap/stack health every 5 seconds
 #define OPENCALC_KEYPAD_POLL_WHEN_NO_INTERRUPT 0 // Use row GPIO interrupts; only scan after a key edge
 #define OPENCALC_DEBUG_LOG_RAW_KEYPAD_LEVELS 0 // Print raw row/column GPIO levels during keypad bring-up
 #define OPENCALC_ENABLE_SERIAL_BUTTON_INPUT 0 // For debugging without having to use a physical button matrix
@@ -107,6 +107,28 @@
 
 #if OPENCALC_POWER_SAVE_CPU_MAX_MHZ != 80 && OPENCALC_POWER_SAVE_CPU_MAX_MHZ != 160 && OPENCALC_POWER_SAVE_CPU_MAX_MHZ != 240
 #error "OPENCALC_POWER_SAVE_CPU_MAX_MHZ should be 80, 160, or 240"
+#endif
+
+/*
+ * Battery monitor.
+ *
+ * VBAT_DIV is a resistor divider into GPIO7 / ADC1 channel 6. The current PCB
+ * uses 1M over 1M to reduce sleep drain. Keep the 100nF capacitor on the ADC
+ * node so the high-value divider can settle before ADC reads.
+ */
+#define OPENCALC_BATTERY_DIVIDER_R_TOP_OHMS 1000000
+#define OPENCALC_BATTERY_DIVIDER_R_BOTTOM_OHMS 1000000
+#define OPENCALC_BATTERY_MIN_VALID_MV 2500
+#define OPENCALC_BATTERY_MAX_VALID_MV 4600
+#define OPENCALC_BATTERY_EMPTY_MV 3300
+#define OPENCALC_BATTERY_FULL_MV 4200
+
+#if OPENCALC_BATTERY_DIVIDER_R_TOP_OHMS <= 0 || OPENCALC_BATTERY_DIVIDER_R_BOTTOM_OHMS <= 0
+#error "Battery divider resistor values must be positive"
+#endif
+
+#if OPENCALC_BATTERY_EMPTY_MV >= OPENCALC_BATTERY_FULL_MV
+#error "OPENCALC_BATTERY_EMPTY_MV must be lower than OPENCALC_BATTERY_FULL_MV"
 #endif
 
 /*

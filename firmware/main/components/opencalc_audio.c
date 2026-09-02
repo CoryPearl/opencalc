@@ -28,6 +28,7 @@ typedef struct {
 } tone_voice_t;
 
 static const char *TAG = "audio";
+static int s_volume_percent = OPENCALC_AUDIO_VOLUME_PERCENT;
 
 #if OPENCALC_GAME_AUDIO_ENABLED
 static i2s_chan_handle_t s_tx_channel;
@@ -94,7 +95,7 @@ static void audio_output_task(void *arg)
     while (true) {
         bool active;
         portENTER_CRITICAL(&s_audio_lock);
-        active = s_game_active;
+        active = s_game_active && s_volume_percent > 0;
         portEXIT_CRITICAL(&s_audio_lock);
 
         if (!active) {
@@ -208,6 +209,36 @@ bool opencalc_audio_available(void)
 #endif
 }
 
+void opencalc_audio_set_volume_percent(int percent)
+{
+    if (percent < 0) percent = 0;
+    if (percent > 100) percent = 100;
+
+#if OPENCALC_GAME_AUDIO_ENABLED
+    portENTER_CRITICAL(&s_audio_lock);
+    s_volume_percent = percent;
+    if (s_volume_percent == 0) {
+        clear_audio_state_locked();
+    }
+    portEXIT_CRITICAL(&s_audio_lock);
+#else
+    s_volume_percent = percent;
+#endif
+}
+
+int opencalc_audio_get_volume_percent(void)
+{
+#if OPENCALC_GAME_AUDIO_ENABLED
+    int percent;
+    portENTER_CRITICAL(&s_audio_lock);
+    percent = s_volume_percent;
+    portEXIT_CRITICAL(&s_audio_lock);
+    return percent;
+#else
+    return s_volume_percent;
+#endif
+}
+
 void opencalc_audio_game_begin(void)
 {
 #if OPENCALC_GAME_AUDIO_ENABLED
@@ -255,7 +286,7 @@ void opencalc_audio_play_tone(uint16_t frequency_hz,
                                   OPENCALC_AUDIO_SAMPLE_RATE);
     tone->samples_left = ((uint32_t)duration_ms * OPENCALC_AUDIO_SAMPLE_RATE) / 1000;
     tone->amplitude = (int16_t)((INT16_MAX / 5) *
-                                OPENCALC_AUDIO_VOLUME_PERCENT * volume_percent /
+                                s_volume_percent * volume_percent /
                                 10000);
     portEXIT_CRITICAL(&s_audio_lock);
 #else
@@ -281,7 +312,7 @@ size_t opencalc_audio_write_pcm16(const int16_t *samples,
         size_t batch = sample_count - queued;
         if (batch > free_samples) batch = free_samples;
         for (size_t i = 0; i < batch; i++) {
-            int32_t scaled = (int32_t)samples[queued + i] * OPENCALC_AUDIO_VOLUME_PERCENT / 100;
+            int32_t scaled = (int32_t)samples[queued + i] * s_volume_percent / 100;
             s_pcm_ring[s_pcm_write] = clamp_sample(scaled);
             s_pcm_write = (s_pcm_write + 1) % AUDIO_RING_SAMPLES;
         }

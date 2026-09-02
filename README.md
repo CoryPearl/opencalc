@@ -1,136 +1,47 @@
 <h1>
   <img src="opencalc_logo_light.png" width="100" align="center">
-  <p>OpenCalc</p>
 </h1>
 
-This project was partially funded by [PCBWay](https://pcbway.com) so I could test the OpenCalc PCB designs. They were easy to work with, communicated quickly, and helped make the current hardware prototype possible.
+OpenCalc is an open-source graphing calculator inspired by the TI-84, built around an ESP32-S3, a color LCD, USB-C, Python-style scripting, games, and expandable firmware.
+
+The calculator runs **OpenCalc OS**, the project’s open-source ESP32-S3 operating environment. OpenCalc OS includes the calculator interface, math and graphing engines, built-in apps, scripting runtime, USB file storage, keypad handling, display drivers, game support, and power management.
+
+This project was partially funded by [PCBWay](https://pcbway.com) so I could test the OpenCalc PCB designs.
 
 Blog: [https://corypearl.github.io/opencalc/blog.html](https://corypearl.github.io/opencalc/blog.html)
 
-OpenCalc is an open-source graphing calculator inspired by the TI-84, but built around a faster ESP32-S3, a color LCD, USB-C, Python-style scripting, games, and expandable firmware.
-
-The calculator runs **OpenCalc OS**, the project’s open-source ESP32-S3 operating environment. OpenCalc OS includes the calculator interface, math and graphing engines, built-in apps, Python-style scripting runtime, USB file storage, keypad handling, display drivers, and power management.
-
 <p align="center">
-  <img src="hardware/pcb/pcb_done_v4_full.png" alt="PCB Front" width="60%">
+  <img src="hardware/pcb/opencalc_pcb_V5/img/opencalc_pcb_V5_full.png" alt="OpenCalc PCB" width="60%">
   <br>
-  <img src="firmware/open_calc_ui_calculator_demo.gif" alt="App Demo" width="35%" />
-
-  <!-- <img src="hardware/pcb/pcb_done_v4_front.png" alt="PCB Front" width="45%"> -->
-  <!-- <img src="hardware/pcb/pcb_done_v4_back.png" alt="PCB Back" width="45%"> -->
+  <img src="firmware/open_calc_ui_calculator_demo.gif" alt="OpenCalc OS demo" width="35%">
+  <img src="hardware/pcb/opencalc_pcb_V5/img/case_full.png" alt="OpenCalc case" width="51%">
 </p>
 
-**First prototype PCB**
+## Highlights
 
-## Why OpenCalc Is Different
-
-OpenCalc is meant to feel like a graphing calculator, but with more open hardware and a much more flexible firmware base than a closed classroom calculator.
-
-- **ESP32-S3 processor:** dual-core 32-bit MCU running up to 240 MHz, giving the calculator far more general-purpose compute headroom than older calculator hardware.
-- **More memory to build with:** the current target has 16 MB flash and 8 MB PSRAM, leaving room for graphics, scripting, menus, apps, and games.
-- **8 MB user storage partition:** scripts, WAD files, NES ROMs, and other user files live in a FAT storage area exposed by the calculator.
-- **Easy USB-C file access:** the current single USB-C connector supports power, flashing/monitoring over CDC serial, and USB mass storage named `opencalc`.
-- **OpenCalc OS:** the calculator UI, math parser, graphing, keypad, storage, apps, PCB designs, and hardware behavior are open source.
-- **Modern extras:** color LCD, USB mass storage, Python-style scripts, configurable app launcher, and optional games.
-
-The current prototype includes:
-
-- ILI9341 LCD output
-- 10x5 button matrix support with per-key diodes for multi-key presses
-- USB mass storage named `opencalc`
-- flashed script/storage image support
-- Python-style scripting - [README](firmware/main/components/tiny-python-readme.md)
-- graphing calculator UI with calculator, graph, table, apps, settings, scripts, matrix, stats, finance, conics, and inequality graphing
-- games menu with Tetris, Doom, Snake, Breakout, and Mario
-- Wi-Fi and Bluetooth available in hardware, disabled by default in firmware to save battery
-
-The next prototype:
-
-- Smaller footprint LCD
-- Speaker for sounds during games
-- Bigger bittons
-- More organized pcb
-- Correct battery connector
-- Smaller body
-- Full case
-- PCB imgs
-- PCB labeled better
-- Easier GND accsess
-- Better antenna placment
-- switch for full power off
-
-Cost breakdown for the first prototype, single-board pricing before shipping and not including manufacturing:
-
-- Board: about $7
-- Soldered parts: about $34
-- Battery: about $6
-- Screen: about $6
-
-The goal is to bring this down with a cleaner PCB and bulk assembly.
-
-## User And Debug
-
-Test pads are located on the back. The current hardware also has a front red power LED, a back green charging LED, and a back blue power-good LED.
-
-Power off is software-only in the current firmware: `2nd` + `On` turns off the display/backlight and enters the configured low-power sleep path. It does not use a true battery cutoff latch.
-
-Many OpenCalc OS settings live in [firmware/main/config.h](firmware/main/config.h), including Wi-Fi, Bluetooth, Doom, target FPS, testing-vs-PCB mode, storage flashing, CPU frequency, and power-save brightness caps.
-
-## Games
-
-Press `Alpha` then `2nd` to open the game menu. `2nd` then `Alpha` does not open it, and Alpha Lock should not trigger it.
-
-| Calculator button        | Doom action               |
-| ------------------------ | ------------------------- |
-| Up / Down / Left / Right | Move                      |
-| `Y=`                     | Fire                      |
-| `Window`                 | Cycle weapons             |
-| `Zoom`                   | Use / open doors          |
-| `Trace`                  | Open / close automap      |
-| `1`-`7`                  | Select weapon slot        |
-| Hold `Mode`              | Run / sprint              |
-| Hold `Stat` + Left/Right | Strafe                    |
-| `Enter`                  | Menu/select               |
-| `Back`                   | Escape/back               |
-| `On (Home)`              | Quit Doom and return home |
-
-| Calculator button        | Mario action                    |
-| ------------------------ | ------------------------------- |
-| Up / Down / Left / Right | Move                            |
-| `Y=`                     | B / action                      |
-| `Zoom`                   | A / jump                        |
-| `Enter`                  | Start                           |
-| `Back`                   | Select/back                     |
-| `On (Home)`              | Quit Mario and return game menu |
-
-| Calculator button | Tetris action               |
-| ----------------- | --------------------------- |
-| Left / Right      | Move piece                  |
-| Down              | Soft drop                   |
-| `Y=`              | Hard drop                   |
-| `Window`          | Hold piece                  |
-| Up                | Rotate                      |
-| `Back`            | Pause/back                  |
-| `On (Home)`       | Quit Tetris and return menu |
-
-Other games:
-
-- Snake
-- Breakout
+- ESP32-S3-WROOM-1-N16R8 with 16 MB flash and 8 MB PSRAM.
+- 320x240 color ILI9341-style display.
+- 10x5 keypad matrix with per-key diodes for multi-key input.
+- One USB-C port for power, flashing/monitoring, and USB mass storage.
+- 8 MB FAT storage partition for scripts, WAD files, NES ROMs, and user files.
+- Python-style scripting through the built-in script app.
+- TI-style calculator, graphing, table, matrix, stats, finance, conics, inequalities, settings, and app launcher screens.
+- Game menu with Tetris, Doom, Snake, Breakout, and Mario work in progress.
+- Optional new-PCB game audio through a PAM8302A speaker amp.
+- Wi-Fi and Bluetooth available in hardware, disabled by default in firmware to save battery.
+- Current PCB includes battery charging, battery monitoring, software-off sleep, a full power switch, and back-side test pads.
 
 ## Project Layout
 
 ```text
 firmware/   OpenCalc OS source for the ESP32-S3 calculator
-hardware/   key layouts, graphics, and hardware design files
+hardware/   key layouts, graphics, PCB files, case files, and hardware docs
 docs/       notes and project website files
 ```
 
-## Flash And Monitor
+## Quick Start
 
-Plug the USB-C port into your computer.
-
-From a fresh terminal:
+Plug the OpenCalc USB-C port into your computer.
 
 ```zsh
 cd firmware
@@ -140,37 +51,28 @@ idf.py flash
 idf.py monitor
 ```
 
-If the board is not already in download mode, hold Boot, press Reset, then release both.
+If the board is not already in download mode, hold Boot, press Reset, then release both. On the current single-USB hardware, the monitor port usually appears as `/dev/cu.usbmodemopencalc1` when USB CDC is active.
 
-If you need the specific port name, list available ports with:
+To list available macOS serial ports:
 
 ```zsh
 ls /dev/cu.*
 ```
 
-On the current single-USB hardware, the monitor port usually appears as `/dev/cu.usbmodemopencalc1` when USB CDC is active.
+## Documentation
 
-See [firmware/FIRMWARE_README.md](firmware/FIRMWARE_README.md) for build, flash, USB storage, and game setup notes.
-See [hardware/pcb/PCB_README.md](hardware/pcb/PCB_README.md) for info on the current PCB design.
+- [Firmware README](firmware/FIRMWARE_README.md): build settings, flashing, storage image, controls, apps, games, and firmware status.
+- [PCB README](hardware/pcb/PCB_README.md): current V5 PCB parts, pin map, power path, display, keypad, battery, audio, and bring-up checks.
+- [Tiny Python README](firmware/main/components/tiny-python-readme.md): scripting runtime details.
 
-## Status
+## Current Status
 
-This is still prototype hardware and OpenCalc OS software. The current goal is to keep the calculator booting directly into a usable interface, expose files over USB when connected to a computer, and continue filling out the TI-style apps with working implementations rather than placeholder screens.
-
-## Plans
-
-- Upgrade to esp32-s31 for even faster speeds
-- Bigger battery
-- Faster charging
-- Full power off switch
-- Continue improving ESP32-S3 performance and display throughput
-- Reorganize and clean up the PCB
-- Flesh out firmware features, apps, scripting, and game stability
+OpenCalc is still prototype hardware and software. The current development focus is keeping OpenCalc OS booting into a usable calculator interface, stabilizing USB storage and scripts, improving graphing/math behavior, and making the PCB bring-up process predictable.
 
 ## Credits
 
-Doom port in `/doomgeneric` made by @ozkl on GitHub at [https://github.com/ozkl/doomgeneric](https://github.com/ozkl/doomgeneric)
+Doom port in `firmware/main/components/doomgeneric` is based on [doomgeneric](https://github.com/ozkl/doomgeneric) by @ozkl.
 
-NES emulator in `/mario` created by @Shim06, @jethomson, and @ferytell on GitHub at [https://github.com/Shim06/Anemoia-ESP32](https://github.com/Shim06/Anemoia-ESP32)
+NES emulator work in `firmware/main/components/mario` is based on [Anemoia-ESP32](https://github.com/Shim06/Anemoia-ESP32) by @Shim06, @jethomson, and @ferytell.
 
 All other code and designs created by Cory Pearl.

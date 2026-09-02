@@ -42,6 +42,8 @@ static adc_oneshot_unit_handle_t s_battery_adc_unit = NULL;
 static adc_cali_handle_t s_battery_adc_cali = NULL;
 static bool s_battery_adc_ready = false;
 static bool s_battery_adc_calibrated = false;
+static int s_battery_filtered_mv = 0;
+static int s_battery_filtered_percent = -1;
 
 static void log_wakeup_reason(void)
 {
@@ -156,10 +158,12 @@ static void log_wakeup_reason(void)
 #define BATTERY_ADC_CHANNEL ADC_CHANNEL_6
 #define PIN_NUM_BATTERY_ADC GPIO_NUM_7
 #define BATTERY_ADC_ATTEN ADC_ATTEN_DB_12
-#define BATTERY_DIVIDER_R_TOP_OHMS 100000.0f
-#define BATTERY_DIVIDER_R_BOTTOM_OHMS 100000.0f
-#define BATTERY_EMPTY_MV 3300
-#define BATTERY_FULL_MV 4200
+#define BATTERY_DIVIDER_R_TOP_OHMS OPENCALC_BATTERY_DIVIDER_R_TOP_OHMS
+#define BATTERY_DIVIDER_R_BOTTOM_OHMS OPENCALC_BATTERY_DIVIDER_R_BOTTOM_OHMS
+#define BATTERY_MIN_VALID_MV OPENCALC_BATTERY_MIN_VALID_MV
+#define BATTERY_MAX_VALID_MV OPENCALC_BATTERY_MAX_VALID_MV
+#define BATTERY_EMPTY_MV OPENCALC_BATTERY_EMPTY_MV
+#define BATTERY_FULL_MV OPENCALC_BATTERY_FULL_MV
 #define BATTERY_CHARGE_STATUS_ENABLED 0
 #if OPENCALC_USE_NEW_AUDIO_PCB
 #define PIN_NUM_BATTERY_CHARGE_STATUS GPIO_NUM_NC
@@ -1366,10 +1370,18 @@ bool board_battery_get_voltage_mv(int *millivolts)
         return false;
     }
 
-    int raw = 0;
-    if (adc_oneshot_read(s_battery_adc_unit, BATTERY_ADC_CHANNEL, &raw) != ESP_OK) {
-        return false;
+    int raw_total = 0;
+    int raw_count = 0;
+    for (int i = 0; i < 8; i++) {
+        int raw = 0;
+        if (adc_oneshot_read(s_battery_adc_unit, BATTERY_ADC_CHANNEL, &raw) == ESP_OK) {
+            raw_total += raw;
+            raw_count++;
+        }
+        esp_rom_delay_us(150);
     }
+    if (raw_count == 0) return false;
+    int raw = raw_total / raw_count;
 
     int adc_mv = 0;
     if (s_battery_adc_calibrated && s_battery_adc_cali != NULL) {
@@ -1380,14 +1392,61 @@ bool board_battery_get_voltage_mv(int *millivolts)
         adc_mv = raw * 3300 / 4095;
     }
 
-    float scale = (BATTERY_DIVIDER_R_TOP_OHMS + BATTERY_DIVIDER_R_BOTTOM_OHMS) /
-        BATTERY_DIVIDER_R_BOTTOM_OHMS;
-    *millivolts = (int)((float)adc_mv * scale);
+    float scale = (float)(BATTERY_DIVIDER_R_TOP_OHMS + BATTERY_DIVIDER_R_BOTTOM_OHMS) /
+        (float)BATTERY_DIVIDER_R_BOTTOM_OHMS;
+    int measured_mv = (int)((float)adc_mv * scale);
+    if (measured_mv < BATTERY_MIN_VALID_MV || measured_mv > BATTERY_MAX_VALID_MV) {
+        return false;
+    }
+
+    if (s_battery_filtered_mv == 0) {
+        s_battery_filtered_mv = measured_mv;
+    } else {
+        s_battery_filtered_mv = (s_battery_filtered_mv * 7 + measured_mv) / 8;
+    }
+
+    *millivolts = s_battery_filtered_mv;
     return true;
 #else
     (void)millivolts;
     return false;
 #endif
+}
+
+static int battery_percent_from_mv(int mv)
+{
+    typedef struct {
+        int mv;
+        int pct;
+    } battery_point_t;
+
+    static const battery_point_t curve[] = {
+        {4200, 100},
+        {4110, 90},
+        {4020, 80},
+        {3930, 70},
+        {3840, 60},
+        {3780, 50},
+        {3720, 40},
+        {3660, 30},
+        {3580, 20},
+        {3500, 10},
+        {3300, 0},
+    };
+
+    if (mv >= BATTERY_FULL_MV) return 100;
+    if (mv <= BATTERY_EMPTY_MV) return 0;
+
+    for (size_t i = 0; i + 1 < sizeof(curve) / sizeof(curve[0]); i++) {
+        if (mv <= curve[i].mv && mv >= curve[i + 1].mv) {
+            int span_mv = curve[i].mv - curve[i + 1].mv;
+            int span_pct = curve[i].pct - curve[i + 1].pct;
+            if (span_mv <= 0) return curve[i + 1].pct;
+            return curve[i + 1].pct + (mv - curve[i + 1].mv) * span_pct / span_mv;
+        }
+    }
+
+    return (mv - BATTERY_EMPTY_MV) * 100 / (BATTERY_FULL_MV - BATTERY_EMPTY_MV);
 }
 
 bool board_battery_get_percent(int *percent)
@@ -1397,13 +1456,20 @@ bool board_battery_get_percent(int *percent)
         return false;
     }
 
-    int pct = (mv - BATTERY_EMPTY_MV) * 100 / (BATTERY_FULL_MV - BATTERY_EMPTY_MV);
+    int pct = battery_percent_from_mv(mv);
     if (pct < 0) {
         pct = 0;
     } else if (pct > 100) {
         pct = 100;
     }
-    *percent = pct;
+
+    if (s_battery_filtered_percent < 0) {
+        s_battery_filtered_percent = pct;
+    } else {
+        s_battery_filtered_percent = (s_battery_filtered_percent * 3 + pct) / 4;
+    }
+
+    *percent = s_battery_filtered_percent;
     return true;
 }
 

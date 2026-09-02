@@ -10,6 +10,8 @@ extern "C" {
 
 void opencalc_audio_init(void);
 bool opencalc_audio_available(void);
+void opencalc_audio_set_volume_percent(int percent);
+int opencalc_audio_get_volume_percent(void);
 
 /* Exactly one game owns audio at a time. These calls also control amp SD. */
 void opencalc_audio_game_begin(void);

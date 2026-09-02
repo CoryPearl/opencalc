@@ -37,6 +37,8 @@ Use `idf.py flash`, not `idf.py app-flash`, because the normal flash target also
 
 To edit OpenCalc OS, change files under `main/`, rebuild with `idf.py build`, then flash with `idf.py flash`. Use `idf.py monitor` to view logs after flashing.
 
+After flashing, press Reset once more if the board stays in download mode or the monitor does not reconnect cleanly.
+
 Common commands:
 
 ```bash
@@ -57,7 +59,7 @@ Important current toggles:
 #define OPENCALC_ENABLE_BLUETOOTH 0
 #define OPENCALC_ENABLE_WIFI 0
 #define OPENCALC_ENABLE_DOOM 1
-#define OPENCALC_ENABLE_GAME_AUDIO 1
+#define OPENCALC_ENABLE_GAME_AUDIO 0
 #define OPENCALC_USE_NEW_AUDIO_PCB 0
 #define OPENCALC_ENABLE_SERIAL_BUTTON_INPUT 0
 #define OPENCALC_FLASH_STORAGE_IMAGE 1
@@ -66,6 +68,8 @@ Important current toggles:
 #define OPENCALC_POWER_SAVE_BRIGHTNESS_CAP_PERCENT 35
 #define OPENCALC_USE_REAL_PCB 1
 ```
+
+These toggles cover Wi-Fi, Bluetooth, Doom, game audio, target FPS, testing-vs-PCB mode, storage image flashing, CPU frequency, USB CDC serial, and power-save brightness caps.
 
 The storage image always comes from `storage_image/`. To test without Doom,
 remove or move `storage_image/doom1.wad` before building/flashing.
@@ -94,7 +98,7 @@ On the current single USB-C hardware, TinyUSB exposes CDC serial and MSC storage
 
 ## Current PCB Pin Map
 
-Set `OPENCALC_USE_NEW_AUDIO_PCB` to `0` for the existing board or `1` for the new board that removes LCD MISO and charger status. The two profiles use these assignments:
+Set `OPENCALC_USE_NEW_AUDIO_PCB` to `0` for the existing board or `1` for the new board that removes LCD MISO and charger status. Game volume is controlled from Settings -> Audio in 5% steps and is saved in NVS; `OPENCALC_AUDIO_VOLUME_PERCENT` is only the default/factory value. The two profiles use these assignments:
 
 | Function | Old PCB | New audio PCB |
 | -------- | ------- | ------------- |
@@ -201,7 +205,7 @@ Doom controls:
 | `Trace`                  | Open / close automap           |
 | `1`-`7`                  | Select weapon slot             |
 | Hold `Mode`              | Run / sprint                   |
-| Hold `Del` + Left/Right  | Strafe                         |
+| Hold `Stat` + Left/Right | Strafe                         |
 | `Enter`                  | Menu/select                    |
 | `Back`                   | Escape/back                    |
 | `On (Home)`              | Quit Doom and return game menu |
@@ -223,7 +227,7 @@ Mario controls are mapped to match Doom-style play:
 | `Back`                   | Select/back                      |
 | `On (Home)`              | Quit Mario and return game menu  |
 
-Mario loads `storage_image/mario.nes` through the real NES path: iNES cartridge loader, mapper 0 cartridge support, 6502 CPU, NES bus, controller state, PPU 2C02 framebuffer, then the ILI9341 display driver. Audio is disabled. For now, use a mapper 0 `.nes` ROM such as the standard Super Mario Bros cartridge format.
+Mario loads `storage_image/mario.nes` through the real NES path: iNES cartridge loader, mapper 0 cartridge support, 6502 CPU, NES bus, controller state, PPU 2C02 framebuffer, then the ILI9341 display driver. On the new audio PCB, Mario routes NES APU audio through the shared OpenCalc game-audio path. For now, use a mapper 0 `.nes` ROM such as the standard Super Mario Bros cartridge format.
 
 Tetris controls:
 
@@ -238,6 +242,8 @@ Tetris controls:
 | `On (Home)`              | Quit Tetris and return menu    |
 
 The production 10x5 keypad expects one series diode per key. The firmware scans by driving one column low at a time and reading rows with pull-ups. The diode direction must allow a pressed key to pull its row low only through the selected low column. This enables simultaneous movement, sprint, strafe, fire, and use inputs without matrix ghosting.
+
+The battery icon reads the VBAT divider on GPIO7. The default firmware values match a 1M/1M divider with a 100nF capacitor on the ADC node, then map the measured Li-ion voltage through a discharge curve instead of a straight line. If the ADC reading is missing or outside the valid range, the UI crosses out an empty battery icon instead of showing a fake level.
 
 ## Notes
 
