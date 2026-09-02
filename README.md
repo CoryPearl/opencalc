@@ -11,10 +11,12 @@ This project was partially funded by [PCBWay](https://pcbway.com).
 Blog: [https://corypearl.github.io/opencalc/blog.html](https://corypearl.github.io/opencalc/blog.html)
 
 <p align="center">
-  <img src="hardware/pcb/opencalc_pcb_V5/img/opencalc_pcb_V5_full.png" alt="OpenCalc PCB" width="60%">
+  <img src="hardware/pcb/opencalc_pcb_V5/img/opencalc_pcb_V5_full.png" alt="OpenCalc V5 PCB" width="70%">
   <br>
-  <img src="firmware/open_calc_ui_calculator_demo.gif" alt="OpenCalc OS demo" width="35%">
-  <img src="hardware/pcb/opencalc_pcb_V5/img/case_full.png" alt="OpenCalc case" width="51%">
+  <img src="hardware/pcb/opencalc_pcb_V5/img/opencalc_case_spin.gif" alt="OpenCalc rotating case render" width="42%">
+  <img src="hardware/pcb/opencalc_pcb_V5/img/case_flat.png" alt="OpenCalc flat case render" width="42%">
+  <br>
+  <img src="firmware/open_calc_ui_calculator_demo.gif" alt="OpenCalc OS demo" width="42%">
 </p>
 
 ## Highlights
@@ -54,7 +56,7 @@ docs/       notes and project website files
 
 ## Quick Start
 
-Plug the OpenCalc USB-C port into your computer.
+Plug the OpenCalc USB-C port into your computer. [ESP-IDF Get Started guide.](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/get-started/).
 
 ```zsh
 cd firmware
@@ -77,13 +79,13 @@ To list available serial ports if not auto found:
 ls /dev/cu.*
 ```
 
-##### Windows:
+##### Windows Command Prompt:
 
 ```cmd
 reg query HKLM\HARDWARE\DEVICEMAP\SERIALCOMM
 ```
 
-or
+##### Windows PowerShell:
 
 ```powershell
 Get-CimInstance Win32_SerialPort | Select-Object DeviceID,Description
