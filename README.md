@@ -1,6 +1,6 @@
 <h1>
-  <img src="opencalc_logo.png" width="100" align="center">
-  <!-- OpenCalc -->
+  <img src="opencalc_logo_light.png" width="100" align="center">
+  <p>OpenCalc</p>
 </h1>
 
 This project was partially funded by [PCBWay](https://pcbway.com) so I could test the OpenCalc PCB designs. They were easy to work with, communicated quickly, and helped make the current hardware prototype possible.

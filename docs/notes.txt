@@ -20,6 +20,7 @@ TELL CODEX TO REMOVE ALL CODE AND REFRENCES TO THE OLD PCB, no node needed for o
 
 - see how much jlcpcb will charge
 
+Update readme for new version
 - add new stuff to readme, second prototype, add case images, add that i used freecad
 - add pics of finished calculaotr, case, and pcb
 
