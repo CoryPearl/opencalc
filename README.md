@@ -1,5 +1,5 @@
 <h1>
-  <img src="opencalc_logo.png" width="45" align="center">
+  <img src="opencalc_logo.png" width="100" align="center">
   OpenCalc
 </h1>
 
