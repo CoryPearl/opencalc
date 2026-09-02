@@ -1,20 +1,33 @@
 Finish V5 pcb in kikad
-- Find all part files
-- change to fast charging at 1000 mah or 2000 mah - thicker traces
-- switch to esp32-s31
+- thicker traces for charging and 3v3
 - organize better
 - flip around batteyr port
 - make smaller
-- charge light and power light dont work when usb cabel plugged in
-- use a ribbon cabel, smaller footprint screen
+- antenna off the board - maybe make cutout
+- m2 screws for mounting
+- no battery onector, solder on
+- add switch for full power off
+- usb sheilding gnd
+- small speaker for games
+
+continue what you were doing if not done then, now the games all have audio?,
+  also make sure there is audio setting in
+    settings, should work like brightness but by increments of 5
+
+make sure battery remaining display works
+
+TELL CODEX TO REMOVE ALL CODE AND REFRENCES TO THE OLD PCB, no node needed for old vs new, only new is needed now
+
+- see how much jlcpcb will charge
+
+- add new stuff to readme, second prototype, add case images, add that i used freecad
+- add pics of finished calculaotr, case, and pcb
+
+https://accu-components.com/us/torx-low-cap-head-screws/14442-SHCL-M2-10-A2?google_shopping=1&c=2
+https://www.harfington.com/products/p-1067848?currency=USD&country=US&variant=42127068659961&utm_source=google&utm_medium=cpc&utm_campaign=Google%20Shopping&stkn=f8e35277684b
+
+switch to esp32-s31 in future
 
 - lower case by default, for alpha charecters, then can turn on caps and caps lock, find a button for it
-
-next prompts:
-- for tetris change drop key to Y=,hold to window,
-- fix errors in build log
-- enter key not working in caluclator app
-- create an animated gif of what the ui lokos like, should be high quality and maybe 20 seconds of just using the calculator
-- look over all readme files includeing hardware and top leval and firmware to make sure looking good
 
 codex resume 019e5120-6419-79a2-838e-e21c6775bba5

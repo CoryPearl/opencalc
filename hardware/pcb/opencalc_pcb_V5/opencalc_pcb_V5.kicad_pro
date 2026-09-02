@@ -37,9 +37,9 @@
         "other_text_thickness": 0.15,
         "other_text_upright": false,
         "pads": {
-          "drill": 0.8,
-          "height": 1.27,
-          "width": 2.54
+          "drill": 2.1082,
+          "height": 1.1176,
+          "width": 2.6162
         },
         "silk_line_width": 0.1,
         "silk_text_italic": false,
@@ -490,7 +490,7 @@
       "plot": "",
       "pos_files": "",
       "specctra_dsn": "",
-      "step": "",
+      "step": "../../../../opencalc_pcb_V5.stl",
       "svg": "",
       "vrml": ""
     },
