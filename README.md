@@ -11,12 +11,9 @@ This project was partially funded by [PCBWay](https://pcbway.com).
 Blog: [https://corypearl.github.io/opencalc/blog.html](https://corypearl.github.io/opencalc/blog.html)
 
 <p align="center">
-  <img src="hardware/pcb/opencalc_pcb_V5/img/opencalc_pcb_V5_full.png" alt="OpenCalc V5 PCB" width="70%">
-  <br>
-  <img src="hardware/pcb/opencalc_pcb_V5/img/opencalc_case_spin.gif" alt="OpenCalc rotating case render" width="42%">
-  <img src="hardware/pcb/opencalc_pcb_V5/img/case_flat.png" alt="OpenCalc flat case render" width="42%">
-  <br>
-  <img src="firmware/open_calc_ui_calculator_demo.gif" alt="OpenCalc OS demo" width="42%">
+  <img src="hardware/pcb/opencalc_pcb_V5/img/opencalc_pcb_V5_full.png" alt="OpenCalc V5 PCB" height="210">
+  <img src="hardware/pcb/opencalc_pcb_V5/img/opencalc_case_spin.gif" alt="OpenCalc rotating case render" height="210">
+  <img src="firmware/open_calc_ui_calculator_demo.gif" alt="OpenCalc OS demo" height="210">
 </p>
 
 ## Highlights
