@@ -1,6 +1,6 @@
-<h1>
-  <img src="opencalc_logo_light.png" width="100" align="center">
-</h1>
+<p align="center">
+  <img src="opencalc_logo_light.png" width="100" alt="OpenCalc logo">
+</p>
 
 OpenCalc is an open-source graphing calculator inspired by the TI-84, built around an ESP32-S3, a color LCD, USB-C, Python-style scripting, games, and expandable firmware.
 
