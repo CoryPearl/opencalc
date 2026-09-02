@@ -6,7 +6,7 @@ OpenCalc is an open-source graphing calculator inspired by the TI-84, built arou
 
 The calculator runs **OpenCalc OS**, the project’s open-source ESP32-S3 operating environment. OpenCalc OS includes the calculator interface, math and graphing engines, built-in apps, scripting runtime, USB file storage, keypad handling, display drivers, game support, and power management.
 
-This project was partially funded by [PCBWay](https://pcbway.com) so I could test the OpenCalc PCB designs.
+This project was partially funded by [PCBWay](https://pcbway.com).
 
 Blog: [https://corypearl.github.io/opencalc/blog.html](https://corypearl.github.io/opencalc/blog.html)
 
@@ -31,6 +31,19 @@ Blog: [https://corypearl.github.io/opencalc/blog.html](https://corypearl.github.
 - Wi-Fi and Bluetooth available in hardware, disabled by default in firmware to save battery.
 - Current PCB includes battery charging, battery monitoring, software-off sleep, a full power switch, and back-side test pads.
 
+## Rough production Cost Estimate
+
+| Cost area                           | Estimate per unit |
+| ----------------------------------- | ----------------- |
+| PCB electronics parts from BOM      | $11-$16           |
+| 320x240 LCD                         | $5                |
+| 3.7 V 2000 mAh Li-ion battery       | $3-$5             |
+| Cheap keycaps / keypad plastics     | $2-$4             |
+| 3d printed case                     | $3-$6             |
+| PCB fabrication + SMT assembly      | $5-$9             |
+| Bulk shipping / logistics allowance | $3-$6             |
+| Estimated production cost           | $32-$51           |
+
 ## Project Layout
 
 ```text
@@ -47,16 +60,33 @@ Plug the OpenCalc USB-C port into your computer.
 cd firmware
 idf
 idf.py build
+```
+
+Hold Boot, press Reset, then release both.
+
+```zsh
 idf.py flash
 idf.py monitor
 ```
 
-If the board is not already in download mode, hold Boot, press Reset, then release both. On the current single-USB hardware, the monitor port usually appears as `/dev/cu.usbmodemopencalc1` when USB CDC is active.
+To list available serial ports if not auto found:
 
-To list available macOS serial ports:
+##### macOS:
 
 ```zsh
 ls /dev/cu.*
+```
+
+##### Windows:
+
+```cmd
+reg query HKLM\HARDWARE\DEVICEMAP\SERIALCOMM
+```
+
+or
+
+```powershell
+Get-CimInstance Win32_SerialPort | Select-Object DeviceID,Description
 ```
 
 ## Documentation
