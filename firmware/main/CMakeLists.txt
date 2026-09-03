@@ -1,11 +1,16 @@
-idf_component_register(
-    SRCS
+file(READ "${CMAKE_CURRENT_LIST_DIR}/config.h" OPENCALC_CONFIG_H)
+string(REGEX MATCH "#define[ \t]+OPENCALC_ENABLE_GIAC_CAS[ \t]+([^ \t\r\n/]+)" _giac_match "${OPENCALC_CONFIG_H}")
+set(OPENCALC_GIAC_ENABLED "${CMAKE_MATCH_1}")
+
+set(OPENCALC_SOURCES
         "main.c"
         "components/board_init.c"
         "components/SD.cpp"
         "components/opencalc_audio.c"
         "components/opencalc_breakout.c"
+        "components/opencalc_cas.c"
         "components/opencalc_doom.c"
+        "components/opencalc_eigenmath.c"
         "components/opencalc_mario.cpp"
         "components/opencalc_math.c"
         "components/opencalc_persist.c"
@@ -16,6 +21,7 @@ idf_component_register(
         "components/storage.c"
         "components/usb_msc.c"
         "components/tiny-python.c"
+        "components/eigenmath/eigenmath.c"
         "components/mario/bus.cpp"
         "components/mario/apu2A03.cpp"
         "components/mario/cartridge.cpp"
@@ -104,10 +110,9 @@ idf_component_register(
         "components/doomgeneric/w_wad.c"
         "components/doomgeneric/wi_stuff.c"
         "components/doomgeneric/z_zone.c"
-    INCLUDE_DIRS
-        "./components"
-        "./components/doomgeneric"
-    REQUIRES
+)
+
+set(OPENCALC_PRIVATE_REQUIRES
         driver
         esp_driver_ledc
         esp_driver_i2s
@@ -116,12 +121,40 @@ idf_component_register(
         esp_lcd
         esp_pm
         nvs_flash
-        fatfs 
-        wear_levelling 
+        fatfs
+        wear_levelling
         esp_tinyusb
 )
 
+if(OPENCALC_GIAC_ENABLED)
+    list(APPEND OPENCALC_SOURCES
+        "components/opencalc_giac.cpp"
+        "components/opencalc_giac_alloc.cpp"
+    )
+    list(APPEND OPENCALC_PRIVATE_REQUIRES giac)
+else()
+    list(APPEND OPENCALC_SOURCES "components/opencalc_giac.cpp")
+endif()
+
+idf_component_register(
+    SRCS ${OPENCALC_SOURCES}
+    INCLUDE_DIRS
+        "./components"
+        "./components/doomgeneric"
+    REQUIRES ${OPENCALC_PRIVATE_REQUIRES}
+)
+
 target_compile_definitions(${COMPONENT_LIB} PRIVATE PY_MAX_TOKENS=128)
+set_source_files_properties("components/eigenmath/eigenmath.c" PROPERTIES
+    COMPILE_DEFINITIONS "OPENCALC_EIGENMATH_EMBEDDED=1"
+)
+if(OPENCALC_GIAC_ENABLED)
+    # The vendored Giac headers predate GCC 15/C++26 and emit hundreds of
+    # compatibility diagnostics from the otherwise small OpenCalc adapter.
+    set_source_files_properties("components/opencalc_giac.cpp" PROPERTIES
+        COMPILE_OPTIONS "-w"
+    )
+endif()
 target_compile_definitions(${COMPONENT_LIB} PRIVATE DOOMGENERIC_RESX=320 DOOMGENERIC_RESY=200)
 target_compile_definitions(${COMPONENT_LIB} PRIVATE COMPOSITE_VIDEO=1 OPENCALC_NONBLOCKING_DOOM_TICS=1)
 target_compile_options(${COMPONENT_LIB} PRIVATE

@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_managed_components_espressif_tinyusb_examples_device_cdc_uac2_src_common_h", "label": "common.h", "file_type": "code", "source_file": "managed_components/espressif__tinyusb/examples/device/cdc_uac2/src/common.h", "source_location": "L1"}], "edges": [], "raw_calls": []}

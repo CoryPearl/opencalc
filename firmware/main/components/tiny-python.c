@@ -1151,51 +1151,6 @@ static py_value_t call_function(parser_t *p, const char *name) {
         return py_none();
     }
 
-    if (strcmp(name, "int") == 0 &&
-        current(p)->type == TOK_IDENT &&
-        strncmp(current(p)->text, "input", PY_MAX_NAME) == 0 &&
-        peek(p, 1)->type == TOK_LPAREN) {
-        char input[PY_MAX_STRING];
-        size_t len;
-
-        p->pos += 2;
-        if (!match(p, TOK_RPAREN)) {
-            py_value_t prompt = parse_expression(p);
-            char prompt_text[PY_MAX_STRING];
-            if (py_has_error(p->py)) {
-                return py_none();
-            }
-            if (!expect(p, TOK_RPAREN, "expected ')' after input prompt")) {
-                return py_none();
-            }
-            py_value_to_string(&prompt, prompt_text, sizeof(prompt_text));
-            py_append(p, prompt_text);
-        }
-        if (!match(p, TOK_RPAREN) &&
-            current(p)->type != TOK_SEMI &&
-            current(p)->type != TOK_RBRACE &&
-            current(p)->type != TOK_EOF) {
-            py_error(p->py, "expected ')' after int(input())");
-            return py_none();
-        }
-        if (p->py->input_callback == NULL) {
-            py_error(p->py, "input callback not set");
-            return py_none();
-        }
-
-        input[0] = '\0';
-        if (!p->py->input_callback(input, sizeof(input), p->py->input_user_data)) {
-            py_error(p->py, "input failed");
-            return py_none();
-        }
-        input[sizeof(input) - 1] = '\0';
-        len = strlen(input);
-        while (len > 0 && (input[len - 1] == '\n' || input[len - 1] == '\r')) {
-            input[--len] = '\0';
-        }
-        return py_int(atoi(input));
-    }
-
     if (!match(p, TOK_RPAREN)) {
         do {
             if (argc >= PY_MAX_PARAMS) {

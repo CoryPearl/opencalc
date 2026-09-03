@@ -1,0 +1,39 @@
+{
+  "name": "giac",
+  "version": "1.4.9+khicas.57",
+  "description": "NumOS-adapted Giac/KhiCAS snapshot; see NUMOS_CHANGES.md",
+  "license": "GPL-3.0-or-later",
+  "build": {
+    "extraScript": "extra_script.py",
+    "flags": [
+      "-DGIAC_KHICAS",
+      "-DNO_GUI",
+      "-DGIAC_GENERIC",
+      "-DEMBEDDED",
+      "-DUSE_GMP_REPLACEMENTS",
+      "-DUMAP",
+      "-fexceptions",
+      "-Isrc"
+    ],
+    "srcFilter": [
+      "+<*.cc>",
+      "+<*.cpp>",
+      "+<*.c>",
+      "-<kdisplay*>",
+      "-<k_*.cc>",
+      "-<k_*.cpp>",
+      "-<fx*.cc>",
+      "-<fx*.cpp>",
+      "-<ti*.cc>",
+      "-<ti*.cpp>",
+      "-<Xcas*>",
+      "-<Fl_*>",
+      "-<Graph*>",
+      "-<hist*>",
+      "-<test.cpp>"
+    ]
+  },
+  "dependencies": {
+    "libtommath": "*"
+  }
+}

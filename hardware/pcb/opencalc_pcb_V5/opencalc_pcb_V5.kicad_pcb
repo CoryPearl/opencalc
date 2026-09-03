@@ -45104,6 +45104,19 @@
 			(justify left bottom mirror)
 		)
 	)
+	(gr_text "Made By Cory Pearl"
+		(at 68.1 71.1 0)
+		(layer "B.SilkS")
+		(uuid "57ca6777-7a11-4467-a99d-409eb7bea24e")
+		(effects
+			(font
+				(size 1.5 1.5)
+				(thickness 0.3)
+				(bold yes)
+			)
+			(justify left bottom mirror)
+		)
+	)
 	(gr_text "BOOT"
 		(at 78.2 32 0)
 		(layer "B.SilkS")

@@ -1,14 +1,93 @@
-TELL CODEX TO REMOVE ALL CODE AND REFRENCES TO THE OLD PCB, no node needed for old vs new, only new is needed now
+codex resume 019e5120-6419-79a2-838e-e21c6775bba5
 
-- see how much jlcpcb will charge
 
-- make readme have real pcb img when get
+after continue with where it left off:
+- do we need the clangd file in the top leval dir?
+- is this cas as close as we'll get to a full cas?
+- add lowercase letters to font if not already there, alpha the y= or alpha then window switches beetween upper and lowercase
+
+
+
+ Major Remaining Work
+  - Statistics: Rich setup screens for every test/distribution, additional confidence intervals and plots, plus AP Statistics edge-case validation.
+  - Matrices: A proper cell-by-cell editor, better large-matrix result browsing, and 99x99 hardware stress testing.
+  - Graphing: Split graph/table screen, graph style editing, image backgrounds, and deeper parity testing for parametric, polar, and sequence analysis.
+  - Solver: Better symbolic-system integration and a detailed screen for large linear-system results.
+  - Tiny Python: More language features and prolonged hardware reliability testing. It will remain a Python-like embedded interpreter rather than full CPython.
+  - Finance: Interest-rate solving and improved cash-flow editing.
+  - Conics: Interactive coefficient solving and richer multi-conic analysis.
+  - Inequalities: Linear-programming tools and storing intersection coordinates into lists.
+
+  add these then update all readmes
+
+
+  Validation And Polish
+  - Test every calculator input/editing edge case on hardware.
+  - Validate all statistics and calculus results against reference calculators.
+  - Stress-test repeated script execution and editing.
+  - Test maximum-sized lists and matrices.
+  - Finish icon, font, layout, and long-result presentation polish.
+  - Validate the optional PAM8302A audio path on the new PCB.
+  - Run longer gameplay and sleep/wake soak tests.
+  - look through all screens manually
+
+
+
+  Best Additions after finish above tasks
+
+    - Periodic table and engineering reference database with stuff for physics and math and engeneering
+
+  2. Project notebooks
+      - Save equations, graphs, lists, matrices, notes, and scripts together.
+      - Reopen an entire assignment or experiment.
+      - Export projects as ordinary files readable on a computer.
+      - Include undo history and automatic recovery after crashes.
+
+  3. USB companion interface
+      - Screen mirroring and remote keypad control.
+      - Live graph and variable synchronization.
+      - Script debugging from a browser or desktop program.
+      - Backup, restore, screenshots, and firmware installation through one interface.
+      - OpenCalc already has CDC and mass storage, so this fits the architecture well.
+
+  4. Scientific data logger
+      - Use exposed GPIO, ADC, I2C, and UART pins for sensors.
+      - Plot voltage, temperature, acceleration, light, or distance in real time.
+      - Save recordings as CSV and analyze them directly in Statistics.
+      - Add trigger conditions and configurable sample rates.
+      - This could make OpenCalc genuinely useful for electronics and laboratory classes.
+
+  5. Unit-aware mathematics
+      - Understand expressions such as 5 m / 2 s.
+      - Perform dimensional validation and automatic conversion.
+      - Support SI prefixes, temperature, angles, pressure, energy, and electronics units.
+      - Integrate units with CAS, variables, graphs, and Python.
+
+  6. Proper Python development environment
+      - Breakpoints, step execution, variable inspection, traceback viewer, and profiling.
+      - Stable OpenCalc modules for graphics, keys, storage, audio, and math.
+      - A watchdog-controlled script sandbox so faulty programs cannot crash the OS.
+      - This is more valuable than merely supporting a larger subset of Python.
+
+  7. Linked symbolic graphing
+      - Select a graph and immediately display its exact derivative, integral, asymptotes, and roots.
+      - Show tangent lines and shaded integrals interactively.
+      - Changes to an equation update its table, analysis, and symbolic forms together.
+      - This would make the CAS feel integrated rather than like a separate command engine.
+
+
+  - Optional Wi-Fi file transfer through a local web page. or host a webpage/internet?
+
+
+
+
+
+For when get new PCB:
+
+TELL CODEX TO REMOVE ALL CODE AND REFRENCES TO THE OLD PCB, no code needed for old vs new, only new is needed now, so now option to go with old backlight circut and no option to say the board has no audio and everything like that
+Then test audio and everything new on pcb
 
 https://accu-components.com/us/torx-low-cap-head-screws/14442-SHCL-M2-10-A2?google_shopping=1&c=2
 https://www.harfington.com/products/p-1067848?currency=USD&country=US&variant=42127068659961&utm_source=google&utm_medium=cpc&utm_campaign=Google%20Shopping&stkn=f8e35277684b
 
 switch to esp32-s31 in future
-
-- lower case by default, for alpha charecters, then can turn on caps and caps lock, find a button for it
-
-codex resume 019e5120-6419-79a2-838e-e21c6775bba5

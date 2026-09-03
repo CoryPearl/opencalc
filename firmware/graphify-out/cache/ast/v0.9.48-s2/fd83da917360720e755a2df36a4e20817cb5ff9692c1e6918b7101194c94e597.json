@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_managed_components_espressif_tinyusb_hw_bsp_kinetis_kl_boards_frdm_kl25z_board_h", "label": "board.h", "file_type": "code", "source_file": "managed_components/espressif__tinyusb/hw/bsp/kinetis_kl/boards/frdm_kl25z/board.h", "source_location": "L1"}], "edges": [], "raw_calls": []}

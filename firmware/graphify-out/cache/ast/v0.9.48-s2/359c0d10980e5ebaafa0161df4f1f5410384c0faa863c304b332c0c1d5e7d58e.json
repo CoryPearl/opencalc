@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_managed_components_espressif_tinyusb_examples_device_webusb_serial_src_usb_descriptors_h", "label": "usb_descriptors.h", "file_type": "code", "source_file": "managed_components/espressif__tinyusb/examples/device/webusb_serial/src/usb_descriptors.h", "source_location": "L1"}], "edges": [], "raw_calls": []}

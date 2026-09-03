@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_managed_components_espressif_tinyusb_hw_bsp_mm32_boards_mm32f327x_mb39_board_h", "label": "board.h", "file_type": "code", "source_file": "managed_components/espressif__tinyusb/hw/bsp/mm32/boards/mm32f327x_mb39/board.h", "source_location": "L1"}], "edges": [], "raw_calls": []}

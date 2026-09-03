@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_managed_components_espressif_tinyusb_hw_bsp_ra_boards_ra4m3_ek_ra_cfg_fsp_cfg_bsp_bsp_mcu_device_pn_cfg_h", "label": "bsp_mcu_device_pn_cfg.h", "file_type": "code", "source_file": "managed_components/espressif__tinyusb/hw/bsp/ra/boards/ra4m3_ek/ra_cfg/fsp_cfg/bsp/bsp_mcu_device_pn_cfg.h", "source_location": "L1"}], "edges": [], "raw_calls": []}

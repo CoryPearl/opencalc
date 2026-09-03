@@ -8,6 +8,8 @@
 #define OPENCALC_ENABLE_BLUETOOTH 0
 #define OPENCALC_ENABLE_WIFI 0
 #define OPENCALC_ENABLE_DOOM 1
+#define OPENCALC_ENABLE_GIAC_CAS 1 // Giac/KhiCAS symbolic backend; Eigenmath remains the fallback
+#define OPENCALC_GIAC_BOOT_SELF_TEST 0 // Set to 1 temporarily for a serial-logged CAS hardware smoke test
 #define OPENCALC_ENABLE_GAME_AUDIO 0 // Master switch for game sound
 #define OPENCALC_USE_NEW_AUDIO_PCB 0 // 0 = old PCB; 1 = write-only LCD + PAM8302A audio PCB
 #define OPENCALC_ENABLE_USB_CDC_CONSOLE 1 // Same USB-C cable shows storage + serial monitor
@@ -65,6 +67,19 @@
 #define OPENCALC_UI_CORE 1
 #define OPENCALC_WORKER_CORE 0
 #define OPENCALC_UI_TASK_STACK 20480
+#define OPENCALC_GIAC_TASK_STACK 65536 // Allocated from PSRAM, not scarce internal DRAM
+
+#if OPENCALC_ENABLE_GIAC_CAS != 0 && OPENCALC_ENABLE_GIAC_CAS != 1
+#error "OPENCALC_ENABLE_GIAC_CAS must be 0 or 1"
+#endif
+
+#if OPENCALC_GIAC_BOOT_SELF_TEST != 0 && OPENCALC_GIAC_BOOT_SELF_TEST != 1
+#error "OPENCALC_GIAC_BOOT_SELF_TEST must be 0 or 1"
+#endif
+
+#if OPENCALC_ENABLE_GIAC_CAS && OPENCALC_GIAC_TASK_STACK < 49152
+#error "OPENCALC_GIAC_TASK_STACK is too small for reliable Giac evaluation"
+#endif
 
 /*
  * Global UI/game pacing.
@@ -144,11 +159,11 @@
  *
  * 0 = testing/dev board:
  *     LCD + USB/storage + serial button input only. Does not touch PCB-only
- *     keypad, touch, battery, charge-status, or backlight GPIOs.
+ *     keypad, battery, charge-status, or backlight GPIOs.
  *
  * 1 = real OpenCalc PCB:
- *     Enables the full keypad matrix, touch controller, battery monitor,
- *     charge indicator, backlight PWM, and ON/HOME wake path.
+ *     Enables the full keypad matrix, battery monitor, charge indicator,
+ *     backlight PWM, and ON/HOME wake path.
  */
 #define OPENCALC_USE_REAL_PCB 1
 
@@ -171,8 +186,8 @@
  *
  * Current target module: ESP32-S3 with 16 MB flash.
  */
-#define OPENCALC_FACTORY_APP_PARTITION_SIZE 0x400000 // 4mb
-#define OPENCALC_STORAGE_PARTITION_SIZE 0x800000 // 8mb
+#define OPENCALC_FACTORY_APP_PARTITION_SIZE 0x600000 // 6 MB
+#define OPENCALC_STORAGE_PARTITION_SIZE 0x800000 // 8 MB
 
 /*
  * Power behavior is software-off only.
