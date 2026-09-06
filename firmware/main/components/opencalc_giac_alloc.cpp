@@ -19,8 +19,16 @@ namespace {
 void *allocate(size_t size)
 {
     if (size == 0) size = 1;
-    void *pointer = heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    if (pointer == nullptr) pointer = heap_caps_malloc(size, MALLOC_CAP_8BIT);
+    size_t psram_free = heap_caps_get_free_size(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    void *pointer = size <= psram_free &&
+                            psram_free - size >= OPENCALC_PSRAM_RESERVE_BYTES
+                        ? heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)
+                        : nullptr;
+    size_t internal_free = heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    if (pointer == nullptr && size <= internal_free &&
+        internal_free - size >= OPENCALC_INTERNAL_HEAP_RESERVE_BYTES) {
+        pointer = heap_caps_malloc(size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    }
     return pointer;
 }
 
@@ -28,10 +36,17 @@ void *allocate_aligned(size_t alignment, size_t size)
 {
     if (size == 0) size = 1;
     if (alignment < sizeof(void *)) alignment = sizeof(void *);
-    void *pointer = heap_caps_aligned_alloc(
-        alignment, size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    if (pointer == nullptr) {
-        pointer = heap_caps_aligned_alloc(alignment, size, MALLOC_CAP_8BIT);
+    size_t psram_free = heap_caps_get_free_size(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    void *pointer = size <= psram_free &&
+                            psram_free - size >= OPENCALC_PSRAM_RESERVE_BYTES
+                        ? heap_caps_aligned_alloc(
+                              alignment, size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)
+                        : nullptr;
+    size_t internal_free = heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    if (pointer == nullptr && size <= internal_free &&
+        internal_free - size >= OPENCALC_INTERNAL_HEAP_RESERVE_BYTES) {
+        pointer = heap_caps_aligned_alloc(
+            alignment, size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     }
     return pointer;
 }

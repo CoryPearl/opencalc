@@ -46,14 +46,56 @@ int main(void) {
 #include "tiny-python.h"
 
 #include <ctype.h>
+#include <errno.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(__GNUC__)
+#define PY_NOINLINE __attribute__((noinline))
+#else
+#define PY_NOINLINE
+#endif
+
 #ifdef ESP_PLATFORM
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
+#include "opencalc_config.h"
 #endif
+
+static void *py_heap_calloc(size_t count, size_t size) {
+#ifdef ESP_PLATFORM
+    if (size != 0 && count > SIZE_MAX / size) return NULL;
+    size_t bytes = count * size;
+    size_t free_bytes = heap_caps_get_free_size(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (bytes > free_bytes || free_bytes - bytes < OPENCALC_PSRAM_RESERVE_BYTES) return NULL;
+    return heap_caps_calloc(count, size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+#else
+    return calloc(count, size);
+#endif
+}
+
+static void *py_heap_realloc(void *memory, size_t size) {
+#ifdef ESP_PLATFORM
+    size_t free_bytes = heap_caps_get_free_size(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (size > free_bytes || free_bytes - size < OPENCALC_PSRAM_RESERVE_BYTES) return NULL;
+    return heap_caps_realloc(memory, size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+#else
+    return realloc(memory, size);
+#endif
+}
+
+static void py_heap_free(void *memory) {
+#ifdef ESP_PLATFORM
+    heap_caps_free(memory);
+#else
+    free(memory);
+#endif
+}
 
 #ifndef PY_MAX_TOKENS
 #ifdef ESP_PLATFORM
@@ -157,7 +199,7 @@ struct py_object {
 
 typedef struct {
     token_type_t type;
-    int int_value;
+    int64_t int_value;
     double float_value;
     size_t line;
     size_t col;
@@ -177,7 +219,10 @@ typedef struct {
     int loop_signal;
     int return_signal;
     py_value_t return_value;
+    unsigned expression_depth;
 } parser_t;
+
+#define PY_MAX_EXPRESSION_DEPTH 12U
 
 #ifdef ESP_PLATFORM
 #ifndef PY_PARSER_POOL_SIZE
@@ -237,6 +282,23 @@ static void program_buffer_free(char *program) {
 #endif
 }
 
+static void py_build_traceback(py_t *py) {
+    size_t used = 0;
+    if (py == NULL) return;
+    py->traceback[0] = '\0';
+    for (size_t i = 0; i < py->call_depth && i < PY_MAX_TRACE_DEPTH; i++) {
+        int written = snprintf(py->traceback + used, sizeof(py->traceback) - used,
+                               "  at %s line %u\n", py->call_stack[i],
+                               (unsigned)py->call_lines[i]);
+        if (written < 0 || (size_t)written >= sizeof(py->traceback) - used) break;
+        used += (size_t)written;
+    }
+    if (used < sizeof(py->traceback)) {
+        snprintf(py->traceback + used, sizeof(py->traceback) - used,
+                 "  at <script> line %u", (unsigned)py->current_line);
+    }
+}
+
 static void py_error(py_t *py, const char *message) {
     if (py->current_line > 0) {
         py->error_line = py->current_line;
@@ -245,11 +307,17 @@ static void py_error(py_t *py, const char *message) {
                  (unsigned)py->error_line,
                  (unsigned)py->error_col,
                  message);
-        return;
+    } else {
+        py->error_line = 0;
+        py->error_col = 0;
+        snprintf(py->error, sizeof(py->error), "%s", message);
     }
-    py->error_line = 0;
-    py->error_col = 0;
-    snprintf(py->error, sizeof(py->error), "%s", message);
+    py_build_traceback(py);
+    if (py->debug_callback != NULL) {
+        (void)py->debug_callback(py, PY_DEBUG_ERROR, py->current_line,
+                                 py->call_depth > 0 ? py->call_stack[py->call_depth - 1] : "<script>",
+                                 py->debug_user_data);
+    }
 }
 
 static int py_has_error(const py_t *py) {
@@ -269,7 +337,7 @@ static py_value_t py_none(void) {
     return value;
 }
 
-static py_value_t py_int(int n) {
+static py_value_t py_int(int64_t n) {
     py_value_t value = py_none();
     value.type = PY_VALUE_INT;
     value.int_value = n;
@@ -281,7 +349,9 @@ static py_value_t py_float(double n) {
     py_value_t value = py_none();
     value.type = PY_VALUE_FLOAT;
     value.float_value = n;
-    value.int_value = (int)n;
+    if (isfinite(n) && n >= -9223372036854775808.0 && n < 9223372036854775808.0) {
+        value.int_value = (int64_t)n;
+    }
     return value;
 }
 
@@ -300,9 +370,22 @@ static py_value_t py_bool(int truth) {
     return value;
 }
 
+static py_value_t py_module(const char *name) {
+    py_value_t value = py_none();
+    value.type = PY_VALUE_MODULE;
+    snprintf(value.string_value, sizeof(value.string_value), "%s", name);
+    return value;
+}
+
 static py_value_t py_container(py_t *py, py_value_type_t type) {
     py_value_t value = py_none();
-    py_object_t *object = (py_object_t *)calloc(1, sizeof(*object));
+    py_object_t *object;
+
+    if (py->object_count >= PY_MAX_OBJECTS) {
+        py_error(py, "too many container objects");
+        return value;
+    }
+    object = (py_object_t *)py_heap_calloc(1, sizeof(*object));
 
     if (object == NULL) {
         py_error(py, "out of memory");
@@ -311,6 +394,7 @@ static py_value_t py_container(py_t *py, py_value_type_t type) {
     object->type = type;
     object->next = py->objects;
     py->objects = object;
+    py->object_count++;
     value.type = type;
     value.object = object;
     return value;
@@ -337,13 +421,24 @@ static int py_sequence_append(py_t *py, py_value_t *sequence, py_value_t item) {
         return 0;
     }
     if (sequence->object->count >= sequence->object->capacity) {
+        if (sequence->object->count >= PY_MAX_CONTAINER_ITEMS) {
+            py_error(py, "container too large");
+            return 0;
+        }
         capacity = sequence->object->capacity == 0 ? 4 : sequence->object->capacity * 2;
-        items = (py_value_t *)realloc(sequence->object->items, capacity * sizeof(*items));
+        if (capacity > PY_MAX_CONTAINER_ITEMS) capacity = PY_MAX_CONTAINER_ITEMS;
+        size_t added_capacity = capacity - sequence->object->capacity;
+        if (added_capacity > PY_MAX_TOTAL_CONTAINER_ITEMS - py->container_item_capacity) {
+            py_error(py, "script container memory limit exceeded");
+            return 0;
+        }
+        items = (py_value_t *)py_heap_realloc(sequence->object->items, capacity * sizeof(*items));
         if (items == NULL) {
             py_error(py, "out of memory");
             return 0;
         }
         sequence->object->items = items;
+        py->container_item_capacity += added_capacity;
         sequence->object->capacity = capacity;
     }
     sequence->object->items[sequence->object->count++] = item;
@@ -374,13 +469,24 @@ static int py_dict_set(py_t *py, py_value_t *dict, py_value_t key, py_value_t va
         }
     }
     if (dict->object->count >= dict->object->capacity) {
+        if (dict->object->count >= PY_MAX_CONTAINER_ITEMS) {
+            py_error(py, "dictionary too large");
+            return 0;
+        }
         capacity = dict->object->capacity == 0 ? 4 : dict->object->capacity * 2;
-        entries = (py_dict_entry_t *)realloc(dict->object->entries, capacity * sizeof(*entries));
+        if (capacity > PY_MAX_CONTAINER_ITEMS) capacity = PY_MAX_CONTAINER_ITEMS;
+        size_t added_capacity = capacity - dict->object->capacity;
+        if (added_capacity > PY_MAX_TOTAL_CONTAINER_ITEMS - py->container_item_capacity) {
+            py_error(py, "script container memory limit exceeded");
+            return 0;
+        }
+        entries = (py_dict_entry_t *)py_heap_realloc(dict->object->entries, capacity * sizeof(*entries));
         if (entries == NULL) {
             py_error(py, "out of memory");
             return 0;
         }
         dict->object->entries = entries;
+        py->container_item_capacity += added_capacity;
         dict->object->capacity = capacity;
     }
     dict->object->entries[dict->object->count].key = key;
@@ -494,7 +600,7 @@ static int py_value_repr(const py_value_t *value, char *buffer, size_t size, int
         return snprintf(buffer, size, "%s", value->int_value ? "True" : "False") > 0;
     }
     if (value->type == PY_VALUE_INT) {
-        return snprintf(buffer, size, "%d", value->int_value) > 0;
+        return snprintf(buffer, size, "%" PRId64, value->int_value) > 0;
     }
     if (value->type == PY_VALUE_FLOAT) {
         return snprintf(buffer, size, "%g", value->float_value) > 0;
@@ -504,6 +610,9 @@ static int py_value_repr(const py_value_t *value, char *buffer, size_t size, int
             return snprintf(buffer, size, "'%s'", value->string_value) >= 0;
         }
         return snprintf(buffer, size, "%s", value->string_value) >= 0;
+    }
+    if (value->type == PY_VALUE_MODULE) {
+        return snprintf(buffer, size, "<module '%s'>", value->string_value) >= 0;
     }
     if (value->type == PY_VALUE_LIST || value->type == PY_VALUE_TUPLE) {
         char item[PY_MAX_STRING];
@@ -616,16 +725,88 @@ static int py_values_equal(const py_value_t *left, const py_value_t *right) {
     return left->int_value == right->int_value;
 }
 
-static int py_pow_int(py_t *py, int base, int exp) {
-    int result = 1;
-    int i;
+static int py_value_compare(py_t *py, py_value_t left, py_value_t right, int *comparison) {
+    if (py_is_number(left) && py_is_number(right)) {
+        double a = py_number_as_double(left);
+        double b = py_number_as_double(right);
+        *comparison = (a > b) - (a < b);
+        return 1;
+    }
+    if (left.type == PY_VALUE_STRING && right.type == PY_VALUE_STRING) {
+        *comparison = strcmp(left.string_value, right.string_value);
+        return 1;
+    }
+    py_error(py, "values are not orderable");
+    return 0;
+}
 
-    if (exp < 0) {
-        py_error(py, "negative exponent not supported");
+static int py_iterable_count(py_value_t value) {
+    if (value.type == PY_VALUE_STRING) {
+        return (int)strlen(value.string_value);
+    }
+    if ((value.type == PY_VALUE_LIST || value.type == PY_VALUE_TUPLE || value.type == PY_VALUE_DICT) &&
+        value.object != NULL) {
+        return (int)value.object->count;
+    }
+    if (value.type == PY_VALUE_LIST || value.type == PY_VALUE_TUPLE || value.type == PY_VALUE_DICT) {
         return 0;
     }
-    for (i = 0; i < exp; ++i) {
-        result *= base;
+    return -1;
+}
+
+static py_value_t py_iterable_item(py_t *py, py_value_t value, int index) {
+    if (value.type == PY_VALUE_STRING) {
+        char character[2] = {value.string_value[index], '\0'};
+        return py_string(character);
+    }
+    if ((value.type == PY_VALUE_LIST || value.type == PY_VALUE_TUPLE) && value.object != NULL) {
+        return value.object->items[index];
+    }
+    if (value.type == PY_VALUE_DICT && value.object != NULL) {
+        return value.object->entries[index].key;
+    }
+    py_error(py, "object is not iterable");
+    return py_none();
+}
+
+static int py_contains(py_t *py, py_value_t container, py_value_t needle) {
+    int count = py_iterable_count(container);
+    int i;
+
+    if (count < 0) {
+        py_error(py, "right operand of 'in' is not iterable");
+        return 0;
+    }
+    if (container.type == PY_VALUE_STRING) {
+        if (needle.type != PY_VALUE_STRING) {
+            py_error(py, "string membership requires a string");
+            return 0;
+        }
+        return strstr(container.string_value, needle.string_value) != NULL;
+    }
+    for (i = 0; i < count; ++i) {
+        py_value_t item = py_iterable_item(py, container, i);
+        if (py_values_equal(&item, &needle)) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static py_value_t py_sequence_copy(py_t *py, py_value_t source, py_value_type_t type) {
+    py_value_t result = type == PY_VALUE_TUPLE ? py_tuple(py) : py_list(py);
+    int count = py_iterable_count(source);
+    int i;
+
+    if (count < 0) {
+        py_error(py, "object is not iterable");
+        return py_none();
+    }
+    for (i = 0; i < count && !py_has_error(py); ++i) {
+        py_value_t item = py_iterable_item(py, source, i);
+        if (!py_sequence_append(py, &result, item)) {
+            return py_none();
+        }
     }
     return result;
 }
@@ -747,9 +928,15 @@ static int lex(parser_t *p) {
                 token.type = TOK_FLOAT;
                 token.float_value = strtod(s, &end);
             } else {
-                long value = strtol(s, &end, 10);
+                int64_t value;
+                errno = 0;
+                value = strtoll(s, &end, 10);
+                if (errno == ERANGE) {
+                    py_error(p->py, "integer literal out of range");
+                    return 0;
+                }
                 token.type = TOK_INT;
-                token.int_value = (int)value;
+                token.int_value = value;
                 token.float_value = (double)token.int_value;
             }
             if (!push_token(p, token)) {
@@ -1066,7 +1253,11 @@ static int read_int_arg(parser_t *p, py_value_t value, const char *name) {
         py_error(p->py, name);
         return 0;
     }
-    return value.int_value;
+    if (value.int_value < INT_MIN || value.int_value > INT_MAX) {
+        py_error(p->py, "integer argument out of range");
+        return 0;
+    }
+    return (int)value.int_value;
 }
 
 static void py_remove_var(py_t *py, const char *name) {
@@ -1083,17 +1274,69 @@ static void py_remove_var(py_t *py, const char *name) {
     }
 }
 
+static int py_debug_event(py_t *py, py_debug_event_t event, size_t line, const char *function) {
+    if (py->abort_requested) {
+        py_error(py, "execution stopped by sandbox");
+        return 0;
+    }
+    if (py->debug_callback != NULL &&
+        !py->debug_callback(py, event, line, function, py->debug_user_data)) {
+        py->abort_requested = 1;
+        if (!py_has_error(py)) py_error(py, "execution stopped by debugger");
+        return 0;
+    }
+    return 1;
+}
+
+static int py_enter_call(py_t *py, const char *function) {
+    unsigned long limit = py->call_depth_limit != 0 ? py->call_depth_limit : PY_MAX_TRACE_DEPTH;
+    if (py->call_depth >= limit || py->call_depth >= PY_MAX_TRACE_DEPTH) {
+        py_error(py, "maximum call depth exceeded");
+        return 0;
+    }
+    snprintf(py->call_stack[py->call_depth], PY_MAX_NAME, "%s", function);
+    py->call_lines[py->call_depth] = py->current_line;
+    py->call_depth++;
+    py->profile.function_calls++;
+    if (py->call_depth > py->profile.max_call_depth) {
+        py->profile.max_call_depth = (unsigned long)py->call_depth;
+    }
+    return py_debug_event(py, PY_DEBUG_CALL, py->current_line, function);
+}
+
+static void py_leave_call(py_t *py, const char *function) {
+    (void)py_debug_event(py, PY_DEBUG_RETURN, py->current_line, function);
+    if (py->call_depth > 0) py->call_depth--;
+}
+
 static py_value_t call_user_function(parser_t *p, py_func_t *func, py_value_t *args, int argc) {
-    py_var_t saved[PY_MAX_PARAMS];
-    int had_saved[PY_MAX_PARAMS];
+    py_var_t *saved = NULL;
+    int *had_saved = NULL;
     py_value_t result = py_none();
     const char *body = func->body;
     char scratch_output[PY_MAX_LINE];
+    size_t bound_count = 0;
     size_t i;
 
     if ((size_t)argc != func->param_count) {
         py_error(p->py, "wrong number of function arguments");
         return py_none();
+    }
+
+    if (!py_enter_call(p->py, func->name)) {
+        return py_none();
+    }
+
+    if (func->param_count > 0) {
+        saved = (py_var_t *)py_heap_calloc(func->param_count, sizeof(*saved));
+        had_saved = (int *)py_heap_calloc(func->param_count, sizeof(*had_saved));
+        if (saved == NULL || had_saved == NULL) {
+            py_heap_free(saved);
+            py_heap_free(had_saved);
+            py_error(p->py, "out of memory");
+            py_leave_call(p->py, func->name);
+            return py_none();
+        }
     }
 
     for (i = 0; i < func->param_count; ++i) {
@@ -1103,8 +1346,9 @@ static py_value_t call_user_function(parser_t *p, py_func_t *func, py_value_t *a
             saved[i] = *existing;
         }
         if (!py_set_var(p->py, func->params[i], args[i])) {
-            return py_none();
+            goto restore_parameters;
         }
+        bound_count++;
     }
 
     while (isspace((unsigned char)*body)) {
@@ -1128,7 +1372,8 @@ static py_value_t call_user_function(parser_t *p, py_func_t *func, py_value_t *a
         }
     }
 
-    for (i = 0; i < func->param_count; ++i) {
+restore_parameters:
+    for (i = 0; i < bound_count; ++i) {
         if (had_saved[i]) {
             py_var_t *existing = py_find_var(p->py, func->params[i]);
             if (existing != NULL) {
@@ -1139,34 +1384,59 @@ static py_value_t call_user_function(parser_t *p, py_func_t *func, py_value_t *a
         }
     }
 
+    py_heap_free(saved);
+    py_heap_free(had_saved);
+    py_leave_call(p->py, func->name);
+
     return result;
 }
 
-static py_value_t call_function(parser_t *p, const char *name) {
-    py_value_t args[PY_MAX_PARAMS];
+static py_value_t call_function_with_args(parser_t *p, const char *name,
+                                          py_value_t *args, int argc);
+
+static PY_NOINLINE py_value_t call_function(parser_t *p, const char *name) {
+    py_value_t *args = NULL;
+    py_value_t result;
     int argc = 0;
-    py_func_t *func;
 
     if (!expect(p, TOK_LPAREN, "expected '(' after function name")) {
         return py_none();
     }
 
     if (!match(p, TOK_RPAREN)) {
+        args = (py_value_t *)py_heap_calloc(PY_MAX_PARAMS, sizeof(*args));
+        if (args == NULL) {
+            py_error(p->py, "out of memory");
+            return py_none();
+        }
         do {
             if (argc >= PY_MAX_PARAMS) {
                 py_error(p->py, "too many function arguments");
-                return py_none();
+                goto fail;
             }
             args[argc++] = parse_expression(p);
             if (py_has_error(p->py)) {
-                return py_none();
+                goto fail;
             }
         } while (match(p, TOK_COMMA));
 
         if (!expect(p, TOK_RPAREN, "expected ')' after arguments")) {
-            return py_none();
+            goto fail;
         }
     }
+
+    result = call_function_with_args(p, name, args, argc);
+    py_heap_free(args);
+    return result;
+
+fail:
+    py_heap_free(args);
+    return py_none();
+}
+
+static PY_NOINLINE py_value_t call_function_with_args(parser_t *p, const char *name,
+                                                       py_value_t *args, int argc) {
+    py_func_t *func;
 
     if (strcmp(name, "len") == 0) {
         if (argc != 1 ||
@@ -1183,6 +1453,8 @@ static py_value_t call_function(parser_t *p, const char *name) {
         return py_int((int)strlen(args[0].string_value));
     }
     if (strcmp(name, "int") == 0) {
+        char *end;
+        int64_t converted;
         if (argc != 1) {
             py_error(p->py, "int() expects one argument");
             return py_none();
@@ -1191,11 +1463,23 @@ static py_value_t call_function(parser_t *p, const char *name) {
             return py_int(args[0].int_value);
         }
         if (args[0].type == PY_VALUE_STRING) {
-            return py_int(atoi(args[0].string_value));
+            errno = 0;
+            converted = strtoll(args[0].string_value, &end, 10);
+            while (isspace((unsigned char)*end)) {
+                end++;
+            }
+            if (errno != 0 || end == args[0].string_value || *end != '\0') {
+                py_error(p->py, "invalid literal for int()");
+                return py_none();
+            }
+            return py_int(converted);
         }
-        return py_int(0);
+        py_error(p->py, "int() argument must be a number or string");
+        return py_none();
     }
     if (strcmp(name, "float") == 0) {
+        char *end;
+        double converted;
         if (argc != 1) {
             py_error(p->py, "float() expects one argument");
             return py_none();
@@ -1204,9 +1488,19 @@ static py_value_t call_function(parser_t *p, const char *name) {
             return py_float(py_number_as_double(args[0]));
         }
         if (args[0].type == PY_VALUE_STRING) {
-            return py_float(strtod(args[0].string_value, NULL));
+            errno = 0;
+            converted = strtod(args[0].string_value, &end);
+            while (isspace((unsigned char)*end)) {
+                end++;
+            }
+            if (errno != 0 || end == args[0].string_value || *end != '\0') {
+                py_error(p->py, "could not convert string to float");
+                return py_none();
+            }
+            return py_float(converted);
         }
-        return py_float(0.0);
+        py_error(p->py, "float() argument must be a number or string");
+        return py_none();
     }
     if (strcmp(name, "str") == 0) {
         char buffer[PY_MAX_STRING];
@@ -1225,44 +1519,239 @@ static py_value_t call_function(parser_t *p, const char *name) {
         return py_bool(py_truthy(args[0]));
     }
     if (strcmp(name, "abs") == 0) {
-        int n;
-        if (argc != 1) {
+        if (argc != 1 || !py_is_number(args[0])) {
             py_error(p->py, "abs() expects one argument");
             return py_none();
         }
-        n = read_int_arg(p, args[0], "abs() expects integer");
-        return py_int(n < 0 ? -n : n);
+        if (args[0].type == PY_VALUE_FLOAT) {
+            return py_float(fabs(args[0].float_value));
+        }
+        if (args[0].int_value == INT64_MIN) {
+            py_error(p->py, "integer overflow");
+            return py_none();
+        }
+        return py_int(args[0].int_value < 0 ? -args[0].int_value : args[0].int_value);
     }
     if (strcmp(name, "min") == 0 || strcmp(name, "max") == 0) {
-        int a;
-        int b;
-        if (argc != 2) {
-            py_error(p->py, "min()/max() expect two arguments");
+        py_value_t best;
+        int index;
+        int count;
+        int comparison;
+        int want_min = strcmp(name, "min") == 0;
+        if (argc == 0) {
+            py_error(p->py, "min()/max() expect at least one argument");
             return py_none();
         }
-        a = read_int_arg(p, args[0], "min()/max() expect integers");
-        b = read_int_arg(p, args[1], "min()/max() expect integers");
-        if (py_has_error(p->py)) {
-            return py_none();
+        if (argc == 1) {
+            count = py_iterable_count(args[0]);
+            if (count <= 0) {
+                py_error(p->py, count == 0 ? "min()/max() argument is empty" : "min()/max() argument is not iterable");
+                return py_none();
+            }
+            best = py_iterable_item(p->py, args[0], 0);
+            for (index = 1; index < count; ++index) {
+                py_value_t candidate = py_iterable_item(p->py, args[0], index);
+                if (!py_value_compare(p->py, candidate, best, &comparison)) {
+                    return py_none();
+                }
+                if ((want_min && comparison < 0) || (!want_min && comparison > 0)) {
+                    best = candidate;
+                }
+            }
+            return best;
         }
-        if (strcmp(name, "min") == 0) {
-            return py_int(a < b ? a : b);
+        best = args[0];
+        for (index = 1; index < argc; ++index) {
+            if (!py_value_compare(p->py, args[index], best, &comparison)) {
+                return py_none();
+            }
+            if ((want_min && comparison < 0) || (!want_min && comparison > 0)) {
+                best = args[index];
+            }
         }
-        return py_int(a > b ? a : b);
+        return best;
     }
     if (strcmp(name, "pow") == 0) {
-        int base;
-        int exp;
-        if (argc != 2) {
+        double result;
+        if (argc != 2 || !py_is_number(args[0]) || !py_is_number(args[1])) {
             py_error(p->py, "pow() expects two arguments");
             return py_none();
         }
-        base = read_int_arg(p, args[0], "pow() expects integers");
-        exp = read_int_arg(p, args[1], "pow() expects integers");
-        if (py_has_error(p->py)) {
+        result = pow(py_number_as_double(args[0]), py_number_as_double(args[1]));
+        if (!isfinite(result)) {
+            py_error(p->py, "pow() math domain error");
             return py_none();
         }
-        return py_int(py_pow_int(p->py, base, exp));
+        if (py_is_integer_value(args[0]) && py_is_integer_value(args[1]) &&
+            args[1].int_value >= 0) {
+            if (result < -9223372036854775808.0 || result >= 9223372036854775808.0) {
+                py_error(p->py, "integer overflow");
+                return py_none();
+            }
+            return py_int((int64_t)result);
+        }
+        return py_float(result);
+    }
+    if (strcmp(name, "sum") == 0) {
+        py_value_t total;
+        int count;
+        int i;
+        if (argc < 1 || argc > 2) {
+            py_error(p->py, "sum() expects an iterable and optional start");
+            return py_none();
+        }
+        count = py_iterable_count(args[0]);
+        if (count < 0) {
+            py_error(p->py, "sum() argument is not iterable");
+            return py_none();
+        }
+        total = argc == 2 ? args[1] : py_int(0);
+        if (!py_is_number(total)) {
+            py_error(p->py, "sum() start must be numeric");
+            return py_none();
+        }
+        for (i = 0; i < count; ++i) {
+            py_value_t item = py_iterable_item(p->py, args[0], i);
+            if (!py_is_number(item)) {
+                py_error(p->py, "sum() items must be numeric");
+                return py_none();
+            }
+            if (total.type == PY_VALUE_FLOAT || item.type == PY_VALUE_FLOAT) {
+                total = py_float(py_number_as_double(total) + py_number_as_double(item));
+            } else {
+                int64_t sum = 0;
+                if (__builtin_add_overflow(total.int_value, item.int_value, &sum)) {
+                    py_error(p->py, "integer overflow");
+                    return py_none();
+                }
+                total = py_int(sum);
+            }
+        }
+        return total;
+    }
+    if (strcmp(name, "round") == 0) {
+        int digits = 0;
+        double scale;
+        double result;
+        if (argc < 1 || argc > 2 || !py_is_number(args[0]) ||
+            (argc == 2 && !py_is_integer_value(args[1]))) {
+            py_error(p->py, "round() expects a number and optional integer digits");
+            return py_none();
+        }
+        if (argc == 1) {
+            return py_int((int)round(py_number_as_double(args[0])));
+        }
+        digits = read_int_arg(p, args[1], "round() digits out of range");
+        if (py_has_error(p->py)) return py_none();
+        scale = pow(10.0, (double)digits);
+        result = round(py_number_as_double(args[0]) * scale) / scale;
+        return py_float(result);
+    }
+    if (strcmp(name, "list") == 0 || strcmp(name, "tuple") == 0) {
+        py_value_type_t type = strcmp(name, "tuple") == 0 ? PY_VALUE_TUPLE : PY_VALUE_LIST;
+        if (argc == 0) {
+            return type == PY_VALUE_TUPLE ? py_tuple(p->py) : py_list(p->py);
+        }
+        if (argc != 1) {
+            py_error(p->py, "list()/tuple() expect at most one iterable");
+            return py_none();
+        }
+        return py_sequence_copy(p->py, args[0], type);
+    }
+    if (strcmp(name, "range") == 0) {
+        py_value_t result = py_list(p->py);
+        int start = 0;
+        int stop;
+        int step = 1;
+        int value;
+        int guard = 0;
+        if (argc < 1 || argc > 3) {
+            py_error(p->py, "range() expects one to three arguments");
+            return py_none();
+        }
+        for (int i = 0; i < argc; ++i) {
+            if (!py_is_integer_value(args[i])) {
+                py_error(p->py, "range() arguments must be integers");
+                return py_none();
+            }
+        }
+        if (argc == 1) stop = read_int_arg(p, args[0], "range() argument out of range");
+        else {
+            start = read_int_arg(p, args[0], "range() argument out of range");
+            stop = read_int_arg(p, args[1], "range() argument out of range");
+            if (argc == 3) step = read_int_arg(p, args[2], "range() argument out of range");
+        }
+        if (py_has_error(p->py)) return py_none();
+        if (step == 0) {
+            py_error(p->py, "range() step cannot be zero");
+            return py_none();
+        }
+        for (value = start; (step > 0) ? value < stop : value > stop; value += step) {
+            if (++guard > 10000) {
+                py_error(p->py, "range() result too large");
+                return py_none();
+            }
+            if (!py_list_append(p->py, &result, py_int(value))) return py_none();
+        }
+        return result;
+    }
+    if (strcmp(name, "enumerate") == 0) {
+        py_value_t result = py_list(p->py);
+        int count;
+        int64_t start = 0;
+        int i;
+        if (argc < 1 || argc > 2 || (count = py_iterable_count(args[0])) < 0 ||
+            (argc == 2 && !py_is_integer_value(args[1]))) {
+            py_error(p->py, "enumerate() expects an iterable and optional integer start");
+            return py_none();
+        }
+        if (argc == 2) start = args[1].int_value;
+        for (i = 0; i < count; ++i) {
+            py_value_t pair = py_tuple(p->py);
+            if (!py_sequence_append(p->py, &pair, py_int(start + i)) ||
+                !py_sequence_append(p->py, &pair, py_iterable_item(p->py, args[0], i)) ||
+                !py_list_append(p->py, &result, pair)) return py_none();
+        }
+        return result;
+    }
+    if (strcmp(name, "sorted") == 0) {
+        py_value_t result;
+        int count;
+        int i;
+        if (argc != 1 || (count = py_iterable_count(args[0])) < 0) {
+            py_error(p->py, "sorted() expects one iterable");
+            return py_none();
+        }
+        result = py_sequence_copy(p->py, args[0], PY_VALUE_LIST);
+        for (i = 1; i < count; ++i) {
+            py_value_t item = result.object->items[i];
+            int j = i - 1;
+            while (j >= 0) {
+                int comparison;
+                if (!py_value_compare(p->py, result.object->items[j], item, &comparison)) return py_none();
+                if (comparison <= 0) break;
+                result.object->items[j + 1] = result.object->items[j];
+                j--;
+            }
+            result.object->items[j + 1] = item;
+        }
+        return result;
+    }
+    if (strcmp(name, "any") == 0 || strcmp(name, "all") == 0) {
+        int count;
+        int i;
+        int want_all = strcmp(name, "all") == 0;
+        if (argc != 1 || (count = py_iterable_count(args[0])) < 0) {
+            py_error(p->py, "any()/all() expect one iterable");
+            return py_none();
+        }
+        for (i = 0; i < count; ++i) {
+            int truth = py_truthy(py_iterable_item(p->py, args[0], i));
+            if ((!want_all && truth) || (want_all && !truth)) {
+                return py_bool(!want_all);
+            }
+        }
+        return py_bool(want_all);
     }
     if (strcmp(name, "ord") == 0) {
         if (argc != 1 || args[0].type != PY_VALUE_STRING || strlen(args[0].string_value) != 1) {
@@ -1434,9 +1923,8 @@ static py_value_t call_function(parser_t *p, const char *name) {
 }
 
 static py_value_t eval_binary(parser_t *p, py_value_t left, token_type_t op, py_value_t right) {
-    char left_buf[PY_MAX_STRING];
-    char right_buf[PY_MAX_STRING];
     char concat[PY_MAX_STRING];
+    int64_t integer_result = 0;
 
     if (py_has_error(p->py)) {
         return py_none();
@@ -1448,17 +1936,41 @@ static py_value_t eval_binary(parser_t *p, py_value_t left, token_type_t op, py_
                 if (left.type == PY_VALUE_FLOAT || right.type == PY_VALUE_FLOAT) {
                     return py_float(py_number_as_double(left) + py_number_as_double(right));
                 }
-                return py_int(left.int_value + right.int_value);
+                if (__builtin_add_overflow(left.int_value, right.int_value, &integer_result)) {
+                    py_error(p->py, "integer overflow");
+                    return py_none();
+                }
+                return py_int(integer_result);
             }
-            py_value_to_string(&left, left_buf, sizeof(left_buf));
-            py_value_to_string(&right, right_buf, sizeof(right_buf));
-            if (strlen(left_buf) + strlen(right_buf) >= sizeof(concat)) {
-                py_error(p->py, "string too long");
-                return py_none();
+            if (left.type == PY_VALUE_STRING && right.type == PY_VALUE_STRING) {
+                if (strlen(left.string_value) + strlen(right.string_value) >= sizeof(concat)) {
+                    py_error(p->py, "string too long");
+                    return py_none();
+                }
+                strcpy(concat, left.string_value);
+                strcat(concat, right.string_value);
+                return py_string(concat);
             }
-            strcpy(concat, left_buf);
-            strcat(concat, right_buf);
-            return py_string(concat);
+            if ((left.type == PY_VALUE_LIST && right.type == PY_VALUE_LIST) ||
+                (left.type == PY_VALUE_TUPLE && right.type == PY_VALUE_TUPLE)) {
+                py_value_t result = left.type == PY_VALUE_LIST ? py_list(p->py) : py_tuple(p->py);
+                int left_count = py_iterable_count(left);
+                int right_count = py_iterable_count(right);
+                int i;
+                for (i = 0; i < left_count; ++i) {
+                    if (!py_sequence_append(p->py, &result, py_iterable_item(p->py, left, i))) {
+                        return py_none();
+                    }
+                }
+                for (i = 0; i < right_count; ++i) {
+                    if (!py_sequence_append(p->py, &result, py_iterable_item(p->py, right, i))) {
+                        return py_none();
+                    }
+                }
+                return result;
+            }
+            py_error(p->py, "unsupported operands for +");
+            return py_none();
         case TOK_MINUS:
             if (!py_is_number(left) || !py_is_number(right)) {
                 py_error(p->py, "subtraction requires numbers");
@@ -1467,35 +1979,85 @@ static py_value_t eval_binary(parser_t *p, py_value_t left, token_type_t op, py_
             if (left.type == PY_VALUE_FLOAT || right.type == PY_VALUE_FLOAT) {
                 return py_float(py_number_as_double(left) - py_number_as_double(right));
             }
-            return py_int(left.int_value - right.int_value);
+            if (__builtin_sub_overflow(left.int_value, right.int_value, &integer_result)) {
+                py_error(p->py, "integer overflow");
+                return py_none();
+            }
+            return py_int(integer_result);
         case TOK_STAR:
+            if ((left.type == PY_VALUE_STRING || left.type == PY_VALUE_LIST || left.type == PY_VALUE_TUPLE) &&
+                py_is_integer_value(right)) {
+                py_value_t result;
+                int count = py_iterable_count(left);
+                int repetitions;
+                int i;
+                int j;
+                if (right.int_value <= 0) repetitions = 0;
+                else if (right.int_value > INT_MAX) {
+                    py_error(p->py, "sequence repetition too large");
+                    return py_none();
+                } else repetitions = (int)right.int_value;
+                if (left.type == PY_VALUE_STRING) {
+                    size_t length = strlen(left.string_value);
+                    size_t used = 0;
+                    if (length > 0 && (size_t)repetitions > (sizeof(concat) - 1) / length) {
+                        py_error(p->py, "string too long");
+                        return py_none();
+                    }
+                    concat[0] = '\0';
+                    for (i = 0; i < repetitions; ++i) {
+                        memcpy(concat + used, left.string_value, length);
+                        used += length;
+                    }
+                    concat[used] = '\0';
+                    return py_string(concat);
+                }
+                result = left.type == PY_VALUE_LIST ? py_list(p->py) : py_tuple(p->py);
+                for (i = 0; i < repetitions; ++i) {
+                    for (j = 0; j < count; ++j) {
+                        if (!py_sequence_append(p->py, &result, py_iterable_item(p->py, left, j))) {
+                            return py_none();
+                        }
+                    }
+                }
+                return result;
+            }
+            if (py_is_integer_value(left) &&
+                (right.type == PY_VALUE_STRING || right.type == PY_VALUE_LIST || right.type == PY_VALUE_TUPLE)) {
+                return eval_binary(p, right, TOK_STAR, left);
+            }
             if (!py_is_number(left) || !py_is_number(right)) {
-                py_error(p->py, "multiplication requires numbers");
+                py_error(p->py, "multiplication requires numbers or a sequence and integer");
                 return py_none();
             }
             if (left.type == PY_VALUE_FLOAT || right.type == PY_VALUE_FLOAT) {
                 return py_float(py_number_as_double(left) * py_number_as_double(right));
             }
-            return py_int(left.int_value * right.int_value);
-        case TOK_STARSTAR:
+            if (__builtin_mul_overflow(left.int_value, right.int_value, &integer_result)) {
+                py_error(p->py, "integer overflow");
+                return py_none();
+            }
+            return py_int(integer_result);
+        case TOK_STARSTAR: {
+            double result;
             if (!py_is_number(left) || !py_is_number(right)) {
                 py_error(p->py, "exponent requires numbers");
                 return py_none();
             }
-            if (left.type == PY_VALUE_FLOAT || right.type == PY_VALUE_FLOAT) {
-                int exp = right.type == PY_VALUE_FLOAT ? (int)right.float_value : right.int_value;
-                double result = 1.0;
-                int i;
-                if (exp < 0) {
-                    py_error(p->py, "negative exponent not supported");
+            result = pow(py_number_as_double(left), py_number_as_double(right));
+            if (!isfinite(result)) {
+                py_error(p->py, "math domain error");
+                return py_none();
+            }
+            if (py_is_integer_value(left) && py_is_integer_value(right) && right.int_value >= 0) {
+                if (result < -9223372036854775808.0 || result >= 9223372036854775808.0) {
+                    py_error(p->py, "integer overflow");
                     return py_none();
                 }
-                for (i = 0; i < exp; ++i) {
-                    result *= py_number_as_double(left);
-                }
-                return py_float(result);
+                return py_int((int64_t)result);
             }
-            return py_int(py_pow_int(p->py, left.int_value, right.int_value));
+            return py_float(result);
+        }
         case TOK_SLASH:
             if (!py_is_number(left) || !py_is_number(right)) {
                 py_error(p->py, "division requires numbers");
@@ -1506,7 +2068,9 @@ static py_value_t eval_binary(parser_t *p, py_value_t left, token_type_t op, py_
                 return py_none();
             }
             return py_float(py_number_as_double(left) / py_number_as_double(right));
-        case TOK_DSLASH:
+        case TOK_DSLASH: {
+            int64_t quotient;
+            int64_t remainder;
             if (!py_is_number(left) || !py_is_number(right)) {
                 py_error(p->py, "division requires numbers");
                 return py_none();
@@ -1515,17 +2079,47 @@ static py_value_t eval_binary(parser_t *p, py_value_t left, token_type_t op, py_
                 py_error(p->py, "division by zero");
                 return py_none();
             }
-            return py_int((int)(py_number_as_double(left) / py_number_as_double(right)));
-        case TOK_PERCENT:
-            if (!py_is_integer_value(left) || !py_is_integer_value(right)) {
-                py_error(p->py, "modulo requires integers");
+            if (left.type == PY_VALUE_FLOAT || right.type == PY_VALUE_FLOAT) {
+                return py_float(floor(py_number_as_double(left) / py_number_as_double(right)));
+            }
+            if (left.int_value == INT64_MIN && right.int_value == -1) {
+                py_error(p->py, "integer overflow");
                 return py_none();
             }
-            if (right.int_value == 0) {
+            quotient = left.int_value / right.int_value;
+            remainder = left.int_value % right.int_value;
+            if (remainder != 0 && ((remainder < 0) != (right.int_value < 0))) {
+                quotient--;
+            }
+            return py_int(quotient);
+        }
+        case TOK_PERCENT: {
+            double divisor;
+            double result;
+            if (!py_is_number(left) || !py_is_number(right)) {
+                py_error(p->py, "modulo requires numbers");
+                return py_none();
+            }
+            divisor = py_number_as_double(right);
+            if (divisor == 0.0) {
                 py_error(p->py, "modulo by zero");
                 return py_none();
             }
-            return py_int(left.int_value % right.int_value);
+            if (left.type == PY_VALUE_FLOAT || right.type == PY_VALUE_FLOAT) {
+                result = py_number_as_double(left) - floor(py_number_as_double(left) / divisor) * divisor;
+                return py_float(result);
+            }
+            if (left.int_value == INT64_MIN && right.int_value == -1) {
+                return py_int(0);
+            }
+            {
+                int64_t remainder = left.int_value % right.int_value;
+                if (remainder != 0 && ((remainder < 0) != (right.int_value < 0))) {
+                    remainder += right.int_value;
+                }
+                return py_int(remainder);
+            }
+        }
         case TOK_AMP:
             if (!py_is_integer_value(left) || !py_is_integer_value(right)) {
                 py_error(p->py, "bitwise and requires integers");
@@ -1549,21 +2143,23 @@ static py_value_t eval_binary(parser_t *p, py_value_t left, token_type_t op, py_
                 py_error(p->py, "left shift requires integers");
                 return py_none();
             }
-            if (right.int_value < 0) {
-                py_error(p->py, "negative shift count");
+            if (right.int_value < 0 || right.int_value >= 64 || left.int_value < 0 ||
+                (right.int_value > 0 &&
+                 (uint64_t)left.int_value > (uint64_t)INT64_MAX >> (unsigned)right.int_value)) {
+                py_error(p->py, "invalid or overflowing shift");
                 return py_none();
             }
-            return py_int(left.int_value << right.int_value);
+            return py_int((int64_t)((uint64_t)left.int_value << (unsigned)right.int_value));
         case TOK_RSHIFT:
             if (!py_is_integer_value(left) || !py_is_integer_value(right)) {
                 py_error(p->py, "right shift requires integers");
                 return py_none();
             }
-            if (right.int_value < 0) {
-                py_error(p->py, "negative shift count");
+            if (right.int_value < 0 || right.int_value >= 64) {
+                py_error(p->py, "invalid shift count");
                 return py_none();
             }
-            return py_int(left.int_value >> right.int_value);
+            return py_int(left.int_value >> (unsigned)right.int_value);
         case TOK_EQ:
             return py_bool(py_values_equal(&left, &right));
         case TOK_NE:
@@ -1572,20 +2168,22 @@ static py_value_t eval_binary(parser_t *p, py_value_t left, token_type_t op, py_
         case TOK_LE:
         case TOK_GT:
         case TOK_GE:
-            if (!py_is_number(left) || !py_is_number(right)) {
-                py_error(p->py, "ordering comparison requires numbers");
+            {
+            int comparison;
+            if (!py_value_compare(p->py, left, right, &comparison)) {
                 return py_none();
             }
             if (op == TOK_LT) {
-                return py_int(py_number_as_double(left) < py_number_as_double(right));
+                return py_bool(comparison < 0);
             }
             if (op == TOK_LE) {
-                return py_int(py_number_as_double(left) <= py_number_as_double(right));
+                return py_bool(comparison <= 0);
             }
             if (op == TOK_GT) {
-                return py_int(py_number_as_double(left) > py_number_as_double(right));
+                return py_bool(comparison > 0);
             }
-            return py_int(py_number_as_double(left) >= py_number_as_double(right));
+            return py_bool(comparison >= 0);
+            }
         default:
             py_error(p->py, "unknown operator");
             return py_none();
@@ -1622,25 +2220,28 @@ static py_value_t py_sequence_slice(parser_t *p, py_value_t sequence, py_value_t
         return py_none();
     }
     if (has_start) {
-        if (!py_is_number(start_value)) {
+        if (!py_is_integer_value(start_value)) {
             py_error(p->py, "slice start must be integer");
             return py_none();
         }
-        start = py_normalize_index(start_value.int_value, len);
+        start = py_normalize_index(read_int_arg(p, start_value, "slice start out of range"), len);
+        if (py_has_error(p->py)) return py_none();
     }
     if (has_stop) {
-        if (!py_is_number(stop_value)) {
+        if (!py_is_integer_value(stop_value)) {
             py_error(p->py, "slice stop must be integer");
             return py_none();
         }
-        stop = py_normalize_index(stop_value.int_value, len);
+        stop = py_normalize_index(read_int_arg(p, stop_value, "slice stop out of range"), len);
+        if (py_has_error(p->py)) return py_none();
     }
     if (has_step) {
-        if (!py_is_number(step_value)) {
+        if (!py_is_integer_value(step_value)) {
             py_error(p->py, "slice step must be integer");
             return py_none();
         }
-        step = step_value.int_value;
+        step = read_int_arg(p, step_value, "slice step out of range");
+        if (py_has_error(p->py)) return py_none();
         if (step == 0) {
             py_error(p->py, "slice step cannot be zero");
             return py_none();
@@ -1713,7 +2314,7 @@ static py_value_t py_subscript(parser_t *p, py_value_t target, py_value_t index)
         return py_none();
     }
 
-    if (!py_is_number(index)) {
+    if (!py_is_integer_value(index)) {
         py_error(p->py, "index must be integer");
         return py_none();
     }
@@ -1722,7 +2323,8 @@ static py_value_t py_subscript(parser_t *p, py_value_t target, py_value_t index)
         py_error(p->py, "target is not subscriptable");
         return py_none();
     }
-    i = py_normalize_index(index.int_value, len);
+    i = py_normalize_index(read_int_arg(p, index, "index out of range"), len);
+    if (py_has_error(p->py)) return py_none();
     if (i < 0 || i >= len) {
         py_error(p->py, "index out of range");
         return py_none();
@@ -1751,12 +2353,13 @@ static int py_assign_subscript(parser_t *p, py_value_t *target, py_value_t index
         py_error(p->py, "target is not subscriptable");
         return 0;
     }
-    if (!py_is_number(index)) {
+    if (!py_is_integer_value(index)) {
         py_error(p->py, "index must be integer");
         return 0;
     }
     len = py_sequence_len(*target);
-    i = py_normalize_index(index.int_value, len);
+    i = py_normalize_index(read_int_arg(p, index, "index out of range"), len);
+    if (py_has_error(p->py)) return 0;
     if (i < 0 || i >= len) {
         py_error(p->py, "index out of range");
         return 0;
@@ -1799,7 +2402,7 @@ static int parse_slice_tail(parser_t *p, py_value_t base, int has_start, py_valu
     return !py_has_error(p->py);
 }
 
-static py_value_t parse_atom(parser_t *p) {
+static PY_NOINLINE py_value_t parse_atom(parser_t *p) {
     token_t *token = current(p);
 
     if (match(p, TOK_INT)) {
@@ -1822,6 +2425,9 @@ static py_value_t parse_atom(parser_t *p) {
     }
     if (match(p, TOK_NONE)) {
         return py_none();
+    }
+    if (match(p, TOK_RANGE)) {
+        return call_function(p, "range");
     }
     if (match(p, TOK_LBRACKET)) {
         py_value_t list = py_list(p->py);
@@ -1917,11 +2523,300 @@ static py_value_t parse_atom(parser_t *p) {
     return py_none();
 }
 
-static py_value_t parse_primary(parser_t *p) {
+static py_value_t call_method_with_args(parser_t *p, py_value_t target,
+                                        const char *name, py_value_t *args, int argc);
+
+static PY_NOINLINE py_value_t call_method(parser_t *p, py_value_t target, const char *name) {
+    py_value_t *args = NULL;
+    py_value_t result;
+    int argc = 0;
+
+    if (!expect(p, TOK_LPAREN, "expected '(' after method name")) {
+        return py_none();
+    }
+    if (!match(p, TOK_RPAREN)) {
+        args = (py_value_t *)py_heap_calloc(PY_MAX_PARAMS, sizeof(*args));
+        if (args == NULL) {
+            py_error(p->py, "out of memory");
+            return py_none();
+        }
+        do {
+            if (argc >= PY_MAX_PARAMS) {
+                py_error(p->py, "too many method arguments");
+                goto fail;
+            }
+            args[argc++] = parse_expression(p);
+            if (py_has_error(p->py)) {
+                goto fail;
+            }
+        } while (match(p, TOK_COMMA));
+        if (!expect(p, TOK_RPAREN, "expected ')' after method arguments")) {
+            goto fail;
+        }
+    }
+
+    result = call_method_with_args(p, target, name, args, argc);
+    py_heap_free(args);
+    return result;
+
+fail:
+    py_heap_free(args);
+    return py_none();
+}
+
+static PY_NOINLINE py_value_t call_method_with_args(parser_t *p, py_value_t target,
+                                                     const char *name, py_value_t *args, int argc) {
+    size_t i;
+
+    if (target.type == PY_VALUE_MODULE) {
+        py_value_t result = py_none();
+        if (p->py->native_callback == NULL) {
+            py_error(p->py, "OpenCalc module host is not configured");
+            return py_none();
+        }
+        if (!p->py->native_callback(p->py, target.string_value, name, args,
+                                    (size_t)argc, &result, p->py->native_user_data)) {
+            if (!py_has_error(p->py)) py_error(p->py, "module call failed");
+            return py_none();
+        }
+        return result;
+    }
+
+    if (target.type == PY_VALUE_LIST) {
+        if (target.object == NULL) {
+            py_error(p->py, "invalid list");
+            return py_none();
+        }
+        if (strcmp(name, "append") == 0) {
+            if (argc != 1) {
+                py_error(p->py, "append() expects one argument");
+                return py_none();
+            }
+            py_list_append(p->py, &target, args[0]);
+            return py_none();
+        }
+        if (strcmp(name, "extend") == 0) {
+            int count;
+            if (argc != 1 || (count = py_iterable_count(args[0])) < 0) {
+                py_error(p->py, "extend() expects one iterable");
+                return py_none();
+            }
+            for (i = 0; i < (size_t)count; ++i) {
+                if (!py_list_append(p->py, &target, py_iterable_item(p->py, args[0], (int)i))) {
+                    return py_none();
+                }
+            }
+            return py_none();
+        }
+        if (strcmp(name, "insert") == 0) {
+            int index;
+            if (argc != 2 || !py_is_integer_value(args[0])) {
+                py_error(p->py, "insert() expects integer index and value");
+                return py_none();
+            }
+            index = read_int_arg(p, args[0], "insert() index out of range");
+            if (py_has_error(p->py)) return py_none();
+            if (index < 0) {
+                index += (int)target.object->count;
+            }
+            if (index < 0) index = 0;
+            if (index > (int)target.object->count) index = (int)target.object->count;
+            if (!py_list_append(p->py, &target, py_none())) {
+                return py_none();
+            }
+            memmove(&target.object->items[index + 1], &target.object->items[index],
+                    (target.object->count - (size_t)index - 1) * sizeof(*target.object->items));
+            target.object->items[index] = args[1];
+            return py_none();
+        }
+        if (strcmp(name, "pop") == 0) {
+            int index = (int)target.object->count - 1;
+            py_value_t result;
+            if (argc > 1 || (argc == 1 && !py_is_integer_value(args[0]))) {
+                py_error(p->py, "pop() expects an optional integer index");
+                return py_none();
+            }
+            if (argc == 1) {
+                index = read_int_arg(p, args[0], "pop() index out of range");
+                if (py_has_error(p->py)) return py_none();
+                index = py_normalize_index(index, (int)target.object->count);
+            }
+            if (index < 0 || index >= (int)target.object->count) {
+                py_error(p->py, target.object->count == 0 ? "pop from empty list" : "pop index out of range");
+                return py_none();
+            }
+            result = target.object->items[index];
+            memmove(&target.object->items[index], &target.object->items[index + 1],
+                    (target.object->count - (size_t)index - 1) * sizeof(*target.object->items));
+            target.object->count--;
+            return result;
+        }
+        if (strcmp(name, "remove") == 0) {
+            if (argc != 1) {
+                py_error(p->py, "remove() expects one value");
+                return py_none();
+            }
+            for (i = 0; i < target.object->count; ++i) {
+                if (py_values_equal(&target.object->items[i], &args[0])) {
+                    memmove(&target.object->items[i], &target.object->items[i + 1],
+                            (target.object->count - i - 1) * sizeof(*target.object->items));
+                    target.object->count--;
+                    return py_none();
+                }
+            }
+            py_error(p->py, "value not in list");
+            return py_none();
+        }
+        if (strcmp(name, "clear") == 0) {
+            if (argc != 0) {
+                py_error(p->py, "clear() expects no arguments");
+                return py_none();
+            }
+            target.object->count = 0;
+            return py_none();
+        }
+        if (strcmp(name, "reverse") == 0) {
+            if (argc != 0) {
+                py_error(p->py, "reverse() expects no arguments");
+                return py_none();
+            }
+            for (i = 0; i < target.object->count / 2; ++i) {
+                py_value_t swap = target.object->items[i];
+                target.object->items[i] = target.object->items[target.object->count - i - 1];
+                target.object->items[target.object->count - i - 1] = swap;
+            }
+            return py_none();
+        }
+        if (strcmp(name, "copy") == 0) {
+            if (argc != 0) {
+                py_error(p->py, "copy() expects no arguments");
+                return py_none();
+            }
+            return py_sequence_copy(p->py, target, PY_VALUE_LIST);
+        }
+        if (strcmp(name, "count") == 0 || strcmp(name, "index") == 0) {
+            int count = 0;
+            if (argc != 1) {
+                py_error(p->py, "count()/index() expect one value");
+                return py_none();
+            }
+            for (i = 0; i < target.object->count; ++i) {
+                if (py_values_equal(&target.object->items[i], &args[0])) {
+                    if (strcmp(name, "index") == 0) return py_int((int)i);
+                    count++;
+                }
+            }
+            if (strcmp(name, "index") == 0) {
+                py_error(p->py, "value is not in list");
+                return py_none();
+            }
+            return py_int(count);
+        }
+    }
+
+    if (target.type == PY_VALUE_DICT && target.object != NULL) {
+        if (strcmp(name, "get") == 0) {
+            if (argc < 1 || argc > 2) {
+                py_error(p->py, "get() expects key and optional default");
+                return py_none();
+            }
+            for (i = 0; i < target.object->count; ++i) {
+                if (py_values_equal(&target.object->entries[i].key, &args[0])) {
+                    return target.object->entries[i].value;
+                }
+            }
+            return argc == 2 ? args[1] : py_none();
+        }
+        if (strcmp(name, "keys") == 0 || strcmp(name, "values") == 0 || strcmp(name, "items") == 0) {
+            py_value_t result = py_list(p->py);
+            if (argc != 0) {
+                py_error(p->py, "keys()/values()/items() expect no arguments");
+                return py_none();
+            }
+            for (i = 0; i < target.object->count; ++i) {
+                py_value_t item;
+                if (strcmp(name, "keys") == 0) item = target.object->entries[i].key;
+                else if (strcmp(name, "values") == 0) item = target.object->entries[i].value;
+                else {
+                    item = py_tuple(p->py);
+                    if (!py_sequence_append(p->py, &item, target.object->entries[i].key) ||
+                        !py_sequence_append(p->py, &item, target.object->entries[i].value)) return py_none();
+                }
+                if (!py_list_append(p->py, &result, item)) return py_none();
+            }
+            return result;
+        }
+    }
+
+    if (target.type == PY_VALUE_STRING) {
+        char result[PY_MAX_STRING];
+        size_t length = strlen(target.string_value);
+        if (strcmp(name, "lower") == 0 || strcmp(name, "upper") == 0) {
+            if (argc != 0) {
+                py_error(p->py, "lower()/upper() expect no arguments");
+                return py_none();
+            }
+            for (i = 0; i < length; ++i) {
+                result[i] = (char)(strcmp(name, "lower") == 0
+                    ? tolower((unsigned char)target.string_value[i])
+                    : toupper((unsigned char)target.string_value[i]));
+            }
+            result[length] = '\0';
+            return py_string(result);
+        }
+        if (strcmp(name, "strip") == 0) {
+            size_t start = 0;
+            size_t end = length;
+            if (argc != 0) {
+                py_error(p->py, "strip() currently expects no arguments");
+                return py_none();
+            }
+            while (start < end && isspace((unsigned char)target.string_value[start])) start++;
+            while (end > start && isspace((unsigned char)target.string_value[end - 1])) end--;
+            memcpy(result, target.string_value + start, end - start);
+            result[end - start] = '\0';
+            return py_string(result);
+        }
+        if (strcmp(name, "startswith") == 0 || strcmp(name, "endswith") == 0) {
+            size_t needle_length;
+            if (argc != 1 || args[0].type != PY_VALUE_STRING) {
+                py_error(p->py, "startswith()/endswith() expect one string");
+                return py_none();
+            }
+            needle_length = strlen(args[0].string_value);
+            if (needle_length > length) return py_bool(0);
+            if (strcmp(name, "startswith") == 0) {
+                return py_bool(strncmp(target.string_value, args[0].string_value, needle_length) == 0);
+            }
+            return py_bool(strcmp(target.string_value + length - needle_length, args[0].string_value) == 0);
+        }
+        if (strcmp(name, "find") == 0) {
+            char *found;
+            if (argc != 1 || args[0].type != PY_VALUE_STRING) {
+                py_error(p->py, "find() expects one string");
+                return py_none();
+            }
+            found = strstr(target.string_value, args[0].string_value);
+            return py_int(found == NULL ? -1 : (int)(found - target.string_value));
+        }
+    }
+
+    py_error(p->py, "unknown method for value");
+    return py_none();
+}
+
+static PY_NOINLINE py_value_t parse_primary(parser_t *p) {
     py_value_t value = parse_atom(p);
 
-    while (!py_has_error(p->py) && match(p, TOK_LBRACKET)) {
-        if (match(p, TOK_COLON)) {
+    while (!py_has_error(p->py)) {
+        if (match(p, TOK_DOT)) {
+            token_t method = *current(p);
+            if (!expect(p, TOK_IDENT, "expected method name")) {
+                return py_none();
+            }
+            value = call_method(p, value, method.text);
+        } else if (match(p, TOK_LBRACKET)) {
+          if (match(p, TOK_COLON)) {
             if (!parse_slice_tail(p, value, 0, py_none(), &value)) {
                 return py_none();
             }
@@ -1940,20 +2835,37 @@ static py_value_t parse_primary(parser_t *p) {
                 }
                 value = py_subscript(p, value, index);
             }
+          }
+        } else {
+            break;
         }
     }
     return value;
 }
 
-static py_value_t parse_power(parser_t *p) {
+static py_value_t parse_unary(parser_t *p);
+static py_value_t parse_unary_impl(parser_t *p);
+
+static PY_NOINLINE py_value_t parse_power(parser_t *p) {
     py_value_t left = parse_primary(p);
     if (!py_has_error(p->py) && match(p, TOK_STARSTAR)) {
-        left = eval_binary(p, left, TOK_STARSTAR, parse_power(p));
+        left = eval_binary(p, left, TOK_STARSTAR, parse_unary(p));
     }
     return left;
 }
 
 static py_value_t parse_unary(parser_t *p) {
+    if (p->expression_depth >= PY_MAX_EXPRESSION_DEPTH) {
+        py_error(p->py, "expression nesting too deep");
+        return py_none();
+    }
+    p->expression_depth++;
+    py_value_t value = parse_unary_impl(p);
+    p->expression_depth--;
+    return value;
+}
+
+static py_value_t parse_unary_impl(parser_t *p) {
     if (match(p, TOK_NOT)) {
         return py_bool(!py_truthy(parse_unary(p)));
     }
@@ -1973,6 +2885,10 @@ static py_value_t parse_unary(parser_t *p) {
         }
         if (value.type == PY_VALUE_FLOAT) {
             return py_float(-value.float_value);
+        }
+        if (value.int_value == INT64_MIN) {
+            py_error(p->py, "integer overflow");
+            return py_none();
         }
         return py_int(-value.int_value);
     }
@@ -2054,11 +2970,27 @@ static py_value_t parse_comparison(parser_t *p) {
     py_value_t left = parse_bit_or(p);
     while (!py_has_error(p->py)) {
         token_type_t op = current(p)->type;
-        if (op != TOK_LT && op != TOK_LE && op != TOK_GT && op != TOK_GE) {
+        int negate_membership = 0;
+        if (op == TOK_NOT && peek(p, 1)->type == TOK_IN) {
+            negate_membership = 1;
+            p->pos += 2;
+            op = TOK_IN;
+        } else if (op == TOK_IN) {
+            p->pos++;
+        } else if (op == TOK_LT || op == TOK_LE || op == TOK_GT || op == TOK_GE) {
+            p->pos++;
+        } else {
             break;
         }
-        p->pos++;
-        left = eval_binary(p, left, op, parse_bit_or(p));
+        if (op == TOK_IN) {
+            py_value_t right = parse_bit_or(p);
+            int contained = py_contains(p->py, right, left);
+            if (!py_has_error(p->py)) {
+                left = py_bool(negate_membership ? !contained : contained);
+            }
+        } else {
+            left = eval_binary(p, left, op, parse_bit_or(p));
+        }
     }
     return left;
 }
@@ -2088,17 +3020,23 @@ static py_value_t parse_and(parser_t *p) {
     py_value_t left = parse_equality(p);
     while (!py_has_error(p->py) && match(p, TOK_AND)) {
         py_value_t right = parse_equality(p);
-        left = py_bool(py_truthy(left) && py_truthy(right));
+        left = py_truthy(left) ? right : left;
     }
     return left;
 }
 
 static py_value_t parse_expression(parser_t *p) {
+    if (p->expression_depth >= PY_MAX_EXPRESSION_DEPTH) {
+        py_error(p->py, "expression nesting too deep");
+        return py_none();
+    }
+    p->expression_depth++;
     py_value_t left = parse_and(p);
     while (!py_has_error(p->py) && match(p, TOK_OR)) {
         py_value_t right = parse_and(p);
-        left = py_bool(py_truthy(left) || py_truthy(right));
+        left = py_truthy(left) ? left : right;
     }
+    p->expression_depth--;
     return left;
 }
 
@@ -2174,11 +3112,11 @@ static int parse_print(parser_t *p) {
 }
 
 static const char *token_source(token_t *token) {
-    static char int_text[16];
+    static char int_text[32];
 
     switch (token->type) {
         case TOK_INT:
-            snprintf(int_text, sizeof(int_text), "%d", token->int_value);
+            snprintf(int_text, sizeof(int_text), "%" PRId64, token->int_value);
             return int_text;
         case TOK_FLOAT:
             snprintf(int_text, sizeof(int_text), "%g", token->float_value);
@@ -2460,11 +3398,11 @@ static token_type_t assignment_to_binary(token_type_t type) {
     return TOK_ASSIGN;
 }
 
-static int parse_assignment(parser_t *p) {
+static PY_NOINLINE int parse_assignment(parser_t *p) {
     token_t name = *current(p);
     token_type_t assign_type;
     py_value_t value;
-    py_value_t indices[PY_MAX_PARAMS];
+    py_value_t *indices = NULL;
     size_t index_count = 0;
     size_t i;
     py_var_t *target_var;
@@ -2476,6 +3414,7 @@ static int parse_assignment(parser_t *p) {
     while (match(p, TOK_LBRACKET)) {
         if (index_count >= PY_MAX_PARAMS) {
             py_error(p->py, "too many subscript levels");
+            py_heap_free(indices);
             return 0;
         }
         if (!p->exec_enabled) {
@@ -2486,19 +3425,30 @@ static int parse_assignment(parser_t *p) {
                    current(p)->type != TOK_ELSE) {
                 p->pos++;
             }
+            py_heap_free(indices);
             return 1;
+        }
+        if (indices == NULL) {
+            indices = (py_value_t *)py_heap_calloc(PY_MAX_PARAMS, sizeof(*indices));
+            if (indices == NULL) {
+                py_error(p->py, "out of memory");
+                return 0;
+            }
         }
         indices[index_count++] = parse_expression(p);
         if (py_has_error(p->py)) {
+            py_heap_free(indices);
             return 0;
         }
         if (!expect(p, TOK_RBRACKET, "expected ']' after assignment target")) {
+            py_heap_free(indices);
             return 0;
         }
     }
     assign_type = current(p)->type;
     if (!is_assignment_operator(assign_type)) {
         py_error(p->py, "expected assignment operator");
+        py_heap_free(indices);
         return 0;
     }
     p->pos++;
@@ -2510,10 +3460,12 @@ static int parse_assignment(parser_t *p) {
                current(p)->type != TOK_ELSE) {
             p->pos++;
         }
+        py_heap_free(indices);
         return 1;
     }
     value = parse_expression(p);
     if (py_has_error(p->py)) {
+        py_heap_free(indices);
         return 0;
     }
     if (assign_type != TOK_ASSIGN) {
@@ -2521,12 +3473,14 @@ static int parse_assignment(parser_t *p) {
             target_var = py_find_var(p->py, name.text);
             if (target_var == NULL) {
                 py_error(p->py, "undefined variable");
+                py_heap_free(indices);
                 return 0;
             }
             target = target_var->value;
             for (i = 0; i + 1 < index_count; ++i) {
                 target = py_subscript(p, target, indices[i]);
                 if (py_has_error(p->py)) {
+                    py_heap_free(indices);
                     return 0;
                 }
             }
@@ -2535,50 +3489,64 @@ static int parse_assignment(parser_t *p) {
             value = eval_binary(p, py_get_var(p->py, name.text), assignment_to_binary(assign_type), value);
         }
         if (py_has_error(p->py)) {
+            py_heap_free(indices);
             return 0;
         }
     }
     if (!p->exec_enabled) {
+        py_heap_free(indices);
         return 1;
     }
     if (index_count > 0) {
         target_var = py_find_var(p->py, name.text);
         if (target_var == NULL) {
             py_error(p->py, "undefined variable");
+            py_heap_free(indices);
             return 0;
         }
         target = target_var->value;
         for (i = 0; i + 1 < index_count; ++i) {
             target = py_subscript(p, target, indices[i]);
             if (py_has_error(p->py)) {
+                py_heap_free(indices);
                 return 0;
             }
         }
-        return py_assign_subscript(p, &target, indices[index_count - 1], value);
+        int assigned = py_assign_subscript(p, &target, indices[index_count - 1], value);
+        py_heap_free(indices);
+        return assigned;
     }
+    py_heap_free(indices);
     return py_set_var(p->py, name.text, value);
 }
 
-static int parse_multi_assignment(parser_t *p) {
-    token_t names[PY_MAX_PARAMS];
-    py_value_t values[PY_MAX_PARAMS];
+static PY_NOINLINE int parse_multi_assignment(parser_t *p) {
+    token_t *names = (token_t *)py_heap_calloc(PY_MAX_PARAMS, sizeof(*names));
+    py_value_t *values = (py_value_t *)py_heap_calloc(PY_MAX_PARAMS, sizeof(*values));
     size_t name_count = 0;
     size_t value_count = 0;
+
+    if (names == NULL || values == NULL) {
+        py_heap_free(names);
+        py_heap_free(values);
+        py_error(p->py, "out of memory");
+        return 0;
+    }
 
     do {
         if (name_count >= PY_MAX_PARAMS) {
             py_error(p->py, "too many assignment targets");
-            return 0;
+            goto fail;
         }
         names[name_count] = *current(p);
         if (!expect(p, TOK_IDENT, "expected assignment target")) {
-            return 0;
+            goto fail;
         }
         name_count++;
     } while (match(p, TOK_COMMA));
 
     if (!expect(p, TOK_ASSIGN, "expected '='")) {
-        return 0;
+        goto fail;
     }
     if (!p->exec_enabled) {
         while (current(p)->type != TOK_EOF &&
@@ -2588,33 +3556,41 @@ static int parse_multi_assignment(parser_t *p) {
                current(p)->type != TOK_ELSE) {
             p->pos++;
         }
-        return 1;
+        goto success;
     }
 
     do {
         if (value_count >= PY_MAX_PARAMS) {
             py_error(p->py, "too many assignment values");
-            return 0;
+            goto fail;
         }
         values[value_count++] = parse_expression(p);
         if (py_has_error(p->py)) {
-            return 0;
+            goto fail;
         }
     } while (match(p, TOK_COMMA));
 
     if (name_count != value_count) {
         py_error(p->py, "assignment count mismatch");
-        return 0;
+        goto fail;
     }
     if (!p->exec_enabled) {
-        return 1;
+        goto success;
     }
     for (value_count = 0; value_count < name_count; ++value_count) {
         if (!py_set_var(p->py, names[value_count].text, values[value_count])) {
-            return 0;
+            goto fail;
         }
     }
+success:
+    py_heap_free(names);
+    py_heap_free(values);
     return 1;
+
+fail:
+    py_heap_free(names);
+    py_heap_free(values);
+    return 0;
 }
 
 static int parse_if(parser_t *p) {
@@ -2796,9 +3772,9 @@ static int parse_while(parser_t *p) {
 static int parse_for(parser_t *p) {
     token_t var_name;
     py_value_t args[3];
-    py_var_t saved_var;
-    py_var_t *existing_var;
-    int had_var = 0;
+    py_value_t iterable = py_none();
+    int range_loop = 0;
+    int iterable_count = 0;
     int argc = 0;
     int start = 0;
     int stop = 0;
@@ -2828,66 +3804,56 @@ static int parse_for(parser_t *p) {
     if (!expect(p, TOK_IN, "expected 'in' after loop variable")) {
         return 0;
     }
-    if (!expect(p, TOK_RANGE, "expected range(...)")) {
-        return 0;
-    }
-    if (!expect(p, TOK_LPAREN, "expected '(' after range")) {
-        return 0;
-    }
-
-    if (!match(p, TOK_RPAREN)) {
-        do {
-            if (argc >= 3) {
-                py_error(p->py, "range() takes at most three arguments");
-                return 0;
-            }
-            args[argc++] = parse_expression(p);
-            if (py_has_error(p->py)) {
-                return 0;
-            }
-        } while (match(p, TOK_COMMA));
-
-        if (!expect(p, TOK_RPAREN, "expected ')' after range arguments")) {
+    if (match(p, TOK_RANGE)) {
+        range_loop = 1;
+        if (!expect(p, TOK_LPAREN, "expected '(' after range")) {
+            return 0;
+        }
+        if (!match(p, TOK_RPAREN)) {
+            do {
+                if (argc >= 3) {
+                    py_error(p->py, "range() takes at most three arguments");
+                    return 0;
+                }
+                args[argc++] = parse_expression(p);
+                if (py_has_error(p->py)) return 0;
+            } while (match(p, TOK_COMMA));
+            if (!expect(p, TOK_RPAREN, "expected ')' after range arguments")) return 0;
+        }
+        if (argc == 0) {
+            py_error(p->py, "range() expects at least one argument");
+            return 0;
+        }
+        if (argc == 1) {
+            stop = read_int_arg(p, args[0], "range() expects integers");
+        } else if (argc == 2) {
+            start = read_int_arg(p, args[0], "range() expects integers");
+            stop = read_int_arg(p, args[1], "range() expects integers");
+        } else {
+            start = read_int_arg(p, args[0], "range() expects integers");
+            stop = read_int_arg(p, args[1], "range() expects integers");
+            step = read_int_arg(p, args[2], "range() expects integers");
+        }
+        if (py_has_error(p->py)) return 0;
+        if (step == 0) {
+            py_error(p->py, "range() step cannot be zero");
+            return 0;
+        }
+    } else {
+        iterable = parse_expression(p);
+        if (py_has_error(p->py)) return 0;
+        iterable_count = py_iterable_count(iterable);
+        if (iterable_count < 0) {
+            py_error(p->py, "for loop object is not iterable");
             return 0;
         }
     }
-
-    if (argc == 0) {
-        py_error(p->py, "range() expects at least one argument");
-        return 0;
-    }
-    if (argc == 1) {
-        stop = read_int_arg(p, args[0], "range() expects integers");
-    } else if (argc == 2) {
-        start = read_int_arg(p, args[0], "range() expects integers");
-        stop = read_int_arg(p, args[1], "range() expects integers");
-    } else {
-        start = read_int_arg(p, args[0], "range() expects integers");
-        stop = read_int_arg(p, args[1], "range() expects integers");
-        step = read_int_arg(p, args[2], "range() expects integers");
-    }
-    if (py_has_error(p->py)) {
-        return 0;
-    }
-    if (step == 0) {
-        py_error(p->py, "range() step cannot be zero");
-        return 0;
-    }
-    if (!expect(p, TOK_COLON, "expected ':' after for range")) {
+    if (!expect(p, TOK_COLON, "expected ':' after for iterable")) {
         return 0;
     }
 
     body_start = p->pos;
     previous_exec_enabled = p->exec_enabled;
-
-    existing_var = py_find_var(p->py, var_name.text);
-    if (existing_var != NULL) {
-        had_var = 1;
-        saved_var = *existing_var;
-    }
-    if (!py_set_var(p->py, var_name.text, py_int(start))) {
-        return 0;
-    }
 
     p->exec_enabled = 0;
     if (!parse_block(p)) {
@@ -2897,33 +3863,17 @@ static int parse_for(parser_t *p) {
     after_loop = p->pos;
     p->exec_enabled = previous_exec_enabled;
 
-    if (had_var) {
-        existing_var = py_find_var(p->py, var_name.text);
-        if (existing_var != NULL) {
-            *existing_var = saved_var;
-        }
-    } else {
-        size_t index;
-        for (index = 0; index < p->py->var_count; ++index) {
-            if (strncmp(p->py->vars[index].name, var_name.text, PY_MAX_NAME) == 0) {
-                size_t j;
-                for (j = index + 1; j < p->py->var_count; ++j) {
-                    p->py->vars[j - 1] = p->py->vars[j];
-                }
-                p->py->var_count--;
-                break;
-            }
-        }
-    }
-
-    for (i = start;
-         !py_has_error(p->py) && previous_exec_enabled && ((step > 0) ? (i < stop) : (i > stop));
-         i += step) {
+    for (i = range_loop ? start : 0;
+         !py_has_error(p->py) && previous_exec_enabled &&
+             (range_loop ? ((step > 0) ? (i < stop) : (i > stop))
+                         : (i < py_iterable_count(iterable)));
+         i += range_loop ? step : 1) {
+        py_value_t item = range_loop ? py_int(i) : py_iterable_item(p->py, iterable, i);
         if (++guard > 10000) {
             py_error(p->py, "for loop limit reached");
             return 0;
         }
-        if (!py_set_var(p->py, var_name.text, py_int(i))) {
+        if (!py_set_var(p->py, var_name.text, item)) {
             return 0;
         }
         p->pos = body_start;
@@ -2970,74 +3920,6 @@ static int parse_expression_statement(parser_t *p) {
     return emit_value_line(p, value);
 }
 
-static int parse_method_call(parser_t *p) {
-    token_t target = *current(p);
-    token_t method;
-    py_value_t args[PY_MAX_PARAMS];
-    int argc = 0;
-    py_var_t *var;
-
-    if (!expect(p, TOK_IDENT, "expected method target")) {
-        return 0;
-    }
-    if (!expect(p, TOK_DOT, "expected '.'")) {
-        return 0;
-    }
-    method = *current(p);
-    if (!expect(p, TOK_IDENT, "expected method name")) {
-        return 0;
-    }
-    if (!expect(p, TOK_LPAREN, "expected '(' after method name")) {
-        return 0;
-    }
-
-    if (!p->exec_enabled) {
-        int depth = 1;
-        while (current(p)->type != TOK_EOF && depth > 0) {
-            if (current(p)->type == TOK_LPAREN) {
-                depth++;
-            } else if (current(p)->type == TOK_RPAREN) {
-                depth--;
-            }
-            p->pos++;
-        }
-        return depth == 0;
-    }
-
-    if (!match(p, TOK_RPAREN)) {
-        do {
-            if (argc >= PY_MAX_PARAMS) {
-                py_error(p->py, "too many method arguments");
-                return 0;
-            }
-            args[argc++] = parse_expression(p);
-            if (py_has_error(p->py)) {
-                return 0;
-            }
-        } while (match(p, TOK_COMMA));
-
-        if (!expect(p, TOK_RPAREN, "expected ')' after method arguments")) {
-            return 0;
-        }
-    }
-
-    var = py_find_var(p->py, target.text);
-    if (var == NULL) {
-        py_error(p->py, "undefined variable");
-        return 0;
-    }
-    if (strcmp(method.text, "append") == 0) {
-        if (argc != 1) {
-            py_error(p->py, "append() expects one argument");
-            return 0;
-        }
-        return py_list_append(p->py, &var->value, args[0]);
-    }
-
-    py_error(p->py, "unknown method");
-    return 0;
-}
-
 static int parse_global(parser_t *p) {
     if (!expect(p, TOK_GLOBAL, "expected 'global'")) {
         return 0;
@@ -3050,11 +3932,31 @@ static int parse_global(parser_t *p) {
     return 1;
 }
 
+static int py_before_statement(parser_t *p, const token_t *token) {
+    unsigned long limit;
+    if (!p->exec_enabled) return 1;
+    p->py->current_line = token->line;
+    p->py->current_col = token->col;
+    p->py->profile.statements++;
+    limit = p->py->statement_limit != 0 ? p->py->statement_limit : 100000UL;
+    if (p->py->profile.statements > limit) {
+        py_error(p->py, "statement limit exceeded");
+        return 0;
+    }
+    return py_debug_event(p->py, PY_DEBUG_STATEMENT, token->line,
+                          p->py->call_depth > 0
+                              ? p->py->call_stack[p->py->call_depth - 1]
+                              : "<script>");
+}
+
 static int parse_statement(parser_t *p) {
     token_t *token = current(p);
 
     if (token->type == TOK_EOF) {
         return 1;
+    }
+    if (!py_before_statement(p, token)) {
+        return 0;
     }
     if (token->type == TOK_PASS) {
         p->pos++;
@@ -3097,9 +3999,6 @@ static int parse_statement(parser_t *p) {
     }
     if (token->type == TOK_FOR) {
         return parse_for(p);
-    }
-    if (token->type == TOK_IDENT && peek(p, 1)->type == TOK_DOT) {
-        return parse_method_call(p);
     }
     if (token->type == TOK_IDENT && peek(p, 1)->type == TOK_COMMA) {
         return parse_multi_assignment(p);
@@ -3170,6 +4069,15 @@ void py_init(py_t *py) {
     py_set_var(py, "HIGH", py_int(1));
     py_set_var(py, "INPUT", py_int(0));
     py_set_var(py, "OUTPUT", py_int(1));
+    py_set_var(py, "INPUT_PULLUP", py_int(2));
+    py_set_var(py, "graphics", py_module("graphics"));
+    py_set_var(py, "keys", py_module("keys"));
+    py_set_var(py, "storage", py_module("storage"));
+    py_set_var(py, "audio", py_module("audio"));
+    py_set_var(py, "math", py_module("math"));
+    py_set_var(py, "sensors", py_module("sensors"));
+    py->statement_limit = 100000UL;
+    py->call_depth_limit = PY_MAX_TRACE_DEPTH;
 }
 
 void py_deinit(py_t *py) {
@@ -3181,12 +4089,14 @@ void py_deinit(py_t *py) {
     object = py->objects;
     while (object != NULL) {
         py_object_t *next = object->next;
-        free(object->items);
-        free(object->entries);
-        free(object);
+        py_heap_free(object->items);
+        py_heap_free(object->entries);
+        py_heap_free(object);
         object = next;
     }
     py->objects = NULL;
+    py->object_count = 0;
+    py->container_item_capacity = 0;
 }
 
 void py_set_output_callback(py_t *py, void (*callback)(const char *text, void *user_data), void *user_data) {
@@ -3217,6 +4127,64 @@ void py_set_gpio_callbacks(py_t *py,
     py->gpio_write_callback = write_callback;
     py->gpio_read_callback = read_callback;
     py->gpio_user_data = user_data;
+}
+
+void py_set_debug_callback(py_t *py, py_debug_callback_t callback, void *user_data) {
+    if (py == NULL) return;
+    py->debug_callback = callback;
+    py->debug_user_data = user_data;
+}
+
+void py_set_native_callback(py_t *py, py_native_callback_t callback, void *user_data) {
+    if (py == NULL) return;
+    py->native_callback = callback;
+    py->native_user_data = user_data;
+}
+
+void py_set_execution_limits(py_t *py, unsigned long statement_limit, unsigned long call_depth_limit) {
+    if (py == NULL) return;
+    py->statement_limit = statement_limit != 0 ? statement_limit : 100000UL;
+    py->call_depth_limit = call_depth_limit != 0 ? call_depth_limit : PY_MAX_TRACE_DEPTH;
+}
+
+void py_request_abort(py_t *py) {
+    if (py != NULL) py->abort_requested = 1;
+}
+
+void py_runtime_error(py_t *py, const char *message) {
+    if (py == NULL || message == NULL || message[0] == '\0') return;
+    py_error(py, message);
+}
+
+const py_profile_t *py_get_profile(const py_t *py) {
+    return py != NULL ? &py->profile : NULL;
+}
+
+size_t py_format_variables(const py_t *py, char *out, size_t out_size) {
+    size_t used = 0;
+    if (out == NULL || out_size == 0) return 0;
+    out[0] = '\0';
+    if (py == NULL) return 0;
+    for (size_t i = 0; i < py->var_count; i++) {
+        char value[PY_MAX_STRING];
+        int written;
+        if (py->vars[i].value.type == PY_VALUE_MODULE) continue;
+        if (!py_value_repr(&py->vars[i].value, value, sizeof(value), 1)) {
+            snprintf(value, sizeof(value), "<value too large>");
+        }
+        written = snprintf(out + used, out_size - used, "%s%s = %s",
+                           used == 0 ? "" : "\n", py->vars[i].name, value);
+        if (written < 0 || (size_t)written >= out_size - used) {
+            if (out_size >= 4) memcpy(out + out_size - 4, "...", 4);
+            return out_size - 1;
+        }
+        used += (size_t)written;
+    }
+    return used;
+}
+
+const char *py_get_traceback(const py_t *py) {
+    return py != NULL ? py->traceback : "";
 }
 
 static void py_stdio_output(const char *text, void *user_data) {
@@ -3365,6 +4333,10 @@ int py_run(py_t *py, const char *line, char *output, size_t output_size) {
     parser->output = output;
     parser->output_size = output_size;
     parser->exec_enabled = 1;
+    memset(&py->profile, 0, sizeof(py->profile));
+    py->abort_requested = 0;
+    py->call_depth = 0;
+    py->traceback[0] = '\0';
     py->error[0] = '\0';
     py->error_line = 0;
     py->error_col = 0;
@@ -3447,13 +4419,17 @@ static char *skip_indent(char *line) {
 
 static int starts_with_word(const char *line, const char *word) {
     size_t len;
+    size_t line_len;
 
     while (*line == ' ' || *line == '\t') {
         line++;
     }
     len = strlen(word);
-    return strncmp(line, word, len) == 0 &&
-        (line[len] == ' ' || line[len] == '\t' || line[len] == ':' || line[len] == '\0');
+    line_len = strlen(line);
+    if (line_len < len) return 0;
+    if (strncmp(line, word, len) != 0) return 0;
+    if (line_len == len) return 1;
+    return line[len] == ' ' || line[len] == '\t' || line[len] == ':';
 }
 
 static int continues_if_chain(const char *line) {
@@ -3500,13 +4476,13 @@ static char last_non_space(const char *text) {
 }
 
 static int append_source_line(py_t *py, char *program, size_t program_size, const char *line, int *indents, int *depth, int *previous_colon) {
-    char clean[PY_MAX_LINE];
+    char clean[PY_MAX_LINE] = {0};
     char *trimmed;
     size_t len;
     int indent;
 
     trimmed = skip_indent((char *)line);
-    if (trimmed[0] == '\0' || trimmed[0] == '#') {
+    if (trimmed[0] == '\0' || trimmed[0] == '\n' || trimmed[0] == '\r' || trimmed[0] == '#') {
         if (!append_program_text(py, program, program_size, "\n")) {
             return 0;
         }

@@ -7,6 +7,7 @@
 
 #include "board_init.h"
 #include "opencalc_config.h"
+#include "opencalc_sensor_hub.h"
 
 #include "esp_adc/adc_cali.h"
 #include "esp_adc/adc_cali_scheme.h"
@@ -81,9 +82,10 @@ static void log_wakeup_reason(void)
 //   VBAT_DIV            -> GPIO7 / ADC1 channel 6
 //   CHG_STAT            -> Old PCB: GPIO41; removed from new audio PCB
 //   GAME_AUDIO_PDM      -> New audio PCB: GPIO41, filtered PDM audio output
-//   GAME_AUDIO_SD       -> New audio PCB: GPIO13, PAM8302A active-low shutdown
+//   SENSOR_I2C_SDA/SCL  -> Scientific-I/O PCB: GPIO13/GPIO21
+//   GAME_AUDIO_SD       -> Scientific-I/O PCB: MCP23017 GPA0
 //   LCD_BACKL           -> GPIO47, backlight polarity selected in config.h
-//   POWER_STATUS_LED    -> GPIO21, active high while OpenCalc is awake
+//   POWER_STATUS_LED    -> Scientific-I/O PCB: MCP23017 GPA1
 //
 // LCD touch is not wired on this PCB revision, so ENABLE_TOUCH_INPUT is 0.
 //
@@ -141,7 +143,9 @@ static void log_wakeup_reason(void)
 #define PIN_NUM_TOUCH_DO  GPIO_NUM_NC
 #define PIN_NUM_TOUCH_CS  GPIO_NUM_NC
 #define PIN_NUM_TOUCH_IRQ GPIO_NUM_NC
-#define POWER_STATUS_LED_ENABLED (OPENCALC_HARDWARE_IS_PCB_V3 && OPENCALC_ENABLE_POWER_STATUS_LED)
+#define POWER_STATUS_LED_ENABLED (OPENCALC_HARDWARE_IS_PCB_V3 && \
+                                  OPENCALC_ENABLE_POWER_STATUS_LED && \
+                                  !OPENCALC_ENABLE_SCIENTIFIC_IO)
 #define PIN_NUM_POWER_STATUS_LED GPIO_NUM_21
 #define LCD_BCKL_LEDC_MODE LEDC_LOW_SPEED_MODE
 #define LCD_BCKL_LEDC_TIMER LEDC_TIMER_0
@@ -661,8 +665,10 @@ static void lcd_prepare_for_deep_sleep(void)
     sleep_drive_output(PIN_NUM_LCD_SCLK, 0);
     sleep_drive_output(PIN_NUM_LCD_MOSI, 0);
     sleep_drive_input_pulldown(PIN_NUM_LCD_MISO);
-#if OPENCALC_USE_NEW_AUDIO_PCB
+#if OPENCALC_USE_NEW_AUDIO_PCB && !OPENCALC_ENABLE_SCIENTIFIC_IO
     sleep_drive_output(GPIO_NUM_13, 0);
+    sleep_drive_input_pulldown(GPIO_NUM_41);
+#elif OPENCALC_USE_NEW_AUDIO_PCB
     sleep_drive_input_pulldown(GPIO_NUM_41);
 #endif
 }
@@ -1223,6 +1229,7 @@ void board_enter_deep_sleep(void)
     ESP_LOGI(TAG, "Entering software off (light sleep)");
 
     lcd_prepare_for_light_sleep();
+    opencalc_sensor_prepare_sleep();
 #if POWER_STATUS_LED_ENABLED
     power_status_led_set(false);
     sleep_drive_output(PIN_NUM_POWER_STATUS_LED, 0);
@@ -1265,6 +1272,7 @@ void board_enter_deep_sleep(void)
 #endif
     (void)esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
     lcd_resume_from_light_sleep();
+    opencalc_sensor_resume();
     power_status_led_init();
 
     ESP_LOGI(TAG, "Woke from software off (light sleep), err=%s", esp_err_to_name(err));
@@ -1275,6 +1283,7 @@ void board_enter_deep_sleep(void)
     ESP_LOGI(TAG, "Entering software off (deep sleep)");
 
     lcd_prepare_for_deep_sleep();
+    opencalc_sensor_prepare_sleep();
 #if POWER_STATUS_LED_ENABLED
     power_status_led_set(false);
     sleep_drive_output(PIN_NUM_POWER_STATUS_LED, 0);
@@ -1532,8 +1541,19 @@ static const uint8_t *glyph_for(char c)
     static const uint8_t percent[7]  = {0x18, 0x19, 0x02, 0x04, 0x08, 0x13, 0x03};
     static const uint8_t equals[7]   = {0x00, 0x00, 0x1f, 0x00, 0x1f, 0x00, 0x00};
     static const uint8_t hash[7]     = {0x0a, 0x0a, 0x1f, 0x0a, 0x1f, 0x0a, 0x0a};
+    static const uint8_t bang[7]     = {0x04, 0x04, 0x04, 0x04, 0x04, 0x00, 0x04};
+    static const uint8_t quote[7]    = {0x0a, 0x0a, 0x0a, 0x00, 0x00, 0x00, 0x00};
+    static const uint8_t apost[7]    = {0x04, 0x04, 0x08, 0x00, 0x00, 0x00, 0x00};
+    static const uint8_t backslash[7]= {0x10, 0x08, 0x08, 0x04, 0x02, 0x02, 0x01};
+    static const uint8_t backtick[7] = {0x08, 0x04, 0x02, 0x00, 0x00, 0x00, 0x00};
+    static const uint8_t tilde[7]    = {0x00, 0x00, 0x09, 0x16, 0x00, 0x00, 0x00};
     static const uint8_t lparen[7]   = {0x02, 0x04, 0x08, 0x08, 0x08, 0x04, 0x02};
     static const uint8_t rparen[7]   = {0x08, 0x04, 0x02, 0x02, 0x02, 0x04, 0x08};
+    static const uint8_t lbracket[7] = {0x0e, 0x08, 0x08, 0x08, 0x08, 0x08, 0x0e};
+    static const uint8_t rbracket[7] = {0x0e, 0x02, 0x02, 0x02, 0x02, 0x02, 0x0e};
+    static const uint8_t lbrace[7]   = {0x03, 0x04, 0x04, 0x08, 0x04, 0x04, 0x03};
+    static const uint8_t rbrace[7]   = {0x18, 0x04, 0x04, 0x02, 0x04, 0x04, 0x18};
+    static const uint8_t underscore[7] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1f};
     static const uint8_t unknown[7]  = {0x0e, 0x11, 0x01, 0x02, 0x04, 0x00, 0x04};
 
     if (c >= 'A' && c <= 'Z') {
@@ -1587,8 +1607,19 @@ static const uint8_t *glyph_for(char c)
     case '%': return percent;
     case '=': return equals;
     case '#': return hash;
+    case '!': return bang;
+    case '"': return quote;
+    case '\'': return apost;
+    case '\\': return backslash;
+    case '`': return backtick;
+    case '~': return tilde;
     case '(': return lparen;
     case ')': return rparen;
+    case '[': return lbracket;
+    case ']': return rbracket;
+    case '{': return lbrace;
+    case '}': return rbrace;
+    case '_': return underscore;
     case ' ': return space;
     default: return unknown;
     }

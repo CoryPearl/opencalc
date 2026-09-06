@@ -1,4 +1,4 @@
-27266198548267554
+27271564446437348
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -107919,6 +107919,13 @@ opencalc_footprint_library
 2
 2
 opencalc_footprint_library
+ADS1115IDGST
+
+ADS1115IDGST 
+0
+10
+10
+opencalc_footprint_library
 B2B-PH-K-S
 
 B2B-PH-K-S 
@@ -107954,12 +107961,26 @@ FH12-18S-0.5SH55
 20
 20
 opencalc_footprint_library
+MCP23017T_E_SO
+
+MCP23017T-E/SO 
+0
+28
+28
+opencalc_footprint_library
 PAM8302AADCR
 
 PAM8302AADCR 
 0
 8
 8
+opencalc_footprint_library
+PPTC152LFBN_RC
+
+PPTC152LFBN-RC 
+0
+30
+30
 opencalc_footprint_library
 TPD2E2U06DCKR
 

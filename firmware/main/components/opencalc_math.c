@@ -6,11 +6,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 typedef struct {
     const char *s;
     double x;
+    double y;
     char variable;
+    bool has_y;
     bool ok;
 } graph_parser_t;
 
@@ -18,6 +21,230 @@ static bool s_angle_degrees = true;
 static double s_calc_vars[26];
 static double complex s_calc_complex_vars[26];
 static bool s_calc_var_set[26];
+static opencalc_variable_t s_custom_vars[OPENCALC_CUSTOM_VARIABLE_MAX];
+static bool s_custom_var_set[OPENCALC_CUSTOM_VARIABLE_MAX];
+
+static int variable_letter_index(const char *name)
+{
+    if (name == NULL || name[0] == '\0' || name[1] != '\0' ||
+        !isalpha((unsigned char)name[0])) return -1;
+    return toupper((unsigned char)name[0]) - 'A';
+}
+
+static int custom_variable_index(const char *name)
+{
+    if (name == NULL) return -1;
+    for (int i = 0; i < OPENCALC_CUSTOM_VARIABLE_MAX; i++) {
+        if (s_custom_var_set[i] && strcasecmp(s_custom_vars[i].name, name) == 0) return i;
+    }
+    return -1;
+}
+
+bool opencalc_math_variable_name_valid(const char *name)
+{
+    static const char *const reserved[] = {
+        "pi", "e", "i", "ans", "sin", "cos", "tan", "sec", "csc", "cot",
+        "asin", "acos", "atan", "sqrt", "cbrt", "nroot", "root", "ln", "log",
+        "abs", "min", "max", "gcd", "lcm", "rand", "randint", "randnorm", "conj",
+        "real", "imag", "angle", "frac", "dec", "nderiv", "fnint", "npr", "ncr"
+    };
+    if (name == NULL || name[0] == '\0' ||
+        !(isalpha((unsigned char)name[0]) || name[0] == '_')) return false;
+    size_t length = strlen(name);
+    if (length >= OPENCALC_VARIABLE_NAME_MAX) return false;
+    for (size_t i = 1; i < length; i++) {
+        if (!(isalnum((unsigned char)name[i]) || name[i] == '_')) return false;
+    }
+    for (size_t i = 0; i < sizeof(reserved) / sizeof(reserved[0]); i++) {
+        if (name[1] == '\0' && isupper((unsigned char)name[0]) &&
+            reserved[i][1] == '\0' && tolower((unsigned char)name[0]) == reserved[i][0]) continue;
+        if (strcasecmp(name, reserved[i]) == 0) return false;
+    }
+    return true;
+}
+
+bool opencalc_math_variable_set(const char *name, double real, double imag)
+{
+    if (!opencalc_math_variable_name_valid(name) || !isfinite(real) || !isfinite(imag)) return false;
+    if (fabs(real) < 1e-12) real = 0.0;
+    if (fabs(imag) < 1e-12) imag = 0.0;
+    int letter = variable_letter_index(name);
+    if (letter >= 0 && letter < 26) {
+        s_calc_vars[letter] = real;
+        s_calc_complex_vars[letter] = real + imag * I;
+        s_calc_var_set[letter] = true;
+        return true;
+    }
+    int index = custom_variable_index(name);
+    if (index < 0) {
+        for (int i = 0; i < OPENCALC_CUSTOM_VARIABLE_MAX; i++) {
+            if (!s_custom_var_set[i]) { index = i; break; }
+        }
+    }
+    if (index < 0) return false;
+    snprintf(s_custom_vars[index].name, sizeof(s_custom_vars[index].name), "%s", name);
+    s_custom_vars[index].real = real;
+    s_custom_vars[index].imag = imag;
+    s_custom_var_set[index] = true;
+    return true;
+}
+
+bool opencalc_math_variable_get(const char *name, double *real, double *imag)
+{
+    int letter = variable_letter_index(name);
+    if (letter >= 0 && letter < 26 && s_calc_var_set[letter]) {
+        if (real != NULL) *real = creal(s_calc_complex_vars[letter]);
+        if (imag != NULL) *imag = cimag(s_calc_complex_vars[letter]);
+        return true;
+    }
+    int index = custom_variable_index(name);
+    if (index < 0) return false;
+    if (real != NULL) *real = s_custom_vars[index].real;
+    if (imag != NULL) *imag = s_custom_vars[index].imag;
+    return true;
+}
+
+bool opencalc_math_variable_delete(const char *name)
+{
+    int letter = variable_letter_index(name);
+    if (letter >= 0 && letter < 26) {
+        bool existed = s_calc_var_set[letter];
+        s_calc_var_set[letter] = false;
+        s_calc_vars[letter] = 0.0;
+        s_calc_complex_vars[letter] = 0.0;
+        return existed;
+    }
+    int index = custom_variable_index(name);
+    if (index < 0) return false;
+    memset(&s_custom_vars[index], 0, sizeof(s_custom_vars[index]));
+    s_custom_var_set[index] = false;
+    return true;
+}
+
+bool opencalc_math_variable_rename(const char *old_name, const char *new_name)
+{
+    double real = 0.0;
+    double imag = 0.0;
+    if (!opencalc_math_variable_get(old_name, &real, &imag) ||
+        !opencalc_math_variable_name_valid(new_name) ||
+        opencalc_math_variable_get(new_name, NULL, NULL)) return false;
+    if (!opencalc_math_variable_set(new_name, real, imag)) return false;
+    opencalc_math_variable_delete(old_name);
+    return true;
+}
+
+size_t opencalc_math_variable_count(void)
+{
+    size_t count = 0;
+    for (int i = 0; i < 26; i++) if (s_calc_var_set[i]) count++;
+    for (int i = 0; i < OPENCALC_CUSTOM_VARIABLE_MAX; i++) if (s_custom_var_set[i]) count++;
+    return count;
+}
+
+bool opencalc_math_variable_at(size_t index, opencalc_variable_t *variable)
+{
+    if (variable == NULL) return false;
+    for (int i = 0; i < 26; i++) {
+        if (!s_calc_var_set[i]) continue;
+        if (index-- == 0) {
+            variable->name[0] = (char)('A' + i);
+            variable->name[1] = '\0';
+            variable->real = creal(s_calc_complex_vars[i]);
+            variable->imag = cimag(s_calc_complex_vars[i]);
+            return true;
+        }
+    }
+    for (int i = 0; i < OPENCALC_CUSTOM_VARIABLE_MAX; i++) {
+        if (!s_custom_var_set[i]) continue;
+        if (index-- == 0) { *variable = s_custom_vars[i]; return true; }
+    }
+    return false;
+}
+
+void opencalc_math_variables_reset(void)
+{
+    memset(s_calc_vars, 0, sizeof(s_calc_vars));
+    memset(s_calc_complex_vars, 0, sizeof(s_calc_complex_vars));
+    memset(s_calc_var_set, 0, sizeof(s_calc_var_set));
+    memset(s_custom_vars, 0, sizeof(s_custom_vars));
+    memset(s_custom_var_set, 0, sizeof(s_custom_var_set));
+}
+
+bool opencalc_math_assignment_name(const char *expr, char *name, size_t name_size)
+{
+    if (expr == NULL || name == NULL || name_size == 0) return false;
+    const char *p = expr;
+    while (isspace((unsigned char)*p)) p++;
+    if (!(isalpha((unsigned char)*p) || *p == '_')) return false;
+    size_t length = 0;
+    while (isalnum((unsigned char)*p) || *p == '_') {
+        if (length + 1 >= name_size) return false;
+        name[length++] = *p++;
+    }
+    name[length] = '\0';
+    while (isspace((unsigned char)*p)) p++;
+    if (*p == ':' && p[1] == '=') p++;
+    return *p == '=' && p[1] != '=' && opencalc_math_variable_name_valid(name);
+}
+
+static const char *assignment_value_start(const char *expr)
+{
+    const char *value = expr;
+    while (isspace((unsigned char)*value)) value++;
+    while (isalnum((unsigned char)*value) || *value == '_') value++;
+    while (isspace((unsigned char)*value)) value++;
+    if (*value == ':' && value[1] == '=') value += 2;
+    else if (*value == '=') value++;
+    while (isspace((unsigned char)*value)) value++;
+    return value;
+}
+
+bool opencalc_math_substitute_variables(const char *expr, char *out, size_t out_size)
+{
+    if (expr == NULL || out == NULL || out_size == 0) return false;
+    char assignment[OPENCALC_VARIABLE_NAME_MAX] = "";
+    bool has_assignment = opencalc_math_assignment_name(expr, assignment, sizeof(assignment));
+    bool lhs_seen = false;
+    size_t used = 0;
+    const char *p = expr;
+    while (*p != '\0') {
+        if (isalpha((unsigned char)*p) || *p == '_') {
+            char name[OPENCALC_VARIABLE_NAME_MAX];
+            size_t length = 0;
+            const char *start = p;
+            while (isalnum((unsigned char)*p) || *p == '_') {
+                if (length + 1 < sizeof(name)) name[length++] = *p;
+                p++;
+            }
+            name[length] = '\0';
+            double real = 0.0;
+            double imag = 0.0;
+            bool is_lhs = has_assignment && !lhs_seen && strcasecmp(name, assignment) == 0;
+            lhs_seen = true;
+            bool lowercase_constant = length == 1 && (name[0] == 'e' || name[0] == 'i');
+            if (!is_lhs && !lowercase_constant && length == (size_t)(p - start) &&
+                opencalc_math_variable_get(name, &real, &imag)) {
+                char value[64];
+                if (fabs(imag) <= 1e-12) snprintf(value, sizeof(value), "(%.17g)", real);
+                else snprintf(value, sizeof(value), "(%.17g%+.17g*i)", real, imag);
+                size_t add = strlen(value);
+                if (used + add + 1 > out_size) return false;
+                memcpy(out + used, value, add);
+                used += add;
+            } else {
+                size_t add = (size_t)(p - start);
+                if (used + add + 1 > out_size) return false;
+                memcpy(out + used, start, add);
+                used += add;
+            }
+            continue;
+        }
+        if (used + 2 > out_size) return false;
+        out[used++] = *p++;
+    }
+    out[used] = '\0';
+    return true;
+}
 
 void opencalc_math_set_degrees(bool degrees)
 {
@@ -312,9 +539,13 @@ static double graph_parse_primary(graph_parser_t *p)
         return v;
     }
 
-    if (*p->s == 'x' || *p->s == 'X' || *p->s == 't' || *p->s == 'T' || *p->s == 'n' || *p->s == 'N') {
+    if (*p->s == 'x' || *p->s == 'X' || *p->s == 'y' || *p->s == 'Y' ||
+        *p->s == 't' || *p->s == 'T' || *p->s == 'n' || *p->s == 'N') {
         char found = (char)tolower((unsigned char)*p->s);
         p->s++;
+        if (p->has_y && found == 'y') {
+            return p->y;
+        }
         if (found == (char)tolower((unsigned char)p->variable)) {
             return p->x;
         }
@@ -567,13 +798,24 @@ bool graph_eval_expression_var(const char *expr, char variable, double value, do
         return false;
     }
 
-    graph_parser_t p = {.s = expr, .x = value, .variable = variable, .ok = true};
+    graph_parser_t p = {.s = expr, .x = value, .y = 0.0, .variable = variable, .has_y = false, .ok = true};
     double y = graph_parse_expr(&p);
     graph_skip_ws(&p);
     if (!p.ok || *p.s != '\0' || !isfinite(y)) {
         return false;
     }
     *out = y;
+    return true;
+}
+
+bool graph_eval_expression_xy(const char *expr, double x, double y, double *out)
+{
+    if (expr == NULL || out == NULL) return false;
+    graph_parser_t p = {.s = expr, .x = x, .y = y, .variable = 'x', .has_y = true, .ok = true};
+    double value = graph_parse_expr(&p);
+    graph_skip_ws(&p);
+    if (!p.ok || *p.s != '\0' || !isfinite(value)) return false;
+    *out = value;
     return true;
 }
 
@@ -915,7 +1157,7 @@ static double calc_eval_n_deriv(calc_parser_t *p)
 
     char variable = 'x';
     calc_skip_ws(p);
-    if (isalpha((unsigned char)*p->s)) {
+    if (isalpha((unsigned char)*p->s) || *p->s == '_') {
         variable = (char)toupper((unsigned char)*p->s++);
         calc_skip_ws(p);
         if (*p->s != ',') {
@@ -963,7 +1205,7 @@ static double calc_eval_fn_int(calc_parser_t *p)
 
     char variable = 'x';
     calc_skip_ws(p);
-    if (isalpha((unsigned char)*p->s)) {
+    if (isalpha((unsigned char)*p->s) || *p->s == '_') {
         variable = (char)toupper((unsigned char)*p->s++);
         calc_skip_ws(p);
         if (*p->s != ',') {
@@ -1209,18 +1451,15 @@ static double calc_parse_primary(calc_parser_t *p)
             if (p->has_variable && toupper((unsigned char)name[0]) == toupper((unsigned char)p->variable)) {
                 return p->x;
             }
-            int index = toupper((unsigned char)name[0]) - 'A';
-            if (index >= 0 && index < 26) {
-                if (s_calc_var_set[index]) {
-                    if (fabs(cimag(s_calc_complex_vars[index])) > 1e-12) {
-                        p->ok = false;
-                        return 0.0;
-                    }
-                    return s_calc_vars[index];
-                }
+        }
+        double real = 0.0;
+        double imag = 0.0;
+        if (opencalc_math_variable_get(name, &real, &imag)) {
+            if (fabs(imag) > 1e-12) {
                 p->ok = false;
                 return 0.0;
             }
+            return real;
         }
         return calc_apply_func(p, name);
     }
@@ -1327,33 +1566,18 @@ bool opencalc_math_eval_expression(const char *expr, double *out)
         return false;
     }
 
-    const char *start = expr;
-    while (isspace((unsigned char)*start)) {
-        start++;
-    }
-    if (isalpha((unsigned char)start[0])) {
-        const char *after_name = start + 1;
-        while (isspace((unsigned char)*after_name)) {
-            after_name++;
+    char assignment_name[OPENCALC_VARIABLE_NAME_MAX];
+    if (opencalc_math_assignment_name(expr, assignment_name, sizeof(assignment_name))) {
+        const char *after_name = assignment_value_start(expr);
+        calc_parser_t assign = {.s = after_name, .x = 0.0, .variable = 'X', .has_variable = false, .ok = true};
+        double assigned = calc_parse_expr(&assign);
+        calc_skip_ws(&assign);
+        if (!assign.ok || *assign.s != '\0' || !isfinite(assigned) ||
+            !opencalc_math_variable_set(assignment_name, assigned, 0.0)) {
+            return false;
         }
-        if (*after_name == '=') {
-            int index = toupper((unsigned char)start[0]) - 'A';
-            if (index < 0 || index >= 26) {
-                return false;
-            }
-            after_name++;
-            calc_parser_t assign = {.s = after_name, .x = 0.0, .variable = 'X', .has_variable = false, .ok = true};
-            double assigned = calc_parse_expr(&assign);
-            calc_skip_ws(&assign);
-            if (!assign.ok || *assign.s != '\0' || !isfinite(assigned)) {
-                return false;
-            }
-            s_calc_vars[index] = assigned;
-            s_calc_complex_vars[index] = assigned;
-            s_calc_var_set[index] = true;
-            *out = assigned;
-            return true;
-        }
+        *out = assigned;
+        return true;
     }
 
     calc_parser_t p = {.s = expr, .x = 0.0, .variable = 'X', .has_variable = false, .ok = true};
@@ -1661,13 +1885,10 @@ static double complex complex_parse_primary(complex_parser_t *p)
             if (p->has_variable && toupper((unsigned char)name[0]) == toupper((unsigned char)p->variable)) {
                 return p->variable_value;
             }
-            int index = toupper((unsigned char)name[0]) - 'A';
-            if (index >= 0 && index < 26 && s_calc_var_set[index]) {
-                return s_calc_complex_vars[index];
-            }
-            p->ok = false;
-            return 0.0;
         }
+        double real = 0.0;
+        double imag = 0.0;
+        if (opencalc_math_variable_get(name, &real, &imag)) return real + imag * I;
         return complex_apply_func(p, name);
     }
 
@@ -1774,43 +1995,28 @@ bool opencalc_math_eval_complex_expression(const char *expr, double *real, doubl
         return false;
     }
 
-    const char *start = expr;
-    while (isspace((unsigned char)*start)) {
-        start++;
-    }
-    if (isalpha((unsigned char)start[0])) {
-        const char *after_name = start + 1;
-        while (isspace((unsigned char)*after_name)) {
-            after_name++;
+    char assignment_name[OPENCALC_VARIABLE_NAME_MAX];
+    if (opencalc_math_assignment_name(expr, assignment_name, sizeof(assignment_name))) {
+        const char *after_name = assignment_value_start(expr);
+        complex_parser_t assign = {
+            .s = after_name,
+            .variable = 'X',
+            .variable_value = 0.0,
+            .has_variable = false,
+            .ok = true,
+        };
+        double complex assigned = complex_parse_expr(&assign);
+        complex_skip_ws(&assign);
+        if (!assign.ok || *assign.s != '\0' ||
+            !isfinite(creal(assigned)) || !isfinite(cimag(assigned))) {
+            return false;
         }
-        if (*after_name == '=') {
-            int index = toupper((unsigned char)start[0]) - 'A';
-            if (index < 0 || index >= 26) {
-                return false;
-            }
-            after_name++;
-            complex_parser_t assign = {
-                .s = after_name,
-                .variable = 'X',
-                .variable_value = 0.0,
-                .has_variable = false,
-                .ok = true,
-            };
-            double complex assigned = complex_parse_expr(&assign);
-            complex_skip_ws(&assign);
-            if (!assign.ok || *assign.s != '\0' ||
-                !isfinite(creal(assigned)) || !isfinite(cimag(assigned))) {
-                return false;
-            }
-            double assigned_real = fabs(creal(assigned)) < 1e-12 ? 0.0 : creal(assigned);
-            double assigned_imag = fabs(cimag(assigned)) < 1e-12 ? 0.0 : cimag(assigned);
-            s_calc_complex_vars[index] = assigned_real + assigned_imag * I;
-            s_calc_vars[index] = assigned_real;
-            s_calc_var_set[index] = true;
-            *real = assigned_real;
-            *imag = assigned_imag;
-            return true;
-        }
+        double assigned_real = fabs(creal(assigned)) < 1e-12 ? 0.0 : creal(assigned);
+        double assigned_imag = fabs(cimag(assigned)) < 1e-12 ? 0.0 : cimag(assigned);
+        if (!opencalc_math_variable_set(assignment_name, assigned_real, assigned_imag)) return false;
+        *real = assigned_real;
+        *imag = assigned_imag;
+        return true;
     }
 
     return opencalc_math_eval_complex_expression_var(expr, 'x', 0.0, 0.0, real, imag);

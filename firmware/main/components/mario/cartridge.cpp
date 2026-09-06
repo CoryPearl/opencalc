@@ -61,12 +61,28 @@ Cartridge::Cartridge(const char* filename, ROMBackend backend)
     default: break;
     }
 
+    if ((number_PRG_banks != 1 && number_PRG_banks != 2) || number_CHR_banks > 1)
+    {
+        LOGF("Invalid mapper-0 ROM geometry: PRG=%u CHR=%u\n",
+             number_PRG_banks, number_CHR_banks);
+        is_valid = false;
+        return;
+    }
+
     prg_base = sizeof(cartridge_header) + (header.mapper1 & 0x04 ? 512 : 0);
     chr_base = prg_base + (number_PRG_banks * 16384);
+    uint32_t required_size = chr_base + (number_CHR_banks * 8192U);
+    if (rom.size() < required_size)
+    {
+        LOGF("Truncated NES ROM: %u bytes, need %u\n",
+             (unsigned)rom.size(), (unsigned)required_size);
+        is_valid = false;
+        return;
+    }
 
     // Calculate ROM CRC32
     {
-        uint8_t buf[4096];
+        uint8_t buf[512];
         size_t len;
         rom.seek(prg_base);
         while ((len = rom.read(buf, sizeof(buf))) > 0) { CRC32 = crc32(buf, len, CRC32); }

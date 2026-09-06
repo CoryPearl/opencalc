@@ -18,6 +18,8 @@
 #include "components/opencalc_giac.h"
 #include "components/opencalc_persist.h"
 #include "components/opencalc_power.h"
+#include "components/opencalc_sensor_hub.h"
+#include "components/opencalc_self_test.h"
 #include "components/opencalc_ui.h"
 #include "components/storage.h"
 #include "components/usb_msc.h"
@@ -31,8 +33,8 @@ static void serial_button_task(void *arg)
 
     printf("\nSerial button input enabled. Type a number 1-50, then Enter.\n");
     printf("Each entry is normal / 2nd / alpha where applicable.\n");
-    printf("01 y=/plot      02 window/tblset 03 zoom/format  04 trace/calc   05 graph/table\n");
-    printf("06 2nd          07 mode/quit     08 stat/list    09 left         10 up/bright+\n");
+    printf("01 y=/plot/uppercase      02 window/tblset/lowercase 03 zoom/format/help database  04 trace/calc   05 graph/table\n");
+    printf("06 2nd/ /games          07 mode/quit     08 stat/list    09 left         10 up/bright+\n");
     printf("11 alpha/lock   12 XthetaTn      13 back         14 down/bright- 15 right\n");
     printf("16 math/ops/A   17 []/[]/frac/B  18 prgm/scripts/C 19 vars/conv/D 20 del/clear/E\n");
     printf("21 sqrt/root/F  22 sin/asin/csc  23 cos/acos/sec  24 tan/atan/cot 25 pi/e/J\n");
@@ -97,11 +99,10 @@ static void opencalc_ui_task(void *arg)
     (void)arg;
 
     board_set_event_task(xTaskGetCurrentTaskHandle());
+    opencalc_ui_init();
 #if OPENCALC_EXPORT_USB_STORAGE_TO_HOST
     usb_msc_mount_usb();
 #endif
-
-    opencalc_ui_init();
     opencalc_ui_draw();
 
 #if OPENCALC_DEBUG_LOG_FPS
@@ -156,14 +157,26 @@ static void opencalc_ui_task(void *arg)
 void app_main(void) {
     opencalc_persist_init();
     opencalc_power_init();
+    if (!opencalc_ui_prepare_script_worker()) {
+        printf("WARNING: script worker could not be reserved during early boot\n");
+    }
     init_storage();
     init_usb_msc();
     storage_set_label();
 
     board_init();
+    opencalc_sensor_hub_init();
     opencalc_audio_init();
 
-#if OPENCALC_ENABLE_GIAC_CAS && OPENCALC_GIAC_BOOT_SELF_TEST
+#if OPENCALC_ENABLE_AUTOMATED_TESTS && OPENCALC_DEVICE_SELF_TEST
+    (void)opencalc_self_test_run();
+#endif
+
+#if OPENCALC_ENABLE_AUTOMATED_TESTS && OPENCALC_MATRIX_BOOT_STRESS_TEST
+    (void)opencalc_ui_matrix_boot_stress_test();
+#endif
+
+#if OPENCALC_ENABLE_AUTOMATED_TESTS && OPENCALC_ENABLE_GIAC_CAS && OPENCALC_GIAC_BOOT_SELF_TEST
     (void)opencalc_giac_self_test();
 #endif
 

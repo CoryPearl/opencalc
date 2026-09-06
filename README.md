@@ -8,36 +8,42 @@ OpenCalc-authored software is licensed under **GPL-3.0-or-later**. Bundled compo
 
 The calculator runs **OpenCalc OS**, the project’s open-source ESP32-S3 operating environment. OpenCalc OS includes the calculator interface, math and graphing engines, built-in apps, scripting runtime, USB file storage, keypad handling, display drivers, game support, and power management.
 
-This project was partially funded by [PCBWay](https://pcbway.com).
-
 Blog: [https://corypearl.github.io/opencalc/blog.html](https://corypearl.github.io/opencalc/blog.html)
 
 <p align="center">
   <a href="hardware/pcb/opencalc_pcb_V5/img/opencalc_case_spin.gif"><img src="hardware/pcb/opencalc_pcb_V5/img/opencalc_case_spin.gif" alt="OpenCalc rotating case render" height="250"></a>
-  <a href="hardware/pcb/opencalc_pcb_V5/img/opencalc_pcb_V5_full.png"><img src="hardware/pcb/opencalc_pcb_V5/img/opencalc_pcb_V5_full.png" alt="OpenCalc V5 PCB" height="250"></a>
+<a href="hardware/pcb/opencalc_pcb_V5/img/opencalc_pcb_V5_full.png"><img src="hardware/pcb/opencalc_pcb_V5/img/opencalc_pcb_V5_full.png" alt="OpenCalc V5 PCB" height="250"></a>
 <a href="firmware/open_calc_ui_calculator_demo.gif"><img src="firmware/open_calc_ui_calculator_demo.gif" alt="OpenCalc OS demo" height="250"></a>
-<br>
-<sub>Click an image to enlarge it.</sub>
 
 </p>
+<p align="center"><small>Click an image to enlarge. The UI tour visits all 12 apps and the game menu.</small></p>
 
 ## Highlights
 
-- ESP32-S3-WROOM-1-N16R8 with 16 MB flash, a 6 MB firmware partition, and 8 MB PSRAM.
-- 320x240 color display with a full-frame DMA renderer and a configurable 45 FPS UI/game loop.
-- 10x5 diode-isolated keypad with interrupt-assisted scanning, held keys, and multi-key game input.
-- One USB-C port for power, firmware flashing, CDC serial monitoring, and 8 MB of FAT file storage.
-- 12-app OpenCalc OS launcher covering Calculator, Graph, Table, Python, Statistics, Lists, Matrices, Solver, Settings, Finance, Conics, and Inequality tools.
-- Textbook-style calculator entry for fractions, roots, exponents, history, variables, complex numbers, and numerical calculus.
-- Embedded Giac/KhiCAS-derived CAS for exact arithmetic, simplification, expansion, factoring, equations, derivatives, integrals, limits, sums, products, series, complex math, and matrix expressions, with Eigenmath and native polynomial routines as fallbacks.
-- Cartesian, parametric, polar, and sequence graphing with mode-aware tables, tracing, calculus analysis, points of interest, and intersection tools.
-- Statistics catalog with descriptive statistics, regressions, tests, intervals, ANOVA, distributions, and basic statistical plots.
-- Ten matrices up to 99x99 with determinant, inverse, RREF, transpose, augment, list conversion, and row operations.
-- Built-in Tiny Python app with script browsing, creation, editing, deletion, LCD output, and keypad-driven `input()`.
-- Game launcher with Tetris, Doom, Snake, Breakout, and mapper-0 NES/Mario support, persistent high scores, and optional game audio.
-- Dual-core runtime with asynchronous graph/math work, PSRAM-aware large allocations, persistent NVS settings, and configurable performance/power-save limits.
-- Wi-Fi and Bluetooth available in hardware, disabled by default in firmware to save battery.
-- Current PCB includes battery charging and monitoring, PWM backlight control, software-off sleep, a full power switch, optional PAM8302A audio, and back-side test pads.
+- **A real graphing calculator:** textbook-style input, exact and numerical
+  math, complex numbers, calculus, history, persistent variables, and
+  unit-aware expressions such as `8 m / 2 s`.
+- **Integrated CAS and graphing:** Giac/KhiCAS symbolic math linked to Cartesian,
+  parametric, polar, and sequence graphs, tables, roots, derivatives, tangents,
+  integrals, and points of interest.
+- **A complete math toolkit:** Statistics, Lists, Matrices, Solver, Finance,
+  Conics, Inequalities, and a searchable science and engineering reference.
+- **Reference Center:** press `Alpha` + `Zoom` for an interactive periodic table
+  and browsable math, physics, and engineering formulas and explanations.
+- **Programmable on the device:** edit, run, upload, and debug Tiny Python programs with
+  calculator math, graphics, keys, storage, audio, and hardware APIs.
+- **[Built for science and electronics](guied.MD#scientific-data-logging):** use Tiny Python,
+  12 bidirectional digital pins, four 16-bit analog inputs, and shared I2C to
+  control experiments, plot live sensor data, and analyze recordings in Stats.
+- **Games included:** press `Alpha` + `2nd` for Tetris, Doom, Snake, Breakout, and NES/Mario support with
+  persistent high scores, multi-key controls, and optional audio.
+- **Open hardware:** ESP32-S3, 320x240 color display, diode-isolated keypad,
+  rechargeable battery, USB-C, expandable storage, and a documented V5 PCB.
+- **One-cable workflow:** the same USB-C connection handles charging, firmware
+  flashing, serial monitoring, and file storage.
+- **Dual-core OpenCalc OS:** one core keeps the interface and graphics responsive
+  while the other handles background math and system work, with persistent
+  worksheets, configurable performance, and power-saving controls.
 
 ## Rough production Cost Estimate
 
@@ -62,23 +68,49 @@ docs/       notes and project website files
 
 ## Quick Start
 
-Plug the OpenCalc USB-C port into your computer. [ESP-IDF Get Started guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/get-started/) (If not installed yet).
+Install and activate ESP-IDF first; see Espressif's
+[ESP32-S3 Get Started guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/get-started/).
+Then connect OpenCalc with a data-capable USB-C cable and build the firmware:
 
-```zsh
+```console
 cd firmware
-idf
 idf.py build
 ```
 
-Hold Boot, press Reset, then release both.
+Find the serial port created by OpenCalc:
 
-```zsh
-idf.py flash
-idf.py monitor
+| System  | Terminal       | Command                                        |
+| ------- | -------------- | ---------------------------------------------- |
+| macOS   | Terminal       | `ls /dev/cu.*`                                 |
+| Linux   | Terminal       | `ls /dev/ttyACM* /dev/ttyUSB* 2>/dev/null`     |
+| Windows | PowerShell     | `[System.IO.Ports.SerialPort]::GetPortNames()` |
+| Windows | Command Prompt | `mode`                                         |
+
+Look for a new USB serial device after connecting the calculator. Typical names
+are `/dev/cu.usbmodemopencalc1` on macOS, `/dev/ttyACM0` on Linux, or `COM5` on
+Windows. Replace `PORT` below with that complete name; do not type the word
+`PORT` literally.
+
+If automatic flashing does not enter the bootloader, hold **Boot**, tap
+**Reset**, and then release **Boot**. Flash using the detected port:
+
+```text
+idf.py -p PORT flash
 ```
+
+After OpenCalc restarts, find the port again because its name can change between
+bootloader and normal operation. Start the serial monitor with the runtime port:
+
+```text
+idf.py -p PORT monitor
+```
+
+Press `Ctrl+]` to exit the monitor. The same USB-C cable supports flashing,
+serial monitoring, storage, and charging.
 
 ## Documentation
 
+- [Complete OpenCalc OS Guide](guied.MD): in-depth controls, app workflows, games, scripting, settings, build instructions, validation, and troubleshooting.
 - [Firmware README](firmware/FIRMWARE_README.md): build settings, flashing, storage image, controls, apps, games, and firmware status.
 - [App Status](firmware/APP_STATUS.md): implementation status for every OpenCalc OS app and game.
 - [PCB README](hardware/pcb/PCB_README.md): current V5 PCB parts, pin map, power path, display, keypad, battery, audio, and bring-up checks.
@@ -86,7 +118,15 @@ idf.py monitor
 
 ## Current Status
 
-OpenCalc is working prototype hardware and software. Display, keypad, storage, power, calculator, graphing, scripting, and game paths have been exercised on current hardware. A real Giac/KhiCAS-derived CAS backend is now integrated in source, but its OpenCalc ESP-IDF build size, runtime memory behavior, and physical-device result rendering still need validation. Remaining work is concentrated in that CAS validation, richer TI/AP statistics workflows, large-matrix stress testing and editing, advanced graph presentation features, and continued UI polish. See the [app-by-app status](firmware/APP_STATUS.md) for the exact boundary between implemented and partial behavior.
+OpenCalc is an advanced working prototype, not a production-complete calculator.
+Display, keypad, USB, storage, power, core calculator/graphing flows, and all five
+games have been exercised on current hardware. The Giac/KhiCAS-derived CAS and
+the new asynchronous Tiny Python path build and pass their available host tests;
+both still need broader long-running device validation. The largest remaining
+risks are CAS heap/output edge cases, repeated script run/input/exit reliability,
+99x99 matrix stress, specialized statistics workflows, sampled non-Cartesian
+intersections, and final UI/LCD polish. See the [app-by-app status](firmware/APP_STATUS.md)
+for the exact implemented boundary.
 
 ## Credits
 

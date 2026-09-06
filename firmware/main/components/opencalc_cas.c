@@ -32,6 +32,7 @@ typedef struct {
     bool ok;
 } cas_writer_t;
 
+#if OPENCALC_ENABLE_GIAC_CAS && defined(ESP_PLATFORM)
 static bool contains_call(const char *expression, const char *name)
 {
     size_t name_length = strlen(name);
@@ -68,6 +69,23 @@ static bool prefer_existing_backend_semantics(const char *expression)
     }
     return false;
 }
+
+static bool expression_requests_symbolic_cas(const char *expression)
+{
+    static const char *const functions[] = {
+        "solve", "roots", "expand", "factor", "simplify", "collect",
+        "partfrac", "diff", "deriv", "integrate", "int", "defint",
+        "limit", "sum", "product", "taylor", "numer", "numerator",
+        "denom", "denominator", "rationalize", "eigenvec",
+    };
+    for (size_t i = 0; i < sizeof(functions) / sizeof(functions[0]); i++) {
+        if (contains_call(expression, functions[i])) return true;
+    }
+
+    /* Assignments and equations need a stateful/symbolic engine. */
+    return strstr(expression, ":=") != NULL || strchr(expression, '=') != NULL;
+}
+#endif
 
 static bool nearly_zero(double value)
 {
@@ -235,11 +253,14 @@ static cas_poly_t parse_poly_term(cas_poly_parser_t *parser)
     while (parser->ok) {
         parser_skip_space(parser);
         char operation = *parser->cursor;
-        if (operation != '*' && operation != '/') break;
-        parser->cursor++;
+        bool implicit_multiply = operation == '(' || operation == '.' ||
+            isdigit((unsigned char)operation) ||
+            tolower((unsigned char)operation) == parser->variable;
+        if (operation != '*' && operation != '/' && !implicit_multiply) break;
+        if (!implicit_multiply) parser->cursor++;
         cas_poly_t right = parse_poly_unary(parser);
         if (!parser->ok) break;
-        if (operation == '*') {
+        if (operation == '*' || implicit_multiply) {
             cas_poly_t product;
             if (!poly_multiply(left, right, &product)) parser->ok = false;
             else left = product;
@@ -483,13 +504,14 @@ static bool cas_solve(char *inner, char *out, size_t out_size)
         variable = (char)tolower((unsigned char)argument[0]);
         inner[comma] = '\0';
     }
-    int equal = find_top_level(inner, '=');
-    if (equal < 0) return false;
-    inner[equal] = '\0';
-
     cas_poly_t left;
-    cas_poly_t right;
-    if (!parse_polynomial(inner, variable, &left) || !parse_polynomial(inner + equal + 1, variable, &right)) return false;
+    cas_poly_t right = poly_constant(0.0);
+    int equal = find_top_level(inner, '=');
+    if (equal >= 0) {
+        inner[equal] = '\0';
+        if (!parse_polynomial(inner + equal + 1, variable, &right)) return false;
+    }
+    if (!parse_polynomial(inner, variable, &left)) return false;
     cas_poly_t poly;
     poly_add(left, right, -1.0, &poly);
     char symbol[2] = {variable, '\0'};
@@ -565,23 +587,40 @@ static bool cas_integral(char *inner, char *out, size_t out_size)
     return opencalc_math_integral_expression(expression_with_variable, out, out_size);
 }
 
-bool opencalc_cas_eval(const char *expression, char *out, size_t out_size)
+bool opencalc_cas_eval_timed(const char *expression,
+                             char *out,
+                             size_t out_size,
+                             unsigned timeout_ms,
+                             opencalc_giac_cancel_fn should_cancel,
+                             void *cancel_context,
+                             opencalc_giac_status_t *giac_status)
 {
     char inner[256];
+    if (giac_status != NULL) *giac_status = OPENCALC_GIAC_ERROR;
     if (expression == NULL || out == NULL || out_size == 0) return false;
-#if OPENCALC_ENABLE_GIAC_CAS && defined(ESP_PLATFORM)
-    if (!prefer_existing_backend_semantics(expression) &&
-        opencalc_giac_eval(expression,
-                           opencalc_math_degrees_enabled(),
-                           out,
-                           out_size)) {
+    if ((take_wrapped(expression, "expand", inner, sizeof(inner)) && cas_expand(inner, out, out_size)) ||
+        (take_wrapped(expression, "factor", inner, sizeof(inner)) && cas_factor(inner, out, out_size)) ||
+        (take_wrapped(expression, "solve", inner, sizeof(inner)) && cas_solve(inner, out, out_size)) ||
+        (take_wrapped(expression, "deriv", inner, sizeof(inner)) && cas_derivative(inner, out, out_size)) ||
+        (take_wrapped(expression, "int", inner, sizeof(inner)) && cas_integral(inner, out, out_size)) ||
+        opencalc_eigenmath_eval(expression, out, out_size)) {
+        if (giac_status != NULL) *giac_status = OPENCALC_GIAC_OK;
         return true;
     }
+#if OPENCALC_ENABLE_GIAC_CAS && defined(ESP_PLATFORM)
+    if (expression_requests_symbolic_cas(expression) && !prefer_existing_backend_semantics(expression)) {
+        opencalc_giac_status_t status = opencalc_giac_eval_timed(
+            expression, opencalc_math_degrees_enabled(), out, out_size,
+            timeout_ms, should_cancel, cancel_context);
+        if (giac_status != NULL) *giac_status = status;
+        return status == OPENCALC_GIAC_OK;
+    }
 #endif
-    if (take_wrapped(expression, "expand", inner, sizeof(inner)) && cas_expand(inner, out, out_size)) return true;
-    if (take_wrapped(expression, "factor", inner, sizeof(inner)) && cas_factor(inner, out, out_size)) return true;
-    if (take_wrapped(expression, "solve", inner, sizeof(inner)) && cas_solve(inner, out, out_size)) return true;
-    if (take_wrapped(expression, "deriv", inner, sizeof(inner)) && cas_derivative(inner, out, out_size)) return true;
-    if (take_wrapped(expression, "int", inner, sizeof(inner)) && cas_integral(inner, out, out_size)) return true;
-    return opencalc_eigenmath_eval(expression, out, out_size);
+    return false;
+}
+
+bool opencalc_cas_eval(const char *expression, char *out, size_t out_size)
+{
+    return opencalc_cas_eval_timed(expression, out, out_size,
+                                   OPENCALC_CAS_TIMEOUT_MS, NULL, NULL, NULL);
 }

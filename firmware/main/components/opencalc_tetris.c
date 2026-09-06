@@ -3,7 +3,7 @@
 // Tetris for the OpenCalc board (320x240 ILI9341, ESP32-S3).
 //
 // Drawing follows exactly the same approach as opencalc_ui.c:
-//   - one RGB888 framebuffer in PSRAM (EXT_RAM_BSS_ATTR uint32_t[UI_W*UI_H])
+//   - the shared UI RGB888 framebuffer in PSRAM
 //   - simple software primitives (pixel / filled rect / border / 5x7 text)
 //   - a single board_draw_rgb888_frame_320x240() call per frame to push it
 // so it drops into the project next to opencalc_ui.c/opencalc_doom.c and
@@ -25,7 +25,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "esp_attr.h"
 #include "esp_heap_caps.h"
 #include "esp_timer.h"
 
@@ -37,6 +36,7 @@
 #include "opencalc_config.h"
 #include "opencalc_persist.h"
 #include "opencalc_tetris.h"
+#include "opencalc_ui_canvas.h"
 #include "tetris_core.h"
 
 #define UI_W 320
@@ -64,7 +64,7 @@ static const uint32_t PIECE_COLOR[T_PIECE_COUNT] = {
 };
 
 /* ---- framebuffer + primitives (self-contained, same style as opencalc_ui.c) ---- */
-static EXT_RAM_BSS_ATTR uint32_t s_frame[UI_W * UI_H];
+static uint32_t *s_frame;
 
 static const uint8_t FONT[40][7] = {
     {0x0e,0x11,0x13,0x15,0x19,0x11,0x0e}, {0x04,0x0c,0x04,0x04,0x04,0x04,0x0e},
@@ -454,6 +454,7 @@ static void draw_tetris_frame(void)
 
 void opencalc_tetris_init(void)
 {
+    s_frame = opencalc_ui_canvas_pixels();
     memset(&s_game, 0, sizeof(s_game));
     s_active = false;
     s_high_score = (long)opencalc_persist_get_u32("hs_tetris", 0);

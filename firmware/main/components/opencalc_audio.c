@@ -1,6 +1,7 @@
 #include "opencalc_audio.h"
 
 #include "opencalc_config.h"
+#include "opencalc_sensor_hub.h"
 
 #include <string.h>
 
@@ -45,7 +46,11 @@ static bool s_game_active;
 static void amp_set_enabled(bool enabled)
 {
     /* PAM8302A SD is active low. */
+#if OPENCALC_ENABLE_SCIENTIFIC_IO
+    opencalc_sensor_set_audio_enabled(enabled);
+#else
     gpio_set_level(AUDIO_SHUTDOWN_GPIO, enabled ? 1 : 0);
+#endif
 }
 
 static void clear_audio_state_locked(void)
@@ -137,7 +142,7 @@ static void audio_output_task(void *arg)
 
 void opencalc_audio_init(void)
 {
-#if OPENCALC_USE_REAL_PCB && OPENCALC_USE_NEW_AUDIO_PCB
+#if OPENCALC_USE_REAL_PCB && OPENCALC_USE_NEW_AUDIO_PCB && !OPENCALC_ENABLE_SCIENTIFIC_IO
     /* Keep the amplifier hard-muted even when game audio is compiled out. */
     gpio_config_t shutdown_config = {
         .pin_bit_mask = 1ULL << AUDIO_SHUTDOWN_GPIO,
@@ -146,8 +151,16 @@ void opencalc_audio_init(void)
         .pull_down_en = GPIO_PULLDOWN_ENABLE,
         .intr_type = GPIO_INTR_DISABLE,
     };
-    ESP_ERROR_CHECK(gpio_config(&shutdown_config));
-    gpio_set_level(AUDIO_SHUTDOWN_GPIO, 0);
+    esp_err_t shutdown_err = gpio_config(&shutdown_config);
+    if (shutdown_err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to configure amplifier shutdown GPIO: %s",
+                 esp_err_to_name(shutdown_err));
+    } else {
+        gpio_set_level(AUDIO_SHUTDOWN_GPIO, 0);
+    }
+#elif OPENCALC_USE_REAL_PCB && OPENCALC_USE_NEW_AUDIO_PCB && OPENCALC_ENABLE_SCIENTIFIC_IO
+    /* The sensor hub initializes MCP23017 GPA0 low before audio starts. */
+    opencalc_sensor_set_audio_enabled(false);
 #endif
 
 #if OPENCALC_GAME_AUDIO_ENABLED
@@ -156,7 +169,12 @@ void opencalc_audio_init(void)
     i2s_chan_config_t channel_config =
         I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     channel_config.auto_clear = true;
-    ESP_ERROR_CHECK(i2s_new_channel(&channel_config, &s_tx_channel, NULL));
+    esp_err_t err = i2s_new_channel(&channel_config, &s_tx_channel, NULL);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to allocate audio channel: %s", esp_err_to_name(err));
+        s_tx_channel = NULL;
+        return;
+    }
 
     i2s_pdm_tx_config_t pdm_config = {
         .clk_cfg = I2S_PDM_TX_CLK_DAC_DEFAULT_CONFIG(OPENCALC_AUDIO_SAMPLE_RATE),
@@ -170,8 +188,20 @@ void opencalc_audio_init(void)
             },
         },
     };
-    ESP_ERROR_CHECK(i2s_channel_init_pdm_tx_mode(s_tx_channel, &pdm_config));
-    ESP_ERROR_CHECK(i2s_channel_enable(s_tx_channel));
+    err = i2s_channel_init_pdm_tx_mode(s_tx_channel, &pdm_config);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize PDM audio: %s", esp_err_to_name(err));
+        (void)i2s_del_channel(s_tx_channel);
+        s_tx_channel = NULL;
+        return;
+    }
+    err = i2s_channel_enable(s_tx_channel);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to enable PDM audio: %s", esp_err_to_name(err));
+        (void)i2s_del_channel(s_tx_channel);
+        s_tx_channel = NULL;
+        return;
+    }
 
     BaseType_t task_ok = xTaskCreatePinnedToCore(audio_output_task,
                                                  "game_audio",
@@ -188,11 +218,18 @@ void opencalc_audio_init(void)
         return;
     }
     s_ready = true;
+#if OPENCALC_ENABLE_SCIENTIFIC_IO
+    ESP_LOGI(TAG,
+             "PAM8302A game audio ready: PDM GPIO=%d, SD=MCP23017 GPA0, rate=%dHz",
+             AUDIO_OUTPUT_GPIO,
+             OPENCALC_AUDIO_SAMPLE_RATE);
+#else
     ESP_LOGI(TAG,
              "PAM8302A game audio ready: PDM GPIO=%d, SD GPIO=%d, rate=%dHz",
              AUDIO_OUTPUT_GPIO,
              AUDIO_SHUTDOWN_GPIO,
              OPENCALC_AUDIO_SAMPLE_RATE);
+#endif
 #elif OPENCALC_USE_REAL_PCB && OPENCALC_USE_NEW_AUDIO_PCB
     ESP_LOGI(TAG, "PAM8302A held in shutdown; game audio disabled");
 #else

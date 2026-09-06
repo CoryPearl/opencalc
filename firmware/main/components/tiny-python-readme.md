@@ -12,17 +12,29 @@ This is not CPython. It is a compact interpreter for running simple scripts on d
 - Tuple-style assignment like `a, b = 1, 0`
 - `print(...)` with optional `end="..."`
 - `input()` and `input("prompt")` through a host callback
-- Dynamic lists with `[]`, list literals, nested storage, indexing, item assignment, slicing with steps, `append(...)`, `len(...)`, and printing
-- Tuples with literals, nested storage, indexing, slicing with steps, `len(...)`, and printing
-- Dictionaries with literals, nested storage, key lookup, assignment after creation, `len(...)`, and printing
+- Dynamic lists with indexing, item assignment, stepped slicing, concatenation,
+  repetition, and `append`, `extend`, `insert`, `pop`, `remove`, `clear`,
+  `reverse`, `copy`, `count`, and `index`
+- Tuples with literals, nested storage, indexing, stepped slicing,
+  concatenation, repetition, and conversion to/from lists
+- Dictionaries with literals, iteration over keys, key lookup/assignment, and
+  `get`, `keys`, `values`, and `items`
 - Simple functions with parameters, return values, and recursion
 - `if`, `elif`, and `else`
 - `while`
-- `for ... in range(...)`
+- `for ... in range(...)` plus iteration over lists, tuples, strings, and dictionaries
+- Membership tests with `in` and `not in`
 - Comments with `#`
 - Single-line statements and nested indented blocks
-- Builtins: `len`, `int`, `float`, `str`, `bool`, `abs`, `min`, `max`, `pow`, `input`
-- GPIO builtins: `pinMode`, `digitalWrite`, `digitalRead`
+- Builtins: `len`, `int`, `float`, `str`, `bool`, `abs`, `min`, `max`,
+  `pow`, `sum`, `round`, `range`, `enumerate`, `sorted`, `list`, `tuple`,
+  `any`, `all`, and `input`
+- Python-style negative floor division/modulo, negative powers, string ordering,
+  and operand-returning `and`/`or`
+- GPIO builtins: `pinMode`, `digitalWrite`, `digitalRead`, with `INPUT`,
+  `OUTPUT`, and `INPUT_PULLUP` modes supplied by the OpenCalc host
+- OpenCalc `sensors` module for MCP23017 digital I/O, ADS1115 analog sampling,
+  trigger waits, shared I2C sensors, and persistent calculator-list logging
 - Additional builtins: `ord`, `chr`, `type`
 - Bitwise operators and shifts
 - `break`, `continue`, and no-op `global`
@@ -31,6 +43,105 @@ This is not CPython. It is a compact interpreter for running simple scripts on d
 - Optional real-time output streaming callback
 - Optional GPIO callbacks with `pinMode(...)`, `digitalWrite(...)`, and `digitalRead(...)`
 - Error messages include line and column information when available
+- Statement/call/return/error debugger callbacks, variable snapshots, tracebacks,
+  and statement/function/depth profiling
+- Configurable statement and call-depth limits plus cooperative cancellation
+- A native-module callback for exposing bounded host services without adding
+  platform dependencies to the interpreter
+
+On OpenCalc OS, `sensors` is a preloaded host module. It exposes the optional
+MCP23017 `D0-D11` header, ADS1115 `A0-A3` acquisition, bounded analog/digital
+trigger waits, register-based external I2C access, and direct logging into
+persistent calculator lists `L1-L6`. See `FIRMWARE_README.md` and
+`storage_image/scripts/logger.py` for the board API and a live-plot example.
+
+## OpenCalc Sensor Quick Start
+
+The module is preloaded by OpenCalc OS, so scripts call `sensors` directly and
+must not use `import sensors`. Check availability before accessing hardware:
+
+```python
+if not sensors.available():
+    print("Scientific I/O is disabled or missing")
+```
+
+Digital channels `D0-D11` use integer channel numbers `0-11`. Every exposed
+channel supports input and output; mode `2` enables the MCP23017 weak pull-up.
+
+```python
+sensors.mode(0, OUTPUT)
+sensors.digital_write(0, 1)
+
+sensors.mode(1, INPUT_PULLUP)
+print("D1", sensors.digital_read(1))
+```
+
+The generic GPIO builtins operate on the same channels:
+
+```python
+pinMode(2, OUTPUT)
+digitalWrite(2, 1)
+print(digitalRead(1))
+```
+
+Analog channels use numbers `0-3`. Values are returned in volts, or as signed
+ADS1115 conversion codes with `analog_raw`:
+
+```python
+sensors.rate(128)
+print("volts", sensors.analog_read(0))
+print("raw", sensors.analog_raw(0))
+print("A0-A1", sensors.analog_diff(0, 1))
+```
+
+Record directly into persistent calculator list `L1`:
+
+```python
+if sensors.wait_analog(0, 1.5, 1, 10000):
+    count = sensors.capture(0, 200, 128, 1)
+    print("saved", count)
+```
+
+For processed or live-plotted data, build the list sample by sample:
+
+```python
+sensors.list_clear(1)
+previous = sensors.analog_read(0)
+sensors.list_append(1, previous)
+for x in range(1, 60):
+    value = sensors.analog_read(0)
+    sensors.list_append(1, value)
+    graphics.line((x - 1) * 5, 220 - int(previous * 60), x * 5, 220 - int(value * 60), 65535)
+    previous = value
+    sensors.delay(50)
+```
+
+External register-based I2C sensors share GPIO13 SDA and GPIO21 SCL:
+
+```python
+if sensors.i2c_present(0x76):
+    device_id = sensors.i2c_read8(0x76, 0xD0)
+    sensors.i2c_write8(0x76, 0xF4, 0x27)
+```
+
+Sensor API reference:
+
+| Function | Purpose |
+| -------- | ------- |
+| `available()` | Report whether at least one scientific-I/O chip initialized |
+| `mode(pin, mode)` | Configure `D0-D11` as input, output, or pull-up input |
+| `digital_read(pin)` / `digital_write(pin,value)` | Read or drive a digital channel |
+| `analog_read(channel)` / `analog_raw(channel)` | Read `A0-A3` in volts or raw counts |
+| `analog_diff(pos,neg)` | Read a supported ADS1115 differential pair |
+| `rate(sps)` | Select 8, 16, 32, 64, 128, 250, 475, or 860 SPS |
+| `wait_analog(...)` / `wait_digital(...)` | Wait for a bounded trigger condition |
+| `capture(channel,count,rate,list)` | Replace `L1-L6` with up to 999 samples |
+| `list_clear`, `list_append`, `list_count` | Build calculator lists manually |
+| `i2c_present`, `i2c_read8`, `i2c_read16`, `i2c_write8` | Access external register-based I2C sensors |
+| `delay(ms)` | Pace a sampling or control loop |
+
+All header signals are 3.3 V only. This interface does not provide full
+MicroPython machine-module compatibility; it is the bounded OpenCalc host API.
 
 ## Files
 
@@ -80,7 +191,7 @@ x is 5
 The implementation includes an optional desktop test runner.
 
 ```sh
-cc -std=c99 -Wall -Wextra -I. -DPY_DESKTOP_MAIN tiny-python.c -o tiny-python-test
+cc -std=c11 -Wall -Wextra -I. -DPY_DESKTOP_MAIN tiny-python.c -lm -o tiny-python-test
 ./tiny-python-test script.py
 ```
 
@@ -121,7 +232,67 @@ Mount SPIFFS, LittleFS, or SD before calling `py_run_file(...)`. The interpreter
 
 ## OpenCalc OS Integration
 
-OpenCalc OS runs script files from `/data/scripts/` through `py_run_file(...)`. The Python app scans the USB-backed storage folder, runs the selected script on the main UI task, and routes `print(...)` output to the on-screen Python console. `input()` opens a modal keypad input line on the calculator screen; Enter submits, `CLEAR` deletes, and `DEL/Back` cancels. Serial button input only queues button numbers; script execution itself is handled by the main UI loop to avoid running the interpreter from the serial input task stack.
+OpenCalc OS runs script files from `/data/scripts/` through `py_run_file(...)`. The Python app mounts storage for the application, scans scripts, and supports Run, Debug, Edit, New, and Delete workflows. The on-device editor has a visible cursor and uppercase/lowercase Alpha entry; `Alpha` + `Y=` selects uppercase and `Alpha` + `Window` selects lowercase. `Trace` toggles a breakpoint on the current editor line.
+
+Script evaluation runs asynchronously on a dedicated 32 KB internal-RAM
+worker task. Parser pools, program text, and dynamic containers remain in PSRAM,
+but the task stack is internal because scripts can call FATFS-backed storage
+while flash-cache operations are active. The UI task remains the sole owner of LCD drawing and keypad
+dispatch. `print(...)` appends through a mutex-protected output buffer, while
+`input()` waits for text delivered by the UI through a task notification. Enter
+submits, `CLEAR` deletes, and `DEL/Back` cancels. Serial button input only queues
+button numbers, so interpreter and drawing work never execute on the serial
+input task stack. The worker path passes host lifecycle and error-recovery
+regressions; repeated run/input/cancel/exit behavior still requires a fresh
+physical-device soak pass.
+
+Debug runs pause before the first executed statement and at enabled line
+breakpoints. `Enter` steps one statement, `Trace` continues, and `Graph` cycles
+the Console, Variables, Traceback, and Profile screens. `Back` or `Clear`
+requests cancellation. Errors retain a compact call traceback, and the profile
+records executed statements, user-function calls, maximum call depth, and active
+run time.
+
+OpenCalc installs statement, recursion-depth, and active-time limits from
+`main/config.h`. The callback yields periodically to FreeRTOS and checks stop and
+deadline state at each executed statement. Input and debugger waits are
+interruptible; debugger pause time is excluded from the run deadline. The model
+protects the OS from normal script loops, recursion overflow, parse/runtime
+errors, and rejected module calls, but it cannot provide MMU-style isolation
+from a bug inside native firmware.
+
+OpenCalc scripts have six preloaded modules:
+
+```python
+graphics.clear(0x101820)
+graphics.line(10, 60, 200, 60, 0x4aa3ff)
+graphics.rect(20, 80, 40, 25, 0x33d17a)
+graphics.text(20, 115, "hello", 0xffffff)
+
+if keys.down(50):
+    print("Enter is held")
+
+storage.write("result.txt", "42")
+print(storage.read("result.txt"))
+
+audio.tone(880, 80, 25)
+print(math.eval("sqrt(2)"))
+print(math.cas("factor(x^2-1)"))
+print(sensors.available())
+```
+
+Graphics calls are retained in a bounded command buffer and replayed by the UI
+task; scripts never call the LCD driver directly. Storage calls are restricted
+to simple names under `/data/user/`. `keys.down()` uses physical button numbers
+`1` through `50`. Audio functions use the configured hardware profile and are
+safe no-ops or report unavailable when audio is disabled.
+
+OpenCalc regression coverage in `tests/tiny_python_regression.c` exercises
+arithmetic, iterable and range loops, recursion, collection methods,
+membership, sequence operations, builtins, `input()`, file execution, 200
+fresh interpreter lifecycles, 100 repeated runs in one runtime, and recovery
+after syntax errors, debugger/profile callbacks, native module dispatch,
+statement limits, and runtime reuse after a controlled abort.
 
 ## GPIO
 
@@ -132,6 +303,9 @@ pinMode(2, OUTPUT)
 digitalWrite(2, HIGH)
 print(digitalRead(2))
 ```
+
+In OpenCalc OS these numbers refer to expansion channels `D0-D11`, not raw
+ESP32 GPIO numbers. A different host application can install a different mapping.
 
 GPIO constants:
 
@@ -571,7 +745,15 @@ OpenCalc OS may override these with compiler defines from its ESP-IDF build.
 - Strings, input lines, and printed representations are bounded by `PY_MAX_STRING` / `PY_MAX_LINE`.
 - Use `py_use_stdio(...)` or `py_set_output_callback(...)` for streaming output. Otherwise output must fit in the caller-provided buffer.
 - Loop execution has a guard to stop accidental infinite loops.
-- Not implemented yet: comprehensions, classes, imports/modules, exceptions, generators, decorators, and `with`.
+- Function calls currently require positional arguments with an exact parameter
+  count; default, keyword, variadic, and keyword-only arguments are not implemented.
+- Function variables use the compact global-table model. Parameters are restored
+  after calls, but this is not CPython's complete local/nonlocal/global scope model.
+- `and` and `or` return operands like Python, but both operands are evaluated.
+- Unicode, arbitrary-size integers, garbage collection, bytecode, and the CPython
+  standard library are not provided.
+- Not implemented yet: comprehensions, classes, imports/modules, exceptions,
+  generators, decorators, lambdas, `with`, and async syntax.
 
 ## License
 

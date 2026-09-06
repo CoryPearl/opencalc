@@ -18,13 +18,16 @@ extern "C" {
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <exception>
+#include <new>
 
 #define NES_W 256
 #define NES_H 240
 #define INPUT_HOLD_US 180000
 #define NES_FRAME_PERIOD_US 16639LL
-#define NES_MAX_CATCHUP_FRAMES 3
-#define NES_MAX_BACKLOG_FRAMES 6
+#define NES_DISPLAY_PERIOD_US 33333LL
+#define NES_MAX_CATCHUP_FRAMES 6
+#define NES_MAX_BACKLOG_FRAMES 30
 
 static Bus *s_bus = nullptr;
 static Cartridge *s_cart = nullptr;
@@ -33,6 +36,7 @@ static bool s_active = false;
 static int64_t s_started_us = 0;
 static int64_t s_last_emu_tick_us = 0;
 static int64_t s_emu_time_accumulator_us = 0;
+static int64_t s_next_display_us = 0;
 static int64_t s_input_until_us[50];
 static uint32_t s_high_score = 0;
 static uint32_t s_score = 0;
@@ -89,8 +93,13 @@ static void save_score(void)
 static bool ensure_buffers(void)
 {
     if (s_nes_frame == nullptr) {
-        s_nes_frame = (uint8_t *)heap_caps_calloc(NES_W * NES_H, sizeof(uint8_t),
-                                                  MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+        constexpr size_t frame_bytes = NES_W * NES_H * sizeof(uint8_t);
+        size_t psram_free = heap_caps_get_free_size(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+        if (frame_bytes <= psram_free &&
+            psram_free - frame_bytes >= OPENCALC_PSRAM_RESERVE_BYTES) {
+            s_nes_frame = (uint8_t *)heap_caps_calloc(
+                frame_bytes, 1, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+        }
     }
     return s_nes_frame != nullptr;
 }
@@ -183,7 +192,6 @@ void opencalc_mario_init(void)
 {
     s_active = false;
     s_high_score = opencalc_persist_get_u32("hs_mario", 0);
-    ensure_buffers();
 }
 
 void opencalc_mario_enter(void)
@@ -201,18 +209,29 @@ void opencalc_mario_enter(void)
     }
 
     destroy_emu();
-    s_cart = new Cartridge("/data/mario.nes", ROMBackend::LRU);
-    if (s_cart == nullptr || !s_cart->isValid()) {
+    try {
+        s_cart = new Cartridge("/data/mario.nes", ROMBackend::LRU);
+        if (s_cart == nullptr || !s_cart->isValid()) {
+            destroy_emu();
+            board_draw_text_screen("Mario\nROM load failed");
+            board_display_unlock();
+            return;
+        }
+        s_bus = new Bus();
+    } catch (const std::bad_alloc &) {
         destroy_emu();
-        board_draw_text_screen("Mario\nROM load failed");
+        board_draw_text_screen("Mario\nNot enough memory");
         board_display_unlock();
         return;
-    }
-
-    s_bus = new Bus();
-    if (s_bus == nullptr) {
+    } catch (const std::exception &error) {
+        printf("Mario initialization error: %s\n", error.what());
         destroy_emu();
-        board_draw_text_screen("Mario\nNES bus failed");
+        board_draw_text_screen("Mario\nEmulator failed");
+        board_display_unlock();
+        return;
+    } catch (...) {
+        destroy_emu();
+        board_draw_text_screen("Mario\nEmulator failed");
         board_display_unlock();
         return;
     }
@@ -222,6 +241,7 @@ void opencalc_mario_enter(void)
     s_bus->reset();
     opencalc_power_set_performance_required(true);
     s_last_emu_tick_us = esp_timer_get_time();
+    s_next_display_us = s_last_emu_tick_us;
     reset_timing_stats(s_last_emu_tick_us);
     s_active = true;
     board_draw_text_screen("Mario\nNES loading");
@@ -265,18 +285,28 @@ void opencalc_mario_tick(void)
     }
     s_emu_time_accumulator_us -= (int64_t)frames_due * NES_FRAME_PERIOD_US;
 
+    bool render_frame = now >= s_next_display_us;
+    if (render_frame) {
+        do {
+            s_next_display_us += NES_DISPLAY_PERIOD_US;
+        } while (s_next_display_us <= now);
+    }
+
     s_bus->controller = controller_state();
     for (int frame = 0; frame < frames_due; frame++) {
-        /* CPU/game time always advances at the NES rate. Only the final frame
-         * in a catch-up batch spends time rendering all 240 PPU scanlines. */
-        s_bus->clock(frame == frames_due - 1);
+        /* Keep game time at the NTSC rate. Full PPU rendering is intentionally
+         * limited to 30 Hz because scaling and sending a 320x240 LCD frame on
+         * the UI task otherwise starves the emulated CPU and slows game time. */
+        s_bus->clock(render_frame && frame == frames_due - 1);
     }
     s_emu_frames_since_log += (uint32_t)frames_due;
 
-    board_display_lock();
-    draw_frame();
-    board_display_unlock();
-    s_display_frames_since_log++;
+    if (render_frame) {
+        board_display_lock();
+        draw_frame();
+        board_display_unlock();
+        s_display_frames_since_log++;
+    }
     s_tick_work_us_since_log += (uint64_t)(esp_timer_get_time() - tick_started_us);
     s_tick_count_since_log++;
     log_timing_stats(esp_timer_get_time());

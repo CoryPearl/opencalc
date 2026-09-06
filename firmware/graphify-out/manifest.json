@@ -66,10 +66,10 @@
     "semantic_hash": "c7556a25e58dbd487a2070d174a09e53"
   },
   "main/components/board_init.c": {
-    "mtime": 1788321609.630407,
-    "seen": 1788361944.732173,
-    "ast_hash": "94b7877673cd1d2317fb6a74297fc7ab",
-    "semantic_hash": "94b7877673cd1d2317fb6a74297fc7ab"
+    "mtime": 1788670027.4259071,
+    "seen": 1788670095.586625,
+    "ast_hash": "d4d6c0bb1c2055eb179b8259abf61f29",
+    "semantic_hash": "d4d6c0bb1c2055eb179b8259abf61f29"
   },
   "main/components/board_init.h": {
     "mtime": 1788305449.763912,
@@ -546,10 +546,10 @@
     "semantic_hash": "f2e7be01d53e1cdf5018877be12d352f"
   },
   "main/components/doomgeneric/i_system.c": {
-    "mtime": 1788066815.134253,
-    "seen": 1788361944.732209,
-    "ast_hash": "76b499e46288a9f41f8051b478c75104",
-    "semantic_hash": "76b499e46288a9f41f8051b478c75104"
+    "mtime": 1788655109.6400647,
+    "seen": 1788669890.641079,
+    "ast_hash": "bd7b645b2a722ad343fb3533f9067232",
+    "semantic_hash": "bd7b645b2a722ad343fb3533f9067232"
   },
   "main/components/doomgeneric/i_system.h": {
     "mtime": 1779994989.0,
@@ -1290,10 +1290,10 @@
     "semantic_hash": "c26fc8ab4622f3a454b40afd9be7aad0"
   },
   "main/components/mario/cartridge.cpp": {
-    "mtime": 1787283483.3075385,
-    "seen": 1788361944.73226,
-    "ast_hash": "3044b3d74cf656d126bf6393511d362a",
-    "semantic_hash": "3044b3d74cf656d126bf6393511d362a"
+    "mtime": 1788655224.7717268,
+    "seen": 1788669890.6428149,
+    "ast_hash": "984063a7952bbc6d1ecf99dae244474e",
+    "semantic_hash": "984063a7952bbc6d1ecf99dae244474e"
   },
   "main/components/mario/cartridge.h": {
     "mtime": 1786814498.7734435,
@@ -1338,10 +1338,10 @@
     "semantic_hash": "ae035ed2959212aa2ed53c4232c625df"
   },
   "main/components/mario/mappers/mapper000.cpp": {
-    "mtime": 1787283483.2634566,
-    "seen": 1788361944.7322628,
-    "ast_hash": "bbd61e7e4596ddfcf6151a622775e331",
-    "semantic_hash": "bbd61e7e4596ddfcf6151a622775e331"
+    "mtime": 1788655258.270552,
+    "seen": 1788669890.642915,
+    "ast_hash": "c6ff161da25a6fac652cae4b0fc3eeaa",
+    "semantic_hash": "c6ff161da25a6fac652cae4b0fc3eeaa"
   },
   "main/components/mario/mappers/mapper000.h": {
     "mtime": 1787283468.7486358,
@@ -1434,10 +1434,10 @@
     "semantic_hash": "2d1ffc0766a2dee0d95c7a9f9a4654e2"
   },
   "main/components/opencalc_audio.c": {
-    "mtime": 1788321428.7969444,
-    "seen": 1788361944.732269,
-    "ast_hash": "bf9594378f2cde687c96a1a2f6b4e51c",
-    "semantic_hash": "bf9594378f2cde687c96a1a2f6b4e51c"
+    "mtime": 1788654470.1658142,
+    "seen": 1788669890.643143,
+    "ast_hash": "001d70a6741d61d7102f912fa9c248f6",
+    "semantic_hash": "001d70a6741d61d7102f912fa9c248f6"
   },
   "main/components/opencalc_audio.h": {
     "mtime": 1788321428.7497625,
@@ -1446,10 +1446,10 @@
     "semantic_hash": "cc4fa8af69446720e0cce03dda90dbd1"
   },
   "main/components/opencalc_breakout.c": {
-    "mtime": 1788308131.283656,
-    "seen": 1788361944.73227,
-    "ast_hash": "ad739df9be43d0e237f6b24fd7f711be",
-    "semantic_hash": "ad739df9be43d0e237f6b24fd7f711be"
+    "mtime": 1788710031.011721,
+    "seen": 1788710060.302334,
+    "ast_hash": "e5c18b7eacfa1728fc2565117a35a065",
+    "semantic_hash": "e5c18b7eacfa1728fc2565117a35a065"
   },
   "main/components/opencalc_breakout.h": {
     "mtime": 1786193844.0,
@@ -1464,10 +1464,10 @@
     "semantic_hash": "3942fb6734ea10f16261efebac7fe81f"
   },
   "main/components/opencalc_doom.c": {
-    "mtime": 1788308174.250296,
-    "seen": 1788361944.7322712,
-    "ast_hash": "b53423347b36b03fe06cd8f4d09cd8bf",
-    "semantic_hash": "b53423347b36b03fe06cd8f4d09cd8bf"
+    "mtime": 1788709987.5578268,
+    "seen": 1788710060.302453,
+    "ast_hash": "9f32c832e9032d03c983e00c31e700d0",
+    "semantic_hash": "9f32c832e9032d03c983e00c31e700d0"
   },
   "main/components/opencalc_doom.h": {
     "mtime": 1786595678.1313474,
@@ -1476,10 +1476,10 @@
     "semantic_hash": "c464e0b712ddb3b2c0907f1deff0348d"
   },
   "main/components/opencalc_mario.cpp": {
-    "mtime": 1788305591.3768919,
-    "seen": 1788361944.7322721,
-    "ast_hash": "5fede0d9f2bf0dae4873ebd7d2d5286d",
-    "semantic_hash": "5fede0d9f2bf0dae4873ebd7d2d5286d"
+    "mtime": 1788709608.062918,
+    "seen": 1788710060.3025532,
+    "ast_hash": "fa207141d5be32952dbdc9ac8efc8982",
+    "semantic_hash": "fa207141d5be32952dbdc9ac8efc8982"
   },
   "main/components/opencalc_mario.h": {
     "mtime": 1786814364.8242984,
@@ -1488,28 +1488,28 @@
     "semantic_hash": "9830a4da6a3c399bd655d7d0618bc98d"
   },
   "main/components/opencalc_math.c": {
-    "mtime": 1788367136.0090604,
-    "seen": 1788392185.113486,
-    "ast_hash": "1d9378a5594293a894bea12cc19daf93",
-    "semantic_hash": ""
+    "mtime": 1788671095.0675075,
+    "seen": 1788672688.9520168,
+    "ast_hash": "d69015ebea7f2eafdeb23d3b1bdd46a9",
+    "semantic_hash": "d69015ebea7f2eafdeb23d3b1bdd46a9"
   },
   "main/components/opencalc_math.h": {
-    "mtime": 1788361242.381009,
-    "seen": 1788361944.7322738,
-    "ast_hash": "5dca356e08fc1a732cda5bdcf898cdfd",
-    "semantic_hash": "5dca356e08fc1a732cda5bdcf898cdfd"
+    "mtime": 1788534857.622194,
+    "seen": 1788587834.7752378,
+    "ast_hash": "bdbba4e87dab86275edd2400db6f07fd",
+    "semantic_hash": "bdbba4e87dab86275edd2400db6f07fd"
   },
   "main/components/opencalc_persist.c": {
-    "mtime": 1786595615.8920743,
-    "seen": 1788361944.7322738,
-    "ast_hash": "bc1e1dd6ce11195fe3cf518b43797533",
-    "semantic_hash": "bc1e1dd6ce11195fe3cf518b43797533"
+    "mtime": 1788486718.840828,
+    "seen": 1788587834.7752378,
+    "ast_hash": "8322c3c8b44fcf79ab9e3ecb33bbcb33",
+    "semantic_hash": "8322c3c8b44fcf79ab9e3ecb33bbcb33"
   },
   "main/components/opencalc_persist.h": {
-    "mtime": 1786814426.0187597,
-    "seen": 1788361944.7322738,
-    "ast_hash": "774b273c9e7ccc088d697df752b26f9b",
-    "semantic_hash": "774b273c9e7ccc088d697df752b26f9b"
+    "mtime": 1788486718.7978358,
+    "seen": 1788587834.775239,
+    "ast_hash": "58f11a8b7a2e21b24059f640e1a84a89",
+    "semantic_hash": "58f11a8b7a2e21b24059f640e1a84a89"
   },
   "main/components/opencalc_power.c": {
     "mtime": 1788305591.4187205,
@@ -1524,10 +1524,10 @@
     "semantic_hash": "a0f903138779270409f8aa11562149d4"
   },
   "main/components/opencalc_snake.c": {
-    "mtime": 1788308131.2828965,
-    "seen": 1788361944.732276,
-    "ast_hash": "c104dc7ae56d70750c24c782280be7d8",
-    "semantic_hash": "c104dc7ae56d70750c24c782280be7d8"
+    "mtime": 1788710030.9646466,
+    "seen": 1788710060.302735,
+    "ast_hash": "3a70e5178e85cf8b454a557bfd7d4637",
+    "semantic_hash": "3a70e5178e85cf8b454a557bfd7d4637"
   },
   "main/components/opencalc_snake.h": {
     "mtime": 1786193362.0,
@@ -1536,10 +1536,10 @@
     "semantic_hash": "ff6f4a604a1c2dafd0949e10623836b1"
   },
   "main/components/opencalc_tetris.c": {
-    "mtime": 1788308131.2822053,
-    "seen": 1788361944.732276,
-    "ast_hash": "6340f719c0af38d4692f59d0bc0b647f",
-    "semantic_hash": "6340f719c0af38d4692f59d0bc0b647f"
+    "mtime": 1788709456.379801,
+    "seen": 1788710060.302777,
+    "ast_hash": "62fff51a716fe52f48bcd04ee2322ef1",
+    "semantic_hash": "62fff51a716fe52f48bcd04ee2322ef1"
   },
   "main/components/opencalc_tetris.h": {
     "mtime": 1786156108.0,
@@ -1548,16 +1548,16 @@
     "semantic_hash": "16e608c7eeb0c41ca3220bffa9a8ded6"
   },
   "main/components/opencalc_ui.c": {
-    "mtime": 1788402140.5667672,
-    "seen": 1788402204.844324,
-    "ast_hash": "db6f4cef0921add66d4850dd60c6b10b",
-    "semantic_hash": ""
+    "mtime": 1788710085.7407188,
+    "seen": 1788710114.610055,
+    "ast_hash": "259b73a7235da97f7cbf6b22ed1ff0df",
+    "semantic_hash": "259b73a7235da97f7cbf6b22ed1ff0df"
   },
   "main/components/opencalc_ui.h": {
-    "mtime": 1786597142.1228783,
-    "seen": 1788361944.732278,
-    "ast_hash": "852c843de3dfb6cb22b9646d8389fbf8",
-    "semantic_hash": "852c843de3dfb6cb22b9646d8389fbf8"
+    "mtime": 1788652810.032829,
+    "seen": 1788669890.643587,
+    "ast_hash": "d2b134eda133b048d6e3a693d30a307a",
+    "semantic_hash": "d2b134eda133b048d6e3a693d30a307a"
   },
   "main/components/snake_core.h": {
     "mtime": 1786193362.0,
@@ -1584,40 +1584,40 @@
     "semantic_hash": "4738b36582a4c2d14f5b4fafc9f94411"
   },
   "main/components/tiny-python.c": {
-    "mtime": 1788365876.8507485,
-    "seen": 1788392185.113493,
-    "ast_hash": "a4f1966e92171c16f6f9161d591effa7",
-    "semantic_hash": ""
+    "mtime": 1788669810.3943496,
+    "seen": 1788669890.643709,
+    "ast_hash": "487d08a482a8ee92cfeadfb47ef0cf81",
+    "semantic_hash": "487d08a482a8ee92cfeadfb47ef0cf81"
   },
   "main/components/tiny-python.h": {
-    "mtime": 1780971949.7026153,
-    "seen": 1788361944.73228,
-    "ast_hash": "4436526fd5ea234b3ffb30cc7b7c28e2",
-    "semantic_hash": "4436526fd5ea234b3ffb30cc7b7c28e2"
+    "mtime": 1788655540.6744177,
+    "seen": 1788669890.64371,
+    "ast_hash": "921eba127fc9c1078c92bdcf40c86baf",
+    "semantic_hash": "921eba127fc9c1078c92bdcf40c86baf"
   },
   "main/components/usb_msc.c": {
-    "mtime": 1788065755.9723852,
-    "seen": 1788361944.73228,
-    "ast_hash": "d308de62a39d1c4528d5b2a896dcdd93",
-    "semantic_hash": "d308de62a39d1c4528d5b2a896dcdd93"
+    "mtime": 1788709896.612394,
+    "seen": 1788710060.302988,
+    "ast_hash": "3dea3a226eba21f3bc19762cd007d3c0",
+    "semantic_hash": "3dea3a226eba21f3bc19762cd007d3c0"
   },
   "main/components/usb_msc.h": {
-    "mtime": 1780968624.2601428,
-    "seen": 1788361944.732281,
-    "ast_hash": "689921945438fbff1b5845eadae7b1a2",
-    "semantic_hash": "689921945438fbff1b5845eadae7b1a2"
+    "mtime": 1788586049.0920374,
+    "seen": 1788587834.7753851,
+    "ast_hash": "d11c70791869c1b395259d7b329037d2",
+    "semantic_hash": "d11c70791869c1b395259d7b329037d2"
   },
   "main/config.h": {
-    "mtime": 1788384451.362993,
-    "seen": 1788392185.113495,
-    "ast_hash": "d812f277c3d6ffa74c528cba45f5be1d",
-    "semantic_hash": ""
+    "mtime": 1788671382.2611609,
+    "seen": 1788672688.952406,
+    "ast_hash": "7a16d7eb7edcd47306112ea645bac9c4",
+    "semantic_hash": "7a16d7eb7edcd47306112ea645bac9c4"
   },
   "main/main.c": {
-    "mtime": 1788307965.8717253,
-    "seen": 1788361944.7322822,
-    "ast_hash": "b070352038f999d0adac5c6b27596d61",
-    "semantic_hash": "b070352038f999d0adac5c6b27596d61"
+    "mtime": 1788671382.305563,
+    "seen": 1788672688.952406,
+    "ast_hash": "3a019c07f2e9ced7fcb4339df9e36f78",
+    "semantic_hash": "3a019c07f2e9ced7fcb4339df9e36f78"
   },
   "managed_components/espressif__cmake_utilities/CHECKSUMS.json": {
     "mtime": 1779395329.6740549,
@@ -8994,58 +8994,58 @@
     "semantic_hash": "0b4efb77e9ec35bee522934094a88cf2"
   },
   "tools/generate_ui_tour_gif.py": {
-    "mtime": 1788133114.5125797,
-    "seen": 1788361944.732779,
-    "ast_hash": "2bb79e944c74036da87d87b1afb4958e",
-    "semantic_hash": "2bb79e944c74036da87d87b1afb4958e"
+    "mtime": 1788553114.4216566,
+    "seen": 1788587834.798919,
+    "ast_hash": "e24e8799ac869d7164d3db119f3fe819",
+    "semantic_hash": "e24e8799ac869d7164d3db119f3fe819"
   },
   "main/components/eigenmath/eigenmath.c": {
-    "mtime": 1788402023.5458214,
-    "seen": 1788402204.844295,
-    "ast_hash": "86a3a69d4b5c6d95b9bf63a22cdbaf4a",
-    "semantic_hash": ""
+    "mtime": 1788669551.6427102,
+    "seen": 1788669890.642729,
+    "ast_hash": "34e0fd3e091191c1eb16e6aa12512341",
+    "semantic_hash": "34e0fd3e091191c1eb16e6aa12512341"
   },
   "main/components/opencalc_cas.c": {
-    "mtime": 1788402074.8645148,
-    "seen": 1788402204.8443148,
-    "ast_hash": "016292b4f44502b1ae40d35bc467edbd",
-    "semantic_hash": ""
+    "mtime": 1788586973.8049607,
+    "seen": 1788587834.77516,
+    "ast_hash": "8efcd160a752cd845886923fe55179b8",
+    "semantic_hash": "8efcd160a752cd845886923fe55179b8"
   },
   "main/components/opencalc_cas.h": {
-    "mtime": 1788384341.1404824,
-    "seen": 1788392185.113481,
-    "ast_hash": "babaf0ed27f5461a93de8b7a06d34e86",
-    "semantic_hash": ""
+    "mtime": 1788586973.8039744,
+    "seen": 1788587834.775161,
+    "ast_hash": "b39056866f2ebd10ff45b1d2f307377a",
+    "semantic_hash": "b39056866f2ebd10ff45b1d2f307377a"
   },
   "main/components/opencalc_eigenmath.c": {
-    "mtime": 1788402125.7613761,
-    "seen": 1788402204.844318,
-    "ast_hash": "d672d679ade60b3cea3330f9f3e1b171",
-    "semantic_hash": ""
+    "mtime": 1788403780.444968,
+    "seen": 1788587834.7752042,
+    "ast_hash": "72ab8650402d9ecfde47c4d051ca1cc2",
+    "semantic_hash": "72ab8650402d9ecfde47c4d051ca1cc2"
   },
   "main/components/opencalc_eigenmath.h": {
     "mtime": 1788386877.3049672,
-    "seen": 1788392185.1134841,
+    "seen": 1788587834.7752051,
     "ast_hash": "74251c2b1a3a0c031ac36a221caeff4e",
-    "semantic_hash": ""
+    "semantic_hash": "74251c2b1a3a0c031ac36a221caeff4e"
   },
   "tests/cas_regression.c": {
-    "mtime": 1788385879.7577796,
-    "seen": 1788392185.1141288,
-    "ast_hash": "2658e882767f38b0be8c196e86b1d89a",
-    "semantic_hash": ""
+    "mtime": 1788449427.5182323,
+    "seen": 1788587834.798911,
+    "ast_hash": "5d4186f19896bf2eef0778738df1cf2b",
+    "semantic_hash": "5d4186f19896bf2eef0778738df1cf2b"
   },
   "tests/eigenmath_regression.c": {
-    "mtime": 1788402074.8649833,
-    "seen": 1788402204.844952,
-    "ast_hash": "99a9b272430c69226c8cb3c7a9c8a339",
-    "semantic_hash": ""
+    "mtime": 1788403811.4990826,
+    "seen": 1788587834.798913,
+    "ast_hash": "bbb79d9617133c449598ab981b2fb16d",
+    "semantic_hash": "bbb79d9617133c449598ab981b2fb16d"
   },
   "tests/tiny_python_regression.c": {
-    "mtime": 1788386062.0244408,
-    "seen": 1788392185.114131,
-    "ast_hash": "6bb615ecc4aa0dbad1c7a8b0f329cbbe",
-    "semantic_hash": ""
+    "mtime": 1788669641.6165395,
+    "seen": 1788669890.667378,
+    "ast_hash": "4fd839019354b8d138c4cce83a2bebc2",
+    "semantic_hash": "4fd839019354b8d138c4cce83a2bebc2"
   },
   ".claude/CLAUDE.md": {
     "mtime": 1787283375.0430813,
@@ -10306,5 +10306,2189 @@
     "seen": 1788402204.844963,
     "ast_hash": "36fd98dd9c597ee143aeec1a30c31fad",
     "semantic_hash": ""
+  },
+  "components/giac/extra_script.py": {
+    "mtime": 1788404695.163275,
+    "seen": 1788587834.7715142,
+    "ast_hash": "ac2f4d1947e9a98648eaa0e23fe3bb54",
+    "semantic_hash": "ac2f4d1947e9a98648eaa0e23fe3bb54"
+  },
+  "components/giac/library.json": {
+    "mtime": 1788404695.1645148,
+    "seen": 1788587834.771515,
+    "ast_hash": "ee758f2da847a25b6d2e204c6d1007db",
+    "semantic_hash": "ee758f2da847a25b6d2e204c6d1007db"
+  },
+  "components/giac/src/Equation.h": {
+    "mtime": 1788404695.184455,
+    "seen": 1788587834.7715158,
+    "ast_hash": "d2b38f11631ba1854ccef6080d01cca0",
+    "semantic_hash": "d2b38f11631ba1854ccef6080d01cca0"
+  },
+  "components/giac/src/LibText.h": {
+    "mtime": 1788404695.1907387,
+    "seen": 1788587834.771517,
+    "ast_hash": "885624356813d3de2381e9eeffa1a17c",
+    "semantic_hash": "885624356813d3de2381e9eeffa1a17c"
+  },
+  "components/giac/src/alg_ext.h": {
+    "mtime": 1788404695.2093403,
+    "seen": 1788587834.771518,
+    "ast_hash": "56d54a04a4ecd4cb9dc0deb1077afe9f",
+    "semantic_hash": "56d54a04a4ecd4cb9dc0deb1077afe9f"
+  },
+  "components/giac/src/aspen_translate.h": {
+    "mtime": 1788404695.2112718,
+    "seen": 1788587834.771518,
+    "ast_hash": "26d1f5cd2820f37189d99ce213166793",
+    "semantic_hash": "26d1f5cd2820f37189d99ce213166793"
+  },
+  "components/giac/src/blaswrap.h": {
+    "mtime": 1788404695.1752954,
+    "seen": 1788587834.771519,
+    "ast_hash": "ac10533c29eed05007e76c1bdb9901fd",
+    "semantic_hash": "ac10533c29eed05007e76c1bdb9901fd"
+  },
+  "components/giac/src/catalog.h": {
+    "mtime": 1788404695.1999607,
+    "seen": 1788587834.77152,
+    "ast_hash": "e815140be98af17d4729fe00492bffb1",
+    "semantic_hash": "e815140be98af17d4729fe00492bffb1"
+  },
+  "components/giac/src/clapack.h": {
+    "mtime": 1788404695.2005863,
+    "seen": 1788587834.771521,
+    "ast_hash": "291836f55c39a70c3b039782a73a9887",
+    "semantic_hash": "291836f55c39a70c3b039782a73a9887"
+  },
+  "components/giac/src/cocoa.h": {
+    "mtime": 1788404695.1987624,
+    "seen": 1788587834.771522,
+    "ast_hash": "5fb78fe0b4026072905798aa04b93e00",
+    "semantic_hash": "5fb78fe0b4026072905798aa04b93e00"
+  },
+  "components/giac/src/config.h": {
+    "mtime": 1788404695.1884396,
+    "seen": 1788587834.771523,
+    "ast_hash": "716181f80eb6164b5e55fd33516a6202",
+    "semantic_hash": "716181f80eb6164b5e55fd33516a6202"
+  },
+  "components/giac/src/console.h": {
+    "mtime": 1788404695.1698387,
+    "seen": 1788587834.771523,
+    "ast_hash": "f8bc8107c6747622effbe15a207e0ea5",
+    "semantic_hash": "f8bc8107c6747622effbe15a207e0ea5"
+  },
+  "components/giac/src/csturm.h": {
+    "mtime": 1788404695.2037127,
+    "seen": 1788587834.7715242,
+    "ast_hash": "cb943e5086215f2f2802fe82b86a4048",
+    "semantic_hash": "cb943e5086215f2f2802fe82b86a4048"
+  },
+  "components/giac/src/dConsole.h": {
+    "mtime": 1788404695.1954243,
+    "seen": 1788587834.7715251,
+    "ast_hash": "a9c864a13e2316291295d1d86e558004",
+    "semantic_hash": "a9c864a13e2316291295d1d86e558004"
+  },
+  "components/giac/src/debug.h": {
+    "mtime": 1788404695.1767159,
+    "seen": 1788587834.7715251,
+    "ast_hash": "cd03b35b296c57088b144a41ca57b2fb",
+    "semantic_hash": "cd03b35b296c57088b144a41ca57b2fb"
+  },
+  "components/giac/src/defs.h": {
+    "mtime": 1788404695.1760068,
+    "seen": 1788587834.7715259,
+    "ast_hash": "3d0473a36008b125f9bcc2600183d22d",
+    "semantic_hash": "3d0473a36008b125f9bcc2600183d22d"
+  },
+  "components/giac/src/derive.h": {
+    "mtime": 1788404695.1657884,
+    "seen": 1788587834.7715268,
+    "ast_hash": "abc53c171ac62e5429f1c7fbc5d025d7",
+    "semantic_hash": "abc53c171ac62e5429f1c7fbc5d025d7"
+  },
+  "components/giac/src/desolve.h": {
+    "mtime": 1788404695.2133222,
+    "seen": 1788587834.7715268,
+    "ast_hash": "5af73633c843b22797bf6369966b625b",
+    "semantic_hash": "5af73633c843b22797bf6369966b625b"
+  },
+  "components/giac/src/dispatch.h": {
+    "mtime": 1788404695.2188368,
+    "seen": 1788587834.771528,
+    "ast_hash": "00526929408775d1d632b90a6905ebf3",
+    "semantic_hash": "00526929408775d1d632b90a6905ebf3"
+  },
+  "components/giac/src/ezgcd.h": {
+    "mtime": 1788404695.1796541,
+    "seen": 1788587834.771528,
+    "ast_hash": "df00062cf6fada2da98fbfed90786605",
+    "semantic_hash": "df00062cf6fada2da98fbfed90786605"
+  },
+  "components/giac/src/f2c.h": {
+    "mtime": 1788404695.1764266,
+    "seen": 1788587834.771529,
+    "ast_hash": "d567a640c38656395d26f6d8dbcd06fc",
+    "semantic_hash": "d567a640c38656395d26f6d8dbcd06fc"
+  },
+  "components/giac/src/first.cc": {
+    "mtime": 1788404695.1932814,
+    "seen": 1788587834.77153,
+    "ast_hash": "0bf7995c0931dadea5ced61578b6526c",
+    "semantic_hash": "0bf7995c0931dadea5ced61578b6526c"
+  },
+  "components/giac/src/first.h": {
+    "mtime": 1788404695.1736116,
+    "seen": 1788587834.771531,
+    "ast_hash": "6f5fb3111c88631f49a3c95c93a427c8",
+    "semantic_hash": "6f5fb3111c88631f49a3c95c93a427c8"
+  },
+  "components/giac/src/fraction.h": {
+    "mtime": 1788404695.2224834,
+    "seen": 1788587834.771531,
+    "ast_hash": "0227cb1cebe323bbf96661d0927296be",
+    "semantic_hash": "0227cb1cebe323bbf96661d0927296be"
+  },
+  "components/giac/src/gauss.h": {
+    "mtime": 1788404695.217687,
+    "seen": 1788587834.771532,
+    "ast_hash": "9c1b64d7655eff5bfd4244b28c508d18",
+    "semantic_hash": "9c1b64d7655eff5bfd4244b28c508d18"
+  },
+  "components/giac/src/gausspol.h": {
+    "mtime": 1788404695.2274296,
+    "seen": 1788587834.771532,
+    "ast_hash": "e9f7109cbb473255d22377c96bd5a974",
+    "semantic_hash": "e9f7109cbb473255d22377c96bd5a974"
+  },
+  "components/giac/src/gen.h": {
+    "mtime": 1788404695.1940644,
+    "seen": 1788587834.771533,
+    "ast_hash": "7aae77fc2445a591fc0f010d3067b1eb",
+    "semantic_hash": "7aae77fc2445a591fc0f010d3067b1eb"
+  },
+  "components/giac/src/giac.h": {
+    "mtime": 1788404695.1936235,
+    "seen": 1788587834.771533,
+    "ast_hash": "e3cdef3fc16819900ae1da7d42f169a8",
+    "semantic_hash": "e3cdef3fc16819900ae1da7d42f169a8"
+  },
+  "components/giac/src/giacPCH.h": {
+    "mtime": 1788404695.202431,
+    "seen": 1788587834.771534,
+    "ast_hash": "3ff32662f3988baab10948585d67be76",
+    "semantic_hash": "3ff32662f3988baab10948585d67be76"
+  },
+  "components/giac/src/giacintl.h": {
+    "mtime": 1788404695.2126164,
+    "seen": 1788587834.771534,
+    "ast_hash": "526e13878f50fe71133bd7f19d2d847a",
+    "semantic_hash": "526e13878f50fe71133bd7f19d2d847a"
+  },
+  "components/giac/src/gl2ps.h": {
+    "mtime": 1788404695.1975105,
+    "seen": 1788587834.7715352,
+    "ast_hash": "d2f2a223fbcc1fdee7ff5b4fe5984ea2",
+    "semantic_hash": "d2f2a223fbcc1fdee7ff5b4fe5984ea2"
+  },
+  "components/giac/src/global.h": {
+    "mtime": 1788404695.192389,
+    "seen": 1788587834.7715352,
+    "ast_hash": "cf5358934e079335c39045f7784338f7",
+    "semantic_hash": "cf5358934e079335c39045f7784338f7"
+  },
+  "components/giac/src/gmp_replacements.h": {
+    "mtime": 1788404695.2174182,
+    "seen": 1788587834.7715359,
+    "ast_hash": "14c3de6e23e2a0e5d281fda7fcad9777",
+    "semantic_hash": "14c3de6e23e2a0e5d281fda7fcad9777"
+  },
+  "components/giac/src/graphe.h": {
+    "mtime": 1788404695.1875434,
+    "seen": 1788587834.7715368,
+    "ast_hash": "25ffe724174a6187a549e27e6b9ef7b6",
+    "semantic_hash": "25ffe724174a6187a549e27e6b9ef7b6"
+  },
+  "components/giac/src/graphtheory.h": {
+    "mtime": 1788404695.171366,
+    "seen": 1788587834.7715368,
+    "ast_hash": "6b7c9d404dd1cff809878e413e1d212c",
+    "semantic_hash": "6b7c9d404dd1cff809878e413e1d212c"
+  },
+  "components/giac/src/help.h": {
+    "mtime": 1788404695.16703,
+    "seen": 1788587834.771538,
+    "ast_hash": "a4360e17898260f86cc4be19242670a3",
+    "semantic_hash": "a4360e17898260f86cc4be19242670a3"
+  },
+  "components/giac/src/hist.h": {
+    "mtime": 1788404695.1732423,
+    "seen": 1788587834.771538,
+    "ast_hash": "d65dc01762511c489dfd39955c6a4bc8",
+    "semantic_hash": "d65dc01762511c489dfd39955c6a4bc8"
+  },
+  "components/giac/src/history.h": {
+    "mtime": 1788404695.212137,
+    "seen": 1788587834.771539,
+    "ast_hash": "32e82f6ee729c928be51cff80763b54c",
+    "semantic_hash": "32e82f6ee729c928be51cff80763b54c"
+  },
+  "components/giac/src/identificateur.h": {
+    "mtime": 1788404695.1695287,
+    "seen": 1788587834.771539,
+    "ast_hash": "43867fb077534e0b01c8aa2c4c42633b",
+    "semantic_hash": "43867fb077534e0b01c8aa2c4c42633b"
+  },
+  "components/giac/src/ifactor.h": {
+    "mtime": 1788404695.1921551,
+    "seen": 1788587834.77154,
+    "ast_hash": "28cead03b2b400f2720f44ae614dc2ef",
+    "semantic_hash": "28cead03b2b400f2720f44ae614dc2ef"
+  },
+  "components/giac/src/index.cc": {
+    "mtime": 1788404695.2243266,
+    "seen": 1788587834.77154,
+    "ast_hash": "1b901f22cd5c8f44e49df11418e8cfe3",
+    "semantic_hash": "1b901f22cd5c8f44e49df11418e8cfe3"
+  },
+  "components/giac/src/index.h": {
+    "mtime": 1788404695.1703966,
+    "seen": 1788587834.7715409,
+    "ast_hash": "e9209c5ca8d87c9afd37758fb41d26d5",
+    "semantic_hash": "e9209c5ca8d87c9afd37758fb41d26d5"
+  },
+  "components/giac/src/input_lexer.cc": {
+    "mtime": 1788404695.1972108,
+    "seen": 1788587834.7715409,
+    "ast_hash": "03830128eeddf09a8c1d5b526d749c1d",
+    "semantic_hash": "03830128eeddf09a8c1d5b526d749c1d"
+  },
+  "components/giac/src/input_lexer.h": {
+    "mtime": 1788404695.2253363,
+    "seen": 1788587834.7715409,
+    "ast_hash": "6c8c264221685fdc011ea08b51077f09",
+    "semantic_hash": "6c8c264221685fdc011ea08b51077f09"
+  },
+  "components/giac/src/input_parser.cc": {
+    "mtime": 1788404695.196777,
+    "seen": 1788587834.771542,
+    "ast_hash": "d47f5c4d1ac701b7e63357d0f10a2b83",
+    "semantic_hash": "d47f5c4d1ac701b7e63357d0f10a2b83"
+  },
+  "components/giac/src/input_parser.h": {
+    "mtime": 1788404695.202238,
+    "seen": 1788587834.771543,
+    "ast_hash": "c568d8bf366e927001089d2b27b06158",
+    "semantic_hash": "c568d8bf366e927001089d2b27b06158"
+  },
+  "components/giac/src/intg.h": {
+    "mtime": 1788404695.1772423,
+    "seen": 1788587834.771543,
+    "ast_hash": "23b3d3c71c90e51d0ffbb5871603f7cc",
+    "semantic_hash": "23b3d3c71c90e51d0ffbb5871603f7cc"
+  },
+  "components/giac/src/intgab.h": {
+    "mtime": 1788404695.2086744,
+    "seen": 1788587834.771544,
+    "ast_hash": "874dea61ad232e4cf8922bf63b0fbac0",
+    "semantic_hash": "874dea61ad232e4cf8922bf63b0fbac0"
+  },
+  "components/giac/src/isom.h": {
+    "mtime": 1788404695.1799252,
+    "seen": 1788587834.771544,
+    "ast_hash": "97d09ce6f10949b24a7e03f5a86aad69",
+    "semantic_hash": "97d09ce6f10949b24a7e03f5a86aad69"
+  },
+  "components/giac/src/k_csdk.h": {
+    "mtime": 1788404695.2230093,
+    "seen": 1788587834.7715452,
+    "ast_hash": "fdf162d3371c2dccef6749de6c3636b2",
+    "semantic_hash": "fdf162d3371c2dccef6749de6c3636b2"
+  },
+  "components/giac/src/kalg_ext.cc": {
+    "mtime": 1788404695.1948912,
+    "seen": 1788587834.7715452,
+    "ast_hash": "9484cdb397243379362d62c6b527a065",
+    "semantic_hash": "9484cdb397243379362d62c6b527a065"
+  },
+  "components/giac/src/kcsturm.cc": {
+    "mtime": 1788404695.2194943,
+    "seen": 1788587834.7715461,
+    "ast_hash": "a9ed2786ef71b2be799736d80bdb5661",
+    "semantic_hash": "a9ed2786ef71b2be799736d80bdb5661"
+  },
+  "components/giac/src/kderive.cc": {
+    "mtime": 1788404695.1863637,
+    "seen": 1788587834.7715461,
+    "ast_hash": "37e95dcb1d5411b78c81e4c84045d472",
+    "semantic_hash": "37e95dcb1d5411b78c81e4c84045d472"
+  },
+  "components/giac/src/kdesolve.cc": {
+    "mtime": 1788404695.2247832,
+    "seen": 1788587834.7715468,
+    "ast_hash": "454ab99e5bef2693759a9b538d3e6dd9",
+    "semantic_hash": "454ab99e5bef2693759a9b538d3e6dd9"
+  },
+  "components/giac/src/kdisplay.cc": {
+    "mtime": 1788404695.1858609,
+    "seen": 1788587834.7715468,
+    "ast_hash": "3babab00ecc432f9b65d101b6a0459e3",
+    "semantic_hash": "3babab00ecc432f9b65d101b6a0459e3"
+  },
+  "components/giac/src/kdisplay.h": {
+    "mtime": 1788404695.172356,
+    "seen": 1788587834.7715478,
+    "ast_hash": "b5877499d51cf86c7ce3d64a1f043ce0",
+    "semantic_hash": "b5877499d51cf86c7ce3d64a1f043ce0"
+  },
+  "components/giac/src/keyboard.h": {
+    "mtime": 1788404695.2142222,
+    "seen": 1788587834.771549,
+    "ast_hash": "c22b76a8aef03db3a84751ac9b37c010",
+    "semantic_hash": "c22b76a8aef03db3a84751ac9b37c010"
+  },
+  "components/giac/src/keypadc.h": {
+    "mtime": 1788404695.2115014,
+    "seen": 1788587834.771549,
+    "ast_hash": "3274b52a0879969fe079584092d8350b",
+    "semantic_hash": "3274b52a0879969fe079584092d8350b"
+  },
+  "components/giac/src/kezgcd.cc": {
+    "mtime": 1788404695.18954,
+    "seen": 1788587834.77155,
+    "ast_hash": "1a2af96bc9d63a1ddef3b035007f7d7f",
+    "semantic_hash": "1a2af96bc9d63a1ddef3b035007f7d7f"
+  },
+  "components/giac/src/kgauss.cc": {
+    "mtime": 1788404695.1870875,
+    "seen": 1788587834.77155,
+    "ast_hash": "9b860463fa4f0253390cca206efa9a92",
+    "semantic_hash": "9b860463fa4f0253390cca206efa9a92"
+  },
+  "components/giac/src/kgausspol.cc": {
+    "mtime": 1788404695.1778529,
+    "seen": 1788587834.771551,
+    "ast_hash": "c027f5e935f8ccc0116997cfa5842a6c",
+    "semantic_hash": "c027f5e935f8ccc0116997cfa5842a6c"
+  },
+  "components/giac/src/kgen.cc": {
+    "mtime": 1788404788.059888,
+    "seen": 1788587834.771551,
+    "ast_hash": "0c5018895df6300bea63fb17b4866853",
+    "semantic_hash": "0c5018895df6300bea63fb17b4866853"
+  },
+  "components/giac/src/kglobal.cc": {
+    "mtime": 1788409641.8551726,
+    "seen": 1788587834.771552,
+    "ast_hash": "0a89e46cabe32b4bc4eaddfd5ef7f1c2",
+    "semantic_hash": "0a89e46cabe32b4bc4eaddfd5ef7f1c2"
+  },
+  "components/giac/src/khelp.cc": {
+    "mtime": 1788404695.2135384,
+    "seen": 1788587834.771552,
+    "ast_hash": "aa219d8dad5069713d79f05cd2ae126e",
+    "semantic_hash": "aa219d8dad5069713d79f05cd2ae126e"
+  },
+  "components/giac/src/kidentificateur.cc": {
+    "mtime": 1788404695.1719186,
+    "seen": 1788587834.771553,
+    "ast_hash": "8acd868133a7c2664828496a8b9b3781",
+    "semantic_hash": "8acd868133a7c2664828496a8b9b3781"
+  },
+  "components/giac/src/kifactor.cc": {
+    "mtime": 1788404695.221719,
+    "seen": 1788587834.771553,
+    "ast_hash": "4b49b8700e36b6c61878ffb0ad0fd76a",
+    "semantic_hash": "4b49b8700e36b6c61878ffb0ad0fd76a"
+  },
+  "components/giac/src/kintg.cc": {
+    "mtime": 1788404695.1900585,
+    "seen": 1788587834.771554,
+    "ast_hash": "adad127d5aae0c59e675fe6658c62767",
+    "semantic_hash": "adad127d5aae0c59e675fe6658c62767"
+  },
+  "components/giac/src/kintgab.cc": {
+    "mtime": 1788404695.1904893,
+    "seen": 1788587834.771554,
+    "ast_hash": "8f4ecabda3865fab1153a2be8be18e79",
+    "semantic_hash": "8f4ecabda3865fab1153a2be8be18e79"
+  },
+  "components/giac/src/klin.cc": {
+    "mtime": 1788404695.170942,
+    "seen": 1788587834.7715552,
+    "ast_hash": "18721edd893ebfc6a4aeb8daaf00c7a4",
+    "semantic_hash": "18721edd893ebfc6a4aeb8daaf00c7a4"
+  },
+  "components/giac/src/kmaple.cc": {
+    "mtime": 1788404695.1929808,
+    "seen": 1788587834.7715561,
+    "ast_hash": "a9478894939c1624cfe393b5692a763d",
+    "semantic_hash": "a9478894939c1624cfe393b5692a763d"
+  },
+  "components/giac/src/kmisc.cc": {
+    "mtime": 1788404695.196116,
+    "seen": 1788587834.7715561,
+    "ast_hash": "b697236ae1b898854373023c5dd1a52c",
+    "semantic_hash": "b697236ae1b898854373023c5dd1a52c"
+  },
+  "components/giac/src/kmodfactor.cc": {
+    "mtime": 1788404695.2257059,
+    "seen": 1788587834.771557,
+    "ast_hash": "e567bcf52a0aa81a7659aaeae4eb43ce",
+    "semantic_hash": "e567bcf52a0aa81a7659aaeae4eb43ce"
+  },
+  "components/giac/src/kmodpoly.cc": {
+    "mtime": 1788404695.2081723,
+    "seen": 1788587834.771557,
+    "ast_hash": "291a18f7fa132a7d2c5508789184b961",
+    "semantic_hash": "291a18f7fa132a7d2c5508789184b961"
+  },
+  "components/giac/src/kmoyal.cc": {
+    "mtime": 1788404695.1945083,
+    "seen": 1788587834.7715578,
+    "ast_hash": "a39d856d2d3e108d3a7b3e8857116469",
+    "semantic_hash": "a39d856d2d3e108d3a7b3e8857116469"
+  },
+  "components/giac/src/kpermu.cc": {
+    "mtime": 1788404695.2236447,
+    "seen": 1788587834.7715578,
+    "ast_hash": "4f9fb8d12ec72ccfaf8d4064a99cf2bd",
+    "semantic_hash": "4f9fb8d12ec72ccfaf8d4064a99cf2bd"
+  },
+  "components/giac/src/kplot.cc": {
+    "mtime": 1788404695.1985664,
+    "seen": 1788587834.771559,
+    "ast_hash": "58e0a64b6dee93d0e5656c53a5c7f3c3",
+    "semantic_hash": "58e0a64b6dee93d0e5656c53a5c7f3c3"
+  },
+  "components/giac/src/kprog.cc": {
+    "mtime": 1788404695.1993582,
+    "seen": 1788587834.771559,
+    "ast_hash": "87f954e4fb6725fe94c48afd78956a1c",
+    "semantic_hash": "87f954e4fb6725fe94c48afd78956a1c"
+  },
+  "components/giac/src/krisch.cc": {
+    "mtime": 1788404695.2262812,
+    "seen": 1788587834.77156,
+    "ast_hash": "13738e9aee21e8184c1c2b0dadb1f8ff",
+    "semantic_hash": "13738e9aee21e8184c1c2b0dadb1f8ff"
+  },
+  "components/giac/src/krpn.cc": {
+    "mtime": 1788404695.211944,
+    "seen": 1788587834.771561,
+    "ast_hash": "1a54ef523a2ed606414758471dbcb386",
+    "semantic_hash": "1a54ef523a2ed606414758471dbcb386"
+  },
+  "components/giac/src/kseries.cc": {
+    "mtime": 1788404695.1840792,
+    "seen": 1788587834.771561,
+    "ast_hash": "061d77c20e6b634285c782f610574429",
+    "semantic_hash": "061d77c20e6b634285c782f610574429"
+  },
+  "components/giac/src/ksolve.cc": {
+    "mtime": 1788404695.2184577,
+    "seen": 1788587834.771562,
+    "ast_hash": "ef0ba44ec842999a4377db022edf7e54",
+    "semantic_hash": "ef0ba44ec842999a4377db022edf7e54"
+  },
+  "components/giac/src/ksubst.cc": {
+    "mtime": 1788404695.2148976,
+    "seen": 1788587834.771562,
+    "ast_hash": "5b94a826ff07dfa2e248d5bb8b286170",
+    "semantic_hash": "5b94a826ff07dfa2e248d5bb8b286170"
+  },
+  "components/giac/src/ksym2poly.cc": {
+    "mtime": 1788404695.2170749,
+    "seen": 1788587834.771563,
+    "ast_hash": "037b5f4e7e5f701e71b309dd7c017a74",
+    "semantic_hash": "037b5f4e7e5f701e71b309dd7c017a74"
+  },
+  "components/giac/src/ksymbolic.cc": {
+    "mtime": 1788404695.215613,
+    "seen": 1788587834.771563,
+    "ast_hash": "229a5c6ad5f18085c3e6148d8f1cd560",
+    "semantic_hash": "229a5c6ad5f18085c3e6148d8f1cd560"
+  },
+  "components/giac/src/kthreaded.cc": {
+    "mtime": 1788404695.2232237,
+    "seen": 1788587834.771564,
+    "ast_hash": "39458beb8ac870c21b9fffcf1ace9f00",
+    "semantic_hash": "39458beb8ac870c21b9fffcf1ace9f00"
+  },
+  "components/giac/src/kti89.cc": {
+    "mtime": 1788404695.1832645,
+    "seen": 1788587834.771564,
+    "ast_hash": "8d06141fd7db8f1c09f38d842378b081",
+    "semantic_hash": "8d06141fd7db8f1c09f38d842378b081"
+  },
+  "components/giac/src/kunary.cc": {
+    "mtime": 1788404695.2180367,
+    "seen": 1788587834.771565,
+    "ast_hash": "b910f2f2ab72c1626da0c39d7e39c1b2",
+    "semantic_hash": "b910f2f2ab72c1626da0c39d7e39c1b2"
+  },
+  "components/giac/src/kusual.cc": {
+    "mtime": 1788404695.178856,
+    "seen": 1788587834.771565,
+    "ast_hash": "88a505bf2b8052ef57dd6f1e5ff8dd8d",
+    "semantic_hash": "88a505bf2b8052ef57dd6f1e5ff8dd8d"
+  },
+  "components/giac/src/kvecteur.cc": {
+    "mtime": 1788404695.168707,
+    "seen": 1788587834.7715662,
+    "ast_hash": "8c21d603d26cbf66c4cf2f846454c9ba",
+    "semantic_hash": "8c21d603d26cbf66c4cf2f846454c9ba"
+  },
+  "components/giac/src/lexer.h": {
+    "mtime": 1788404695.2206445,
+    "seen": 1788587834.7715662,
+    "ast_hash": "ee0e879180e6b2db6c378e6eadee74e2",
+    "semantic_hash": "ee0e879180e6b2db6c378e6eadee74e2"
+  },
+  "components/giac/src/lexer_tab_int.h": {
+    "mtime": 1788404695.1691415,
+    "seen": 1788587834.771567,
+    "ast_hash": "07a8aacee6e7d6749b4ddabfb54fe101",
+    "semantic_hash": "07a8aacee6e7d6749b4ddabfb54fe101"
+  },
+  "components/giac/src/libText-1.h": {
+    "mtime": 1788404695.1852975,
+    "seen": 1788587834.771567,
+    "ast_hash": "885624356813d3de2381e9eeffa1a17c",
+    "semantic_hash": "885624356813d3de2381e9eeffa1a17c"
+  },
+  "components/giac/src/lin.h": {
+    "mtime": 1788404695.1727605,
+    "seen": 1788587834.771568,
+    "ast_hash": "b1c5942c7c5fc7e3454b34a74c4aa10c",
+    "semantic_hash": "b1c5942c7c5fc7e3454b34a74c4aa10c"
+  },
+  "components/giac/src/lpsolve.h": {
+    "mtime": 1788404695.184944,
+    "seen": 1788587834.771568,
+    "ast_hash": "22259621514ea1fdba4b114b2726d34c",
+    "semantic_hash": "22259621514ea1fdba4b114b2726d34c"
+  },
+  "components/giac/src/luabridge.h": {
+    "mtime": 1788404695.204493,
+    "seen": 1788587834.771569,
+    "ast_hash": "a4311cdb5567d46e57e711cf64255875",
+    "semantic_hash": "a4311cdb5567d46e57e711cf64255875"
+  },
+  "components/giac/src/main.h": {
+    "mtime": 1788404695.1680758,
+    "seen": 1788587834.771569,
+    "ast_hash": "a34a4eff1101e8f8f8cbf557bbb9af27",
+    "semantic_hash": "a34a4eff1101e8f8f8cbf557bbb9af27"
+  },
+  "components/giac/src/maple.h": {
+    "mtime": 1788404695.2084923,
+    "seen": 1788587834.77157,
+    "ast_hash": "0f96373320ede8c10125fe930ece053e",
+    "semantic_hash": "0f96373320ede8c10125fe930ece053e"
+  },
+  "components/giac/src/mathml.h": {
+    "mtime": 1788404695.1881642,
+    "seen": 1788587834.77157,
+    "ast_hash": "f2c60a73c3279e60f44cc15cbebc370d",
+    "semantic_hash": "f2c60a73c3279e60f44cc15cbebc370d"
+  },
+  "components/giac/src/memmgr.h": {
+    "mtime": 1788404695.2223094,
+    "seen": 1788587834.771571,
+    "ast_hash": "39d393fb177436bae5393b2064b32bc4",
+    "semantic_hash": "39d393fb177436bae5393b2064b32bc4"
+  },
+  "components/giac/src/menuGUI.h": {
+    "mtime": 1788404695.2250013,
+    "seen": 1788587834.771571,
+    "ast_hash": "d18996b41451f53a10264f186738c505",
+    "semantic_hash": "d18996b41451f53a10264f186738c505"
+  },
+  "components/giac/src/menu_config.h": {
+    "mtime": 1788404695.1661994,
+    "seen": 1788587834.7715719,
+    "ast_hash": "083cde88aaace441b623acd33617276c",
+    "semantic_hash": "083cde88aaace441b623acd33617276c"
+  },
+  "components/giac/src/misc.h": {
+    "mtime": 1788404695.1913798,
+    "seen": 1788587834.7715719,
+    "ast_hash": "7539869d9440c6639873d87c2ab5715b",
+    "semantic_hash": "7539869d9440c6639873d87c2ab5715b"
+  },
+  "components/giac/src/modfactor.h": {
+    "mtime": 1788404695.2028549,
+    "seen": 1788587834.771573,
+    "ast_hash": "132a541e1a5f3625c4180e9e00300f66",
+    "semantic_hash": "132a541e1a5f3625c4180e9e00300f66"
+  },
+  "components/giac/src/modpoly.h": {
+    "mtime": 1788404695.2130399,
+    "seen": 1788587834.771573,
+    "ast_hash": "f66afb93eae3d0184ae1227ebdba6e61",
+    "semantic_hash": "f66afb93eae3d0184ae1227ebdba6e61"
+  },
+  "components/giac/src/monomial.h": {
+    "mtime": 1788404695.2033103,
+    "seen": 1788587834.771574,
+    "ast_hash": "56d7b38bc71c7a3b75bbbb424700a0fe",
+    "semantic_hash": "56d7b38bc71c7a3b75bbbb424700a0fe"
+  },
+  "components/giac/src/moyal.h": {
+    "mtime": 1788404695.2016397,
+    "seen": 1788587834.771574,
+    "ast_hash": "937e96587be27e1e94919b1c83e1e2f0",
+    "semantic_hash": "937e96587be27e1e94919b1c83e1e2f0"
+  },
+  "components/giac/src/myostream.h": {
+    "mtime": 1788404695.202643,
+    "seen": 1788587834.771575,
+    "ast_hash": "05be30dbba6226fa0e6922789a68065c",
+    "semantic_hash": "05be30dbba6226fa0e6922789a68065c"
+  },
+  "components/giac/src/opengl.h": {
+    "mtime": 1788404695.18673,
+    "seen": 1788587834.771575,
+    "ast_hash": "c0fc6b0726cc022ebd4ed84f88b3636a",
+    "semantic_hash": "c0fc6b0726cc022ebd4ed84f88b3636a"
+  },
+  "components/giac/src/optimization.h": {
+    "mtime": 1788404695.2197905,
+    "seen": 1788587834.7715762,
+    "ast_hash": "2f7e75412a42e04b79da08e4e1d77333",
+    "semantic_hash": "2f7e75412a42e04b79da08e4e1d77333"
+  },
+  "components/giac/src/pari.h": {
+    "mtime": 1788404695.188793,
+    "seen": 1788587834.7715762,
+    "ast_hash": "a7ac749fcf0348f05cddf6b385ad56a9",
+    "semantic_hash": "a7ac749fcf0348f05cddf6b385ad56a9"
+  },
+  "components/giac/src/path.h": {
+    "mtime": 1788404695.1892753,
+    "seen": 1788587834.7715771,
+    "ast_hash": "6d8c9f449816ea0b24f3b65a5ca860d0",
+    "semantic_hash": "6d8c9f449816ea0b24f3b65a5ca860d0"
+  },
+  "components/giac/src/permu.h": {
+    "mtime": 1788404695.2151034,
+    "seen": 1788587834.7715771,
+    "ast_hash": "31688501f2c25e831bee88558db29d43",
+    "semantic_hash": "31688501f2c25e831bee88558db29d43"
+  },
+  "components/giac/src/platform_stubs.cpp": {
+    "mtime": 1788404695.2030876,
+    "seen": 1788587834.771578,
+    "ast_hash": "f567b0f7dee01b36b6f606b07f980971",
+    "semantic_hash": "f567b0f7dee01b36b6f606b07f980971"
+  },
+  "components/giac/src/plot.h": {
+    "mtime": 1788404695.1781962,
+    "seen": 1788587834.771578,
+    "ast_hash": "33e57d12845d9e83d3172b50d28f21da",
+    "semantic_hash": "33e57d12845d9e83d3172b50d28f21da"
+  },
+  "components/giac/src/plot3d.h": {
+    "mtime": 1788404695.195216,
+    "seen": 1788587834.7715788,
+    "ast_hash": "68c79deb33d5465e8fe00833ff67e225",
+    "semantic_hash": "68c79deb33d5465e8fe00833ff67e225"
+  },
+  "components/giac/src/poly.h": {
+    "mtime": 1788404695.2201924,
+    "seen": 1788587834.7715788,
+    "ast_hash": "12f60230fe4bd172c4f2690cecef1dce",
+    "semantic_hash": "12f60230fe4bd172c4f2690cecef1dce"
+  },
+  "components/giac/src/prog.h": {
+    "mtime": 1788404695.1878247,
+    "seen": 1788587834.77158,
+    "ast_hash": "5e51b0b76aaa294083846f68ac354a4e",
+    "semantic_hash": "5e51b0b76aaa294083846f68ac354a4e"
+  },
+  "components/giac/src/quater.h": {
+    "mtime": 1788404695.1749187,
+    "seen": 1788587834.77158,
+    "ast_hash": "0c954f3aa69faf0d80c3b90946a84cb5",
+    "semantic_hash": "0c954f3aa69faf0d80c3b90946a84cb5"
+  },
+  "components/giac/src/renee.h": {
+    "mtime": 1788404695.1956382,
+    "seen": 1788587834.771581,
+    "ast_hash": "1838e67ad43c721ee106124b06ed35d9",
+    "semantic_hash": "1838e67ad43c721ee106124b06ed35d9"
+  },
+  "components/giac/src/risch.h": {
+    "mtime": 1788404695.1666234,
+    "seen": 1788587834.771581,
+    "ast_hash": "5a3269dfcb47efbadcdd04902c7bd428",
+    "semantic_hash": "5a3269dfcb47efbadcdd04902c7bd428"
+  },
+  "components/giac/src/rpn.h": {
+    "mtime": 1788404695.2266164,
+    "seen": 1788587834.771582,
+    "ast_hash": "d56a9eeeaeec85f865010ca8fb011346",
+    "semantic_hash": "d56a9eeeaeec85f865010ca8fb011346"
+  },
+  "components/giac/src/series.h": {
+    "mtime": 1788404695.2259872,
+    "seen": 1788587834.771582,
+    "ast_hash": "3345af12d9c537f2c2f862495fab5c82",
+    "semantic_hash": "3345af12d9c537f2c2f862495fab5c82"
+  },
+  "components/giac/src/signalprocessing.h": {
+    "mtime": 1788404695.174013,
+    "seen": 1788587834.771583,
+    "ast_hash": "9b0ada8eeecca66f1dc692df11d40872",
+    "semantic_hash": "9b0ada8eeecca66f1dc692df11d40872"
+  },
+  "components/giac/src/softmath.h": {
+    "mtime": 1788404695.192589,
+    "seen": 1788587834.771583,
+    "ast_hash": "960bccf8229358217f674a451dd89e42",
+    "semantic_hash": "960bccf8229358217f674a451dd89e42"
+  },
+  "components/giac/src/solve.h": {
+    "mtime": 1788404695.1793551,
+    "seen": 1788587834.771584,
+    "ast_hash": "ad528e4aab1b4f9ebcd46830489d1c47",
+    "semantic_hash": "ad528e4aab1b4f9ebcd46830489d1c47"
+  },
+  "components/giac/src/sparse.h": {
+    "mtime": 1788404695.2209365,
+    "seen": 1788587834.771584,
+    "ast_hash": "780cff4d04c765d1fc762f54116ea994",
+    "semantic_hash": "780cff4d04c765d1fc762f54116ea994"
+  },
+  "components/giac/src/static.h": {
+    "mtime": 1788404695.213744,
+    "seen": 1788587834.771585,
+    "ast_hash": "8ef38f027eb91b451aaced6ad42383eb",
+    "semantic_hash": "8ef38f027eb91b451aaced6ad42383eb"
+  },
+  "components/giac/src/static_extern.h": {
+    "mtime": 1788404695.2166224,
+    "seen": 1788587834.771585,
+    "ast_hash": "ed5bddf1b842badbe0f1db4712e9054c",
+    "semantic_hash": "ed5bddf1b842badbe0f1db4712e9054c"
+  },
+  "components/giac/src/static_help.h": {
+    "mtime": 1788404695.2220302,
+    "seen": 1788587834.771586,
+    "ast_hash": "d6baa4b54775c051c3a1c1471d0b10e3",
+    "semantic_hash": "d6baa4b54775c051c3a1c1471d0b10e3"
+  },
+  "components/giac/src/static_lexer.h": {
+    "mtime": 1788404695.2144854,
+    "seen": 1788587834.771586,
+    "ast_hash": "cefdeed9739822e40fb282f0d8454e88",
+    "semantic_hash": "cefdeed9739822e40fb282f0d8454e88"
+  },
+  "components/giac/src/static_lexer_.h": {
+    "mtime": 1788404695.1918514,
+    "seen": 1788587834.7715871,
+    "ast_hash": "d4e3697647fcf42e266d160fca89f4c1",
+    "semantic_hash": "d4e3697647fcf42e266d160fca89f4c1"
+  },
+  "components/giac/src/static_lexer_at.h": {
+    "mtime": 1788404695.196308,
+    "seen": 1788587834.7715871,
+    "ast_hash": "fd9dc00e0e932a816647d3dd5783d404",
+    "semantic_hash": "fd9dc00e0e932a816647d3dd5783d404"
+  },
+  "components/giac/src/static_lexer_empty.h": {
+    "mtime": 1788404695.198007,
+    "seen": 1788587834.771588,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "components/giac/src/static_lexer_full.h": {
+    "mtime": 1788404695.175641,
+    "seen": 1788587834.771588,
+    "ast_hash": "d32dc691b7fcc6769ad6b5264da2aedc",
+    "semantic_hash": "d32dc691b7fcc6769ad6b5264da2aedc"
+  },
+  "components/giac/src/static_lexer_full_.h": {
+    "mtime": 1788404695.1678007,
+    "seen": 1788587834.771589,
+    "ast_hash": "56150fe84dd66ad597c2b07bd379f6ca",
+    "semantic_hash": "56150fe84dd66ad597c2b07bd379f6ca"
+  },
+  "components/giac/src/subst.h": {
+    "mtime": 1788404695.1978528,
+    "seen": 1788587834.771589,
+    "ast_hash": "1f67d70f7a97fec39f6b03c61ff8e43c",
+    "semantic_hash": "1f67d70f7a97fec39f6b03c61ff8e43c"
+  },
+  "components/giac/src/sym2poly.h": {
+    "mtime": 1788404695.221377,
+    "seen": 1788587834.77159,
+    "ast_hash": "b9782f53ad8d50b799d6e1f02be7f515",
+    "semantic_hash": "b9782f53ad8d50b799d6e1f02be7f515"
+  },
+  "components/giac/src/symbolic.h": {
+    "mtime": 1788404695.2163818,
+    "seen": 1788587834.77159,
+    "ast_hash": "c1f1912b3f61e2136f6d9448e9b58c93",
+    "semantic_hash": "c1f1912b3f61e2136f6d9448e9b58c93"
+  },
+  "components/giac/src/sys/rtc.h": {
+    "mtime": 1788404695.2089832,
+    "seen": 1788587834.771591,
+    "ast_hash": "69f94bdb56353c1aa60856de334ec5f5",
+    "semantic_hash": "69f94bdb56353c1aa60856de334ec5f5"
+  },
+  "components/giac/src/tex.h": {
+    "mtime": 1788404695.1909683,
+    "seen": 1788587834.771591,
+    "ast_hash": "ddde603b096acc7c956e356fb6536c7c",
+    "semantic_hash": "ddde603b096acc7c956e356fb6536c7c"
+  },
+  "components/giac/src/textGUI.h": {
+    "mtime": 1788404695.2124045,
+    "seen": 1788587834.771592,
+    "ast_hash": "d18996b41451f53a10264f186738c505",
+    "semantic_hash": "d18996b41451f53a10264f186738c505"
+  },
+  "components/giac/src/threaded.h": {
+    "mtime": 1788404695.2013013,
+    "seen": 1788587834.771592,
+    "ast_hash": "ff99356fb4c9093a60c8bc266bd20b03",
+    "semantic_hash": "ff99356fb4c9093a60c8bc266bd20b03"
+  },
+  "components/giac/src/ti89.h": {
+    "mtime": 1788404695.2018929,
+    "seen": 1788587834.7715929,
+    "ast_hash": "8f017024a5e3b9fdce72475d403d74a2",
+    "semantic_hash": "8f017024a5e3b9fdce72475d403d74a2"
+  },
+  "components/giac/src/tinymt32.h": {
+    "mtime": 1788404695.2280014,
+    "seen": 1788587834.7715929,
+    "ast_hash": "4d4adf613875753ba24059f112dcd401",
+    "semantic_hash": "4d4adf613875753ba24059f112dcd401"
+  },
+  "components/giac/src/tinymt32_license.h": {
+    "mtime": 1788404695.1673384,
+    "seen": 1788587834.771594,
+    "ast_hash": "91e0544bbe2035221cc770aab5d28cc6",
+    "semantic_hash": "91e0544bbe2035221cc770aab5d28cc6"
+  },
+  "components/giac/src/umap.h": {
+    "mtime": 1788404695.2277179,
+    "seen": 1788587834.771594,
+    "ast_hash": "2cb7d9445774f609ff21b4ae0f642547",
+    "semantic_hash": "2cb7d9445774f609ff21b4ae0f642547"
+  },
+  "components/giac/src/unary.h": {
+    "mtime": 1788404695.2238805,
+    "seen": 1788587834.771595,
+    "ast_hash": "4bd39e9979144d084a876f0cf16743b4",
+    "semantic_hash": "4bd39e9979144d084a876f0cf16743b4"
+  },
+  "components/giac/src/usual.h": {
+    "mtime": 1788404695.1997387,
+    "seen": 1788587834.771595,
+    "ast_hash": "debd5c710d2825264899c0348d59eb52",
+    "semantic_hash": "debd5c710d2825264899c0348d59eb52"
+  },
+  "components/giac/src/vecteur.h": {
+    "mtime": 1788404695.2047424,
+    "seen": 1788587834.771596,
+    "ast_hash": "fed9d5671a378de5108d893d0f2d1515",
+    "semantic_hash": "fed9d5671a378de5108d893d0f2d1515"
+  },
+  "components/giac/src/vector.h": {
+    "mtime": 1788404695.2228081,
+    "seen": 1788587834.771596,
+    "ast_hash": "9b3982653783b3d5960debe8a47b1aec",
+    "semantic_hash": "9b3982653783b3d5960debe8a47b1aec"
+  },
+  "components/libtommath/library.json": {
+    "mtime": 1788404695.2505753,
+    "seen": 1788587834.7715971,
+    "ast_hash": "ff21ee8a8dd67767bf106ac28bcef11d",
+    "semantic_hash": "ff21ee8a8dd67767bf106ac28bcef11d"
+  },
+  "components/libtommath/mp_2expt.c": {
+    "mtime": 1788404695.2314482,
+    "seen": 1788587834.7715971,
+    "ast_hash": "5f01d840e9ea19428bb4fdbc05202f5b",
+    "semantic_hash": "5f01d840e9ea19428bb4fdbc05202f5b"
+  },
+  "components/libtommath/mp_abs.c": {
+    "mtime": 1788404695.2387412,
+    "seen": 1788587834.771598,
+    "ast_hash": "c9aaa82f60c16f588b7d0f0abc98647f",
+    "semantic_hash": "c9aaa82f60c16f588b7d0f0abc98647f"
+  },
+  "components/libtommath/mp_add.c": {
+    "mtime": 1788404695.2308977,
+    "seen": 1788587834.771598,
+    "ast_hash": "384e6e8dcdd570791424b3293e8a6955",
+    "semantic_hash": "384e6e8dcdd570791424b3293e8a6955"
+  },
+  "components/libtommath/mp_add_d.c": {
+    "mtime": 1788404695.264401,
+    "seen": 1788587834.771599,
+    "ast_hash": "4602549ed882f93dc3e451f8565a2035",
+    "semantic_hash": "4602549ed882f93dc3e451f8565a2035"
+  },
+  "components/libtommath/mp_addmod.c": {
+    "mtime": 1788404695.2543664,
+    "seen": 1788587834.771599,
+    "ast_hash": "20b9508219c00d8cc312ec11c9cc6065",
+    "semantic_hash": "20b9508219c00d8cc312ec11c9cc6065"
+  },
+  "components/libtommath/mp_and.c": {
+    "mtime": 1788404695.2409146,
+    "seen": 1788587834.7715998,
+    "ast_hash": "ef9feb4a4709f48d8fdd2a26cf7ceb1e",
+    "semantic_hash": "ef9feb4a4709f48d8fdd2a26cf7ceb1e"
+  },
+  "components/libtommath/mp_clamp.c": {
+    "mtime": 1788404695.2502244,
+    "seen": 1788587834.7715998,
+    "ast_hash": "3f30beac30374918f582c60663a3d4e1",
+    "semantic_hash": "3f30beac30374918f582c60663a3d4e1"
+  },
+  "components/libtommath/mp_clear.c": {
+    "mtime": 1788404695.2537885,
+    "seen": 1788587834.771601,
+    "ast_hash": "f78093fe670c28be2b0759a8a2258753",
+    "semantic_hash": "f78093fe670c28be2b0759a8a2258753"
+  },
+  "components/libtommath/mp_clear_multi.c": {
+    "mtime": 1788404695.2622254,
+    "seen": 1788587834.7716029,
+    "ast_hash": "2da8ac0e18bc4623396f1e62c777518a",
+    "semantic_hash": "2da8ac0e18bc4623396f1e62c777518a"
+  },
+  "components/libtommath/mp_cmp.c": {
+    "mtime": 1788404695.2298253,
+    "seen": 1788587834.771604,
+    "ast_hash": "56b6f403a7b71688f9982f22a44a0b9a",
+    "semantic_hash": "56b6f403a7b71688f9982f22a44a0b9a"
+  },
+  "components/libtommath/mp_cmp_d.c": {
+    "mtime": 1788404695.2399242,
+    "seen": 1788587834.771604,
+    "ast_hash": "8f17ae9b9180c65e646f3684e0241658",
+    "semantic_hash": "8f17ae9b9180c65e646f3684e0241658"
+  },
+  "components/libtommath/mp_cmp_mag.c": {
+    "mtime": 1788404695.2435658,
+    "seen": 1788587834.771605,
+    "ast_hash": "2a80e85eabf0392ebb5b7628c7f906b1",
+    "semantic_hash": "2a80e85eabf0392ebb5b7628c7f906b1"
+  },
+  "components/libtommath/mp_cnt_lsb.c": {
+    "mtime": 1788404695.2449162,
+    "seen": 1788587834.771605,
+    "ast_hash": "cfbc2421c420d66cebf459524ff703a1",
+    "semantic_hash": "cfbc2421c420d66cebf459524ff703a1"
+  },
+  "components/libtommath/mp_complement.c": {
+    "mtime": 1788404695.2368996,
+    "seen": 1788587834.771606,
+    "ast_hash": "fd15187277a08e8be8735d47a2a08cfc",
+    "semantic_hash": "fd15187277a08e8be8735d47a2a08cfc"
+  },
+  "components/libtommath/mp_copy.c": {
+    "mtime": 1788404695.249664,
+    "seen": 1788587834.771606,
+    "ast_hash": "372eab735b23cfda2af8d03d8530a2f0",
+    "semantic_hash": "372eab735b23cfda2af8d03d8530a2f0"
+  },
+  "components/libtommath/mp_count_bits.c": {
+    "mtime": 1788404695.2573314,
+    "seen": 1788587834.771607,
+    "ast_hash": "162b1527b3df9ed746bc9b646bee5e97",
+    "semantic_hash": "162b1527b3df9ed746bc9b646bee5e97"
+  },
+  "components/libtommath/mp_cutoffs.c": {
+    "mtime": 1788404695.2479901,
+    "seen": 1788587834.771607,
+    "ast_hash": "756aea2ba286a2cdd946272a77524860",
+    "semantic_hash": "756aea2ba286a2cdd946272a77524860"
+  },
+  "components/libtommath/mp_div.c": {
+    "mtime": 1788404695.2515028,
+    "seen": 1788587834.771607,
+    "ast_hash": "3002e4840f22f53a040367a1aa1d6b98",
+    "semantic_hash": "3002e4840f22f53a040367a1aa1d6b98"
+  },
+  "components/libtommath/mp_div_2.c": {
+    "mtime": 1788404695.2355926,
+    "seen": 1788587834.771608,
+    "ast_hash": "593a358c67d9cfb9cecf9f28214da13d",
+    "semantic_hash": "593a358c67d9cfb9cecf9f28214da13d"
+  },
+  "components/libtommath/mp_div_2d.c": {
+    "mtime": 1788404695.2534394,
+    "seen": 1788587834.771608,
+    "ast_hash": "b3b6f97c5efee3781ef5cbb52d21dcae",
+    "semantic_hash": "b3b6f97c5efee3781ef5cbb52d21dcae"
+  },
+  "components/libtommath/mp_div_d.c": {
+    "mtime": 1788404695.2487152,
+    "seen": 1788587834.771609,
+    "ast_hash": "d46d8dd8f01f835c66af7f6edadccbc7",
+    "semantic_hash": "d46d8dd8f01f835c66af7f6edadccbc7"
+  },
+  "components/libtommath/mp_dr_is_modulus.c": {
+    "mtime": 1788404695.2554774,
+    "seen": 1788587834.771609,
+    "ast_hash": "08f7ddc661a2c45cedcb214414fa43c1",
+    "semantic_hash": "08f7ddc661a2c45cedcb214414fa43c1"
+  },
+  "components/libtommath/mp_dr_reduce.c": {
+    "mtime": 1788404695.2549045,
+    "seen": 1788587834.77161,
+    "ast_hash": "1c7f687bc3910e2a445bbe1489bace5e",
+    "semantic_hash": "1c7f687bc3910e2a445bbe1489bace5e"
+  },
+  "components/libtommath/mp_dr_setup.c": {
+    "mtime": 1788404695.2382343,
+    "seen": 1788587834.77161,
+    "ast_hash": "22fd6a2aabbd5b0dd71547c2086f3436",
+    "semantic_hash": "22fd6a2aabbd5b0dd71547c2086f3436"
+  },
+  "components/libtommath/mp_error_to_string.c": {
+    "mtime": 1788404695.257154,
+    "seen": 1788587834.771611,
+    "ast_hash": "10428be13f652b0c71a7756ba28524a7",
+    "semantic_hash": "10428be13f652b0c71a7756ba28524a7"
+  },
+  "components/libtommath/mp_exch.c": {
+    "mtime": 1788404695.2609143,
+    "seen": 1788587834.771611,
+    "ast_hash": "bbe72b68fbb0f013256b1fd182e6f98e",
+    "semantic_hash": "bbe72b68fbb0f013256b1fd182e6f98e"
+  },
+  "components/libtommath/mp_expt_n.c": {
+    "mtime": 1788404695.261659,
+    "seen": 1788587834.771612,
+    "ast_hash": "02c5434e7f5d0bb0916c4c46558fcd0e",
+    "semantic_hash": "02c5434e7f5d0bb0916c4c46558fcd0e"
+  },
+  "components/libtommath/mp_exptmod.c": {
+    "mtime": 1788404695.260383,
+    "seen": 1788587834.771612,
+    "ast_hash": "adff15c8c0bb49bdda8a5951c39d11ae",
+    "semantic_hash": "adff15c8c0bb49bdda8a5951c39d11ae"
+  },
+  "components/libtommath/mp_exteuclid.c": {
+    "mtime": 1788404695.2400963,
+    "seen": 1788587834.771613,
+    "ast_hash": "23fa0b3e49eebf4c1f2588fc244b6804",
+    "semantic_hash": "23fa0b3e49eebf4c1f2588fc244b6804"
+  },
+  "components/libtommath/mp_fread.c": {
+    "mtime": 1788404695.247801,
+    "seen": 1788587834.771613,
+    "ast_hash": "8a88ab2d8cb24bed131c63bf0148709f",
+    "semantic_hash": "8a88ab2d8cb24bed131c63bf0148709f"
+  },
+  "components/libtommath/mp_from_sbin.c": {
+    "mtime": 1788404695.2650175,
+    "seen": 1788587834.7716138,
+    "ast_hash": "98627e1c3ea4d342790e966cfa2707c3",
+    "semantic_hash": "98627e1c3ea4d342790e966cfa2707c3"
+  },
+  "components/libtommath/mp_from_ubin.c": {
+    "mtime": 1788404695.2522895,
+    "seen": 1788587834.7716138,
+    "ast_hash": "6f56968e4c8ec70ce4e664fdcf9b18cf",
+    "semantic_hash": "6f56968e4c8ec70ce4e664fdcf9b18cf"
+  },
+  "components/libtommath/mp_fwrite.c": {
+    "mtime": 1788404695.2431917,
+    "seen": 1788587834.771615,
+    "ast_hash": "c35ce8c2f7aa21962873324c38ef47d2",
+    "semantic_hash": "c35ce8c2f7aa21962873324c38ef47d2"
+  },
+  "components/libtommath/mp_gcd.c": {
+    "mtime": 1788404695.2614796,
+    "seen": 1788587834.771615,
+    "ast_hash": "420aea02360bbfae3dff9de47ebc5725",
+    "semantic_hash": "420aea02360bbfae3dff9de47ebc5725"
+  },
+  "components/libtommath/mp_get_double.c": {
+    "mtime": 1788404695.2580724,
+    "seen": 1788587834.771616,
+    "ast_hash": "7e2e5d9b06f48a9a5da4230e6d256716",
+    "semantic_hash": "7e2e5d9b06f48a9a5da4230e6d256716"
+  },
+  "components/libtommath/mp_get_i32.c": {
+    "mtime": 1788404695.230162,
+    "seen": 1788587834.771616,
+    "ast_hash": "1758b9ac3ac84d9ee1dea8bfc3a67cb6",
+    "semantic_hash": "1758b9ac3ac84d9ee1dea8bfc3a67cb6"
+  },
+  "components/libtommath/mp_get_i64.c": {
+    "mtime": 1788404695.256219,
+    "seen": 1788587834.771616,
+    "ast_hash": "88d2dd6e90099b385ebcdbe576581158",
+    "semantic_hash": "88d2dd6e90099b385ebcdbe576581158"
+  },
+  "components/libtommath/mp_get_l.c": {
+    "mtime": 1788404695.2397416,
+    "seen": 1788587834.771617,
+    "ast_hash": "fe97e6293cb1f398a5192274707bc2f1",
+    "semantic_hash": "fe97e6293cb1f398a5192274707bc2f1"
+  },
+  "components/libtommath/mp_get_mag_u32.c": {
+    "mtime": 1788404695.2498674,
+    "seen": 1788587834.771617,
+    "ast_hash": "dee31c00489b66cec428878fa4773bc8",
+    "semantic_hash": "dee31c00489b66cec428878fa4773bc8"
+  },
+  "components/libtommath/mp_get_mag_u64.c": {
+    "mtime": 1788404695.235954,
+    "seen": 1788587834.7716181,
+    "ast_hash": "82a6df9438b93b56edf4d9a0e24dcdd7",
+    "semantic_hash": "82a6df9438b93b56edf4d9a0e24dcdd7"
+  },
+  "components/libtommath/mp_get_mag_ul.c": {
+    "mtime": 1788404695.2402835,
+    "seen": 1788587834.771619,
+    "ast_hash": "445a31a203f5eca0f2ef5d39c617603a",
+    "semantic_hash": "445a31a203f5eca0f2ef5d39c617603a"
+  },
+  "components/libtommath/mp_grow.c": {
+    "mtime": 1788404695.237947,
+    "seen": 1788587834.771619,
+    "ast_hash": "62cef2df1793e139b876395e0b037937",
+    "semantic_hash": "62cef2df1793e139b876395e0b037937"
+  },
+  "components/libtommath/mp_hash.c": {
+    "mtime": 1788404695.2476153,
+    "seen": 1788587834.77162,
+    "ast_hash": "f42cd645751f6009f185b76324a4bdd7",
+    "semantic_hash": "f42cd645751f6009f185b76324a4bdd7"
+  },
+  "components/libtommath/mp_init.c": {
+    "mtime": 1788404695.2539818,
+    "seen": 1788587834.77162,
+    "ast_hash": "e055fa88e5d8cd20f4eb4dec50015a98",
+    "semantic_hash": "e055fa88e5d8cd20f4eb4dec50015a98"
+  },
+  "components/libtommath/mp_init_copy.c": {
+    "mtime": 1788404695.2412724,
+    "seen": 1788587834.77162,
+    "ast_hash": "ba2b2147f4655942b3854873e9e1c225",
+    "semantic_hash": "ba2b2147f4655942b3854873e9e1c225"
+  },
+  "components/libtommath/mp_init_i32.c": {
+    "mtime": 1788404695.2304645,
+    "seen": 1788587834.7716212,
+    "ast_hash": "0900ac93ddc8d30a501c2656dff74167",
+    "semantic_hash": "0900ac93ddc8d30a501c2656dff74167"
+  },
+  "components/libtommath/mp_init_i64.c": {
+    "mtime": 1788404695.2564046,
+    "seen": 1788587834.7716212,
+    "ast_hash": "4bd9ca6842899b7684260ca618d7751d",
+    "semantic_hash": "4bd9ca6842899b7684260ca618d7751d"
+  },
+  "components/libtommath/mp_init_l.c": {
+    "mtime": 1788404695.2625828,
+    "seen": 1788587834.771622,
+    "ast_hash": "584775452f8dabf411931e30511ce233",
+    "semantic_hash": "584775452f8dabf411931e30511ce233"
+  },
+  "components/libtommath/mp_init_multi.c": {
+    "mtime": 1788404695.256032,
+    "seen": 1788587834.771622,
+    "ast_hash": "d638b21f6d4d1471e51c9f8f53f137dd",
+    "semantic_hash": "d638b21f6d4d1471e51c9f8f53f137dd"
+  },
+  "components/libtommath/mp_init_set.c": {
+    "mtime": 1788404695.2575207,
+    "seen": 1788587834.771623,
+    "ast_hash": "8e16d07e80ceac0812ccf076d0352e06",
+    "semantic_hash": "8e16d07e80ceac0812ccf076d0352e06"
+  },
+  "components/libtommath/mp_init_size.c": {
+    "mtime": 1788404695.2552965,
+    "seen": 1788587834.771623,
+    "ast_hash": "0be62caa7e9eddcb7ac7c9d8625def07",
+    "semantic_hash": "0be62caa7e9eddcb7ac7c9d8625def07"
+  },
+  "components/libtommath/mp_init_u32.c": {
+    "mtime": 1788404695.259631,
+    "seen": 1788587834.7716238,
+    "ast_hash": "faa2a730f47160abea2d68c615cd57d2",
+    "semantic_hash": "faa2a730f47160abea2d68c615cd57d2"
+  },
+  "components/libtommath/mp_init_u64.c": {
+    "mtime": 1788404695.2437742,
+    "seen": 1788587834.7716238,
+    "ast_hash": "b7bb5a7c8f4d597601502cb4115b9c02",
+    "semantic_hash": "b7bb5a7c8f4d597601502cb4115b9c02"
+  },
+  "components/libtommath/mp_init_ul.c": {
+    "mtime": 1788404695.2344918,
+    "seen": 1788587834.7716238,
+    "ast_hash": "4b1398f24d5db18f17163b1599f72bb2",
+    "semantic_hash": "4b1398f24d5db18f17163b1599f72bb2"
+  },
+  "components/libtommath/mp_invmod.c": {
+    "mtime": 1788404695.2433705,
+    "seen": 1788587834.771625,
+    "ast_hash": "64cf38827a257b4e41367dc1f6f2e892",
+    "semantic_hash": "64cf38827a257b4e41367dc1f6f2e892"
+  },
+  "components/libtommath/mp_is_square.c": {
+    "mtime": 1788404695.251329,
+    "seen": 1788587834.771625,
+    "ast_hash": "82df9aefe2ffd4713c96f13571c314d7",
+    "semantic_hash": "82df9aefe2ffd4713c96f13571c314d7"
+  },
+  "components/libtommath/mp_kronecker.c": {
+    "mtime": 1788404695.260558,
+    "seen": 1788587834.771626,
+    "ast_hash": "8f74a96a1968277435e722cb8817f15b",
+    "semantic_hash": "8f74a96a1968277435e722cb8817f15b"
+  },
+  "components/libtommath/mp_lcm.c": {
+    "mtime": 1788404695.2414637,
+    "seen": 1788587834.771626,
+    "ast_hash": "b36865d8e50647ce423abd6bb21f8708",
+    "semantic_hash": "b36865d8e50647ce423abd6bb21f8708"
+  },
+  "components/libtommath/mp_log.c": {
+    "mtime": 1788404695.258441,
+    "seen": 1788587834.771627,
+    "ast_hash": "00d43b7b1930611ac6ccff8eafebd80a",
+    "semantic_hash": "00d43b7b1930611ac6ccff8eafebd80a"
+  },
+  "components/libtommath/mp_log_n.c": {
+    "mtime": 1788404695.2375913,
+    "seen": 1788587834.771627,
+    "ast_hash": "e6eb71c660ad25c98a58544c31bb3e20",
+    "semantic_hash": "e6eb71c660ad25c98a58544c31bb3e20"
+  },
+  "components/libtommath/mp_lshd.c": {
+    "mtime": 1788404695.2424307,
+    "seen": 1788587834.7716281,
+    "ast_hash": "660081aca33ad55d4790a668431a098e",
+    "semantic_hash": "660081aca33ad55d4790a668431a098e"
+  },
+  "components/libtommath/mp_mod.c": {
+    "mtime": 1788404695.248531,
+    "seen": 1788587834.7716281,
+    "ast_hash": "f42b333fdda5a778e72ac4d5bf2afaf9",
+    "semantic_hash": "f42b333fdda5a778e72ac4d5bf2afaf9"
+  },
+  "components/libtommath/mp_mod_2d.c": {
+    "mtime": 1788404695.2327511,
+    "seen": 1788587834.771629,
+    "ast_hash": "f02a6b5780a9478ce2d3a86b52c1c739",
+    "semantic_hash": "f02a6b5780a9478ce2d3a86b52c1c739"
+  },
+  "components/libtommath/mp_montgomery_calc_normalization.c": {
+    "mtime": 1788404695.2620285,
+    "seen": 1788587834.771629,
+    "ast_hash": "14f2e3b6a12c419fe2f634162552cbf7",
+    "semantic_hash": "14f2e3b6a12c419fe2f634162552cbf7"
+  },
+  "components/libtommath/mp_montgomery_reduce.c": {
+    "mtime": 1788404695.235124,
+    "seen": 1788587834.77163,
+    "ast_hash": "1d347c68cc04f07df9dbd1a0e6bc139c",
+    "semantic_hash": "1d347c68cc04f07df9dbd1a0e6bc139c"
+  },
+  "components/libtommath/mp_montgomery_setup.c": {
+    "mtime": 1788404695.2599978,
+    "seen": 1788587834.77163,
+    "ast_hash": "14282178eb3ef5cd0529f0ad7fdafc8e",
+    "semantic_hash": "14282178eb3ef5cd0529f0ad7fdafc8e"
+  },
+  "components/libtommath/mp_mul.c": {
+    "mtime": 1788404695.261833,
+    "seen": 1788587834.771631,
+    "ast_hash": "b4b12ef5dfaa122e67c6b24c3af88dfd",
+    "semantic_hash": "b4b12ef5dfaa122e67c6b24c3af88dfd"
+  },
+  "components/libtommath/mp_mul_2.c": {
+    "mtime": 1788404695.263949,
+    "seen": 1788587834.771631,
+    "ast_hash": "f6a7039998778f24facbe59aa0e7f6b9",
+    "semantic_hash": "f6a7039998778f24facbe59aa0e7f6b9"
+  },
+  "components/libtommath/mp_mul_2d.c": {
+    "mtime": 1788404695.2569437,
+    "seen": 1788587834.7716322,
+    "ast_hash": "19e8fb9149e84fd2d6c4d1eb8e3fc805",
+    "semantic_hash": "19e8fb9149e84fd2d6c4d1eb8e3fc805"
+  },
+  "components/libtommath/mp_mul_d.c": {
+    "mtime": 1788404695.242634,
+    "seen": 1788587834.7716322,
+    "ast_hash": "642799020a12d4b80a69251ace0fac62",
+    "semantic_hash": "642799020a12d4b80a69251ace0fac62"
+  },
+  "components/libtommath/mp_mulmod.c": {
+    "mtime": 1788404695.262764,
+    "seen": 1788587834.771633,
+    "ast_hash": "208933f2c306b869cd80f4b40df2597e",
+    "semantic_hash": "208933f2c306b869cd80f4b40df2597e"
+  },
+  "components/libtommath/mp_neg.c": {
+    "mtime": 1788404695.250054,
+    "seen": 1788587834.7716339,
+    "ast_hash": "5caad8597770ee5432b8ed750d74784e",
+    "semantic_hash": "5caad8597770ee5432b8ed750d74784e"
+  },
+  "components/libtommath/mp_or.c": {
+    "mtime": 1788404695.2370996,
+    "seen": 1788587834.7716339,
+    "ast_hash": "f3eb93f8b797bba31b483ae5fe1d509a",
+    "semantic_hash": "f3eb93f8b797bba31b483ae5fe1d509a"
+  },
+  "components/libtommath/mp_pack.c": {
+    "mtime": 1788404695.2457693,
+    "seen": 1788587834.7716339,
+    "ast_hash": "c639cfca093d2eb21ceaa6c5ddb7a652",
+    "semantic_hash": "c639cfca093d2eb21ceaa6c5ddb7a652"
+  },
+  "components/libtommath/mp_pack_count.c": {
+    "mtime": 1788404695.258251,
+    "seen": 1788587834.771635,
+    "ast_hash": "e93eaf7916b91d3b53a5d17af1f649ec",
+    "semantic_hash": "e93eaf7916b91d3b53a5d17af1f649ec"
+  },
+  "components/libtommath/mp_prime_fermat.c": {
+    "mtime": 1788404695.2363586,
+    "seen": 1788587834.771635,
+    "ast_hash": "3024f6620613ecc25f8f0885d6a5065f",
+    "semantic_hash": "3024f6620613ecc25f8f0885d6a5065f"
+  },
+  "components/libtommath/mp_prime_frobenius_underwood.c": {
+    "mtime": 1788404695.2648134,
+    "seen": 1788587834.771636,
+    "ast_hash": "c098eec98937c52f19fdb5bf3ac9028d",
+    "semantic_hash": "c098eec98937c52f19fdb5bf3ac9028d"
+  },
+  "components/libtommath/mp_prime_is_prime.c": {
+    "mtime": 1788404695.254553,
+    "seen": 1788587834.771636,
+    "ast_hash": "464a04ec65048fe105bdb8ffa04e2746",
+    "semantic_hash": "464a04ec65048fe105bdb8ffa04e2746"
+  },
+  "components/libtommath/mp_prime_miller_rabin.c": {
+    "mtime": 1788404695.254169,
+    "seen": 1788587834.771637,
+    "ast_hash": "47660191e35e0b2ea278784c8e37c7ac",
+    "semantic_hash": "47660191e35e0b2ea278784c8e37c7ac"
+  },
+  "components/libtommath/mp_prime_next_prime.c": {
+    "mtime": 1788404695.2590294,
+    "seen": 1788587834.771637,
+    "ast_hash": "aa80e1d36569acfb0a9e8a55ed333079",
+    "semantic_hash": "aa80e1d36569acfb0a9e8a55ed333079"
+  },
+  "components/libtommath/mp_prime_rabin_miller_trials.c": {
+    "mtime": 1788404695.233233,
+    "seen": 1788587834.771638,
+    "ast_hash": "0db91e321d79705b5cefc4d0bd3c8b45",
+    "semantic_hash": "0db91e321d79705b5cefc4d0bd3c8b45"
+  },
+  "components/libtommath/mp_prime_rand.c": {
+    "mtime": 1788404695.2410984,
+    "seen": 1788587834.771638,
+    "ast_hash": "cff82ba2b46b5c3a4102690173ddf5fb",
+    "semantic_hash": "cff82ba2b46b5c3a4102690173ddf5fb"
+  },
+  "components/libtommath/mp_prime_strong_lucas_selfridge.c": {
+    "mtime": 1788404695.2291324,
+    "seen": 1788587834.771639,
+    "ast_hash": "41755f7250dd7527e68f4ecb638925e8",
+    "semantic_hash": "41755f7250dd7527e68f4ecb638925e8"
+  },
+  "components/libtommath/mp_radix_size.c": {
+    "mtime": 1788404695.2611156,
+    "seen": 1788587834.771639,
+    "ast_hash": "aa06a86fa3da3237e2aff757eb06c605",
+    "semantic_hash": "aa06a86fa3da3237e2aff757eb06c605"
+  },
+  "components/libtommath/mp_radix_size_overestimate.c": {
+    "mtime": 1788404695.239156,
+    "seen": 1788587834.771639,
+    "ast_hash": "3d88d1060cb95da2d86d09cb7ec387d4",
+    "semantic_hash": "3d88d1060cb95da2d86d09cb7ec387d4"
+  },
+  "components/libtommath/mp_rand.c": {
+    "mtime": 1788404695.2602031,
+    "seen": 1788587834.77164,
+    "ast_hash": "49511a3d6c75c5bd3cbbc8685c81e033",
+    "semantic_hash": "49511a3d6c75c5bd3cbbc8685c81e033"
+  },
+  "components/libtommath/mp_rand_source.c": {
+    "mtime": 1788404695.2547219,
+    "seen": 1788587834.77164,
+    "ast_hash": "f725ec116438c415cf517872851dff9c",
+    "semantic_hash": "f725ec116438c415cf517872851dff9c"
+  },
+  "components/libtommath/mp_read_radix.c": {
+    "mtime": 1788404695.2455683,
+    "seen": 1788587834.771641,
+    "ast_hash": "12eb9769f636ec401efd165326034b92",
+    "semantic_hash": "12eb9769f636ec401efd165326034b92"
+  },
+  "components/libtommath/mp_reduce.c": {
+    "mtime": 1788404695.2491064,
+    "seen": 1788587834.771641,
+    "ast_hash": "62a5de3e7875916819ae3deb8470bd40",
+    "semantic_hash": "62a5de3e7875916819ae3deb8470bd40"
+  },
+  "components/libtommath/mp_reduce_2k.c": {
+    "mtime": 1788404695.2335148,
+    "seen": 1788587834.7716422,
+    "ast_hash": "d0e508393412432fe6641d176ec39172",
+    "semantic_hash": "d0e508393412432fe6641d176ec39172"
+  },
+  "components/libtommath/mp_reduce_2k_l.c": {
+    "mtime": 1788404695.2598076,
+    "seen": 1788587834.7716422,
+    "ast_hash": "2bae97fbb4ee7c7b42cd8f45b6f3ddd1",
+    "semantic_hash": "2bae97fbb4ee7c7b42cd8f45b6f3ddd1"
+  },
+  "components/libtommath/mp_reduce_2k_setup.c": {
+    "mtime": 1788404695.2586164,
+    "seen": 1788587834.771643,
+    "ast_hash": "8d285645f9bc4426684079363fd8393b",
+    "semantic_hash": "8d285645f9bc4426684079363fd8393b"
+  },
+  "components/libtommath/mp_reduce_2k_setup_l.c": {
+    "mtime": 1788404695.2504005,
+    "seen": 1788587834.771643,
+    "ast_hash": "a72627f9449dcc443dfc783f94075320",
+    "semantic_hash": "a72627f9449dcc443dfc783f94075320"
+  },
+  "components/libtommath/mp_reduce_is_2k.c": {
+    "mtime": 1788404695.2442129,
+    "seen": 1788587834.771643,
+    "ast_hash": "d39b731c6db484cf353b0de99b23816d",
+    "semantic_hash": "d39b731c6db484cf353b0de99b23816d"
+  },
+  "components/libtommath/mp_reduce_is_2k_l.c": {
+    "mtime": 1788404695.2418723,
+    "seen": 1788587834.7716439,
+    "ast_hash": "7647f09848fb976cd005bc2faf688b4c",
+    "semantic_hash": "7647f09848fb976cd005bc2faf688b4c"
+  },
+  "components/libtommath/mp_reduce_setup.c": {
+    "mtime": 1788404695.2565768,
+    "seen": 1788587834.7716439,
+    "ast_hash": "9b1dc87be09458eb5081e2f87c4aa549",
+    "semantic_hash": "9b1dc87be09458eb5081e2f87c4aa549"
+  },
+  "components/libtommath/mp_root_n.c": {
+    "mtime": 1788404695.2578735,
+    "seen": 1788587834.7716448,
+    "ast_hash": "da356bb130ac2c6d8836554879be011a",
+    "semantic_hash": "da356bb130ac2c6d8836554879be011a"
+  },
+  "components/libtommath/mp_rshd.c": {
+    "mtime": 1788404695.2357638,
+    "seen": 1788587834.7716448,
+    "ast_hash": "1d2cf3078854abebd1515194712ee359",
+    "semantic_hash": "1d2cf3078854abebd1515194712ee359"
+  },
+  "components/libtommath/mp_sbin_size.c": {
+    "mtime": 1788404695.245126,
+    "seen": 1788587834.771646,
+    "ast_hash": "7ed8ffa0f97ba2d7f82f213cccc2e3d8",
+    "semantic_hash": "7ed8ffa0f97ba2d7f82f213cccc2e3d8"
+  },
+  "components/libtommath/mp_set.c": {
+    "mtime": 1788404695.2520745,
+    "seen": 1788587834.771646,
+    "ast_hash": "f204de2d4706b411df79b002e183e73f",
+    "semantic_hash": "f204de2d4706b411df79b002e183e73f"
+  },
+  "components/libtommath/mp_set_double.c": {
+    "mtime": 1788404695.2536116,
+    "seen": 1788587834.771647,
+    "ast_hash": "bcd620df08a8b25ec58a218ed1de1789",
+    "semantic_hash": "bcd620df08a8b25ec58a218ed1de1789"
+  },
+  "components/libtommath/mp_set_i32.c": {
+    "mtime": 1788404695.2377713,
+    "seen": 1788587834.771647,
+    "ast_hash": "384773f09a0574cd8141f370b175e090",
+    "semantic_hash": "384773f09a0574cd8141f370b175e090"
+  },
+  "components/libtommath/mp_set_i64.c": {
+    "mtime": 1788404695.2483613,
+    "seen": 1788587834.771648,
+    "ast_hash": "fe727bdbe0ab7104fe5b3a36fbecb7a8",
+    "semantic_hash": "fe727bdbe0ab7104fe5b3a36fbecb7a8"
+  },
+  "components/libtommath/mp_set_l.c": {
+    "mtime": 1788404695.2641747,
+    "seen": 1788587834.771648,
+    "ast_hash": "ad7084669efbea0579b8e56f1ba06cbe",
+    "semantic_hash": "ad7084669efbea0579b8e56f1ba06cbe"
+  },
+  "components/libtommath/mp_set_u32.c": {
+    "mtime": 1788404695.2631872,
+    "seen": 1788587834.771648,
+    "ast_hash": "792e44e6294ac3a3681b5ea9173997e3",
+    "semantic_hash": "792e44e6294ac3a3681b5ea9173997e3"
+  },
+  "components/libtommath/mp_set_u64.c": {
+    "mtime": 1788404695.2420502,
+    "seen": 1788587834.7716491,
+    "ast_hash": "c580c3b674115d1a976b223eeea199cc",
+    "semantic_hash": "c580c3b674115d1a976b223eeea199cc"
+  },
+  "components/libtommath/mp_set_ul.c": {
+    "mtime": 1788404695.2354126,
+    "seen": 1788587834.7716491,
+    "ast_hash": "1db4ec357f5ea872be5dd7dd5720cb8a",
+    "semantic_hash": "1db4ec357f5ea872be5dd7dd5720cb8a"
+  },
+  "components/libtommath/mp_shrink.c": {
+    "mtime": 1788404695.2367184,
+    "seen": 1788587834.77165,
+    "ast_hash": "383e2ca03d35c77c218bbb617bc5f60b",
+    "semantic_hash": "383e2ca03d35c77c218bbb617bc5f60b"
+  },
+  "components/libtommath/mp_signed_rsh.c": {
+    "mtime": 1788404695.2567546,
+    "seen": 1788587834.77165,
+    "ast_hash": "9168929788a4cc748f11cd48dbd9b1ba",
+    "semantic_hash": "9168929788a4cc748f11cd48dbd9b1ba"
+  },
+  "components/libtommath/mp_sqrmod.c": {
+    "mtime": 1788404695.2652316,
+    "seen": 1788587834.771651,
+    "ast_hash": "ba3ab2f72a36df658fb1f2745c3bea4d",
+    "semantic_hash": "ba3ab2f72a36df658fb1f2745c3bea4d"
+  },
+  "components/libtommath/mp_sqrt.c": {
+    "mtime": 1788404695.2472641,
+    "seen": 1788587834.771651,
+    "ast_hash": "470f1600ce40f12235295c802266d0a9",
+    "semantic_hash": "470f1600ce40f12235295c802266d0a9"
+  },
+  "components/libtommath/mp_sqrtmod_prime.c": {
+    "mtime": 1788404695.2374055,
+    "seen": 1788587834.771652,
+    "ast_hash": "a34587d89ec80834f572aa387b218dd3",
+    "semantic_hash": "a34587d89ec80834f572aa387b218dd3"
+  },
+  "components/libtommath/mp_sub.c": {
+    "mtime": 1788404695.2287018,
+    "seen": 1788587834.771652,
+    "ast_hash": "945cb5d6025761012609fbd2166123b7",
+    "semantic_hash": "945cb5d6025761012609fbd2166123b7"
+  },
+  "components/libtommath/mp_sub_d.c": {
+    "mtime": 1788404695.26073,
+    "seen": 1788587834.771652,
+    "ast_hash": "ad6068479d31d3b99335dd9ebd2b9304",
+    "semantic_hash": "ad6068479d31d3b99335dd9ebd2b9304"
+  },
+  "components/libtommath/mp_submod.c": {
+    "mtime": 1788404695.2453427,
+    "seen": 1788587834.7716532,
+    "ast_hash": "6e27e7dabab2158ad7d1cecce4fecc5d",
+    "semantic_hash": "6e27e7dabab2158ad7d1cecce4fecc5d"
+  },
+  "components/libtommath/mp_to_radix.c": {
+    "mtime": 1788404695.249297,
+    "seen": 1788587834.7716532,
+    "ast_hash": "3c7b77e6e2ab9de25039681fd8086d2d",
+    "semantic_hash": "3c7b77e6e2ab9de25039681fd8086d2d"
+  },
+  "components/libtommath/mp_to_sbin.c": {
+    "mtime": 1788404695.2428362,
+    "seen": 1788587834.771654,
+    "ast_hash": "c6bf14c8980beec5970635135216f0eb",
+    "semantic_hash": "c6bf14c8980beec5970635135216f0eb"
+  },
+  "components/libtommath/mp_to_ubin.c": {
+    "mtime": 1788404695.2294476,
+    "seen": 1788587834.771654,
+    "ast_hash": "1fb4a974fe39199cddcb7841c78109a8",
+    "semantic_hash": "1fb4a974fe39199cddcb7841c78109a8"
+  },
+  "components/libtommath/mp_ubin_size.c": {
+    "mtime": 1788404695.2393541,
+    "seen": 1788587834.7716548,
+    "ast_hash": "f8c190cb7895da8922b2b0e0e4bc544d",
+    "semantic_hash": "f8c190cb7895da8922b2b0e0e4bc544d"
+  },
+  "components/libtommath/mp_unpack.c": {
+    "mtime": 1788404695.2646062,
+    "seen": 1788587834.7716548,
+    "ast_hash": "07ee97bbc901bb64efb6652aac631941",
+    "semantic_hash": "07ee97bbc901bb64efb6652aac631941"
+  },
+  "components/libtommath/mp_warray_free.c": {
+    "mtime": 1788404695.246903,
+    "seen": 1788587834.771656,
+    "ast_hash": "1671f30a6baef7e8d05b5f3eeac27e53",
+    "semantic_hash": "1671f30a6baef7e8d05b5f3eeac27e53"
+  },
+  "components/libtommath/mp_xor.c": {
+    "mtime": 1788404695.2516813,
+    "seen": 1788587834.771656,
+    "ast_hash": "fb66a28f51375586e64992445af2a18a",
+    "semantic_hash": "fb66a28f51375586e64992445af2a18a"
+  },
+  "components/libtommath/mp_zero.c": {
+    "mtime": 1788404695.255821,
+    "seen": 1788587834.771657,
+    "ast_hash": "304a7095acdecd398b9a23ff54dce39c",
+    "semantic_hash": "304a7095acdecd398b9a23ff54dce39c"
+  },
+  "components/libtommath/native_random_stubs.c": {
+    "mtime": 1788404695.2440012,
+    "seen": 1788587834.771657,
+    "ast_hash": "3c555d2a0c052106db6191b6950dd8ce",
+    "semantic_hash": "3c555d2a0c052106db6191b6950dd8ce"
+  },
+  "components/libtommath/s_mp_add.c": {
+    "mtime": 1788404695.251157,
+    "seen": 1788587834.771658,
+    "ast_hash": "4e6b534b0ad3f50a76a54b600fe39186",
+    "semantic_hash": "4e6b534b0ad3f50a76a54b600fe39186"
+  },
+  "components/libtommath/s_mp_copy_digs.c": {
+    "mtime": 1788404695.2594495,
+    "seen": 1788587834.771658,
+    "ast_hash": "583b186060901f1555c12f092b3e26c6",
+    "semantic_hash": "583b186060901f1555c12f092b3e26c6"
+  },
+  "components/libtommath/s_mp_div_3.c": {
+    "mtime": 1788404695.236163,
+    "seen": 1788587834.771658,
+    "ast_hash": "216450cd1541c3df5e7746c1ed46ffda",
+    "semantic_hash": "216450cd1541c3df5e7746c1ed46ffda"
+  },
+  "components/libtommath/s_mp_div_recursive.c": {
+    "mtime": 1788404695.258803,
+    "seen": 1788587834.771659,
+    "ast_hash": "d404818de9b8cc31cf2d13fbbe2233a2",
+    "semantic_hash": "d404818de9b8cc31cf2d13fbbe2233a2"
+  },
+  "components/libtommath/s_mp_div_school.c": {
+    "mtime": 1788404695.2592564,
+    "seen": 1788587834.771659,
+    "ast_hash": "0e60ca701e0fe89888ccbe3251e0c438",
+    "semantic_hash": "0e60ca701e0fe89888ccbe3251e0c438"
+  },
+  "components/libtommath/s_mp_div_small.c": {
+    "mtime": 1788404695.2613025,
+    "seen": 1788587834.77166,
+    "ast_hash": "81cbce0a2da53598da5595b944fc8776",
+    "semantic_hash": "81cbce0a2da53598da5595b944fc8776"
+  },
+  "components/libtommath/s_mp_exptmod.c": {
+    "mtime": 1788404695.2320993,
+    "seen": 1788587834.77166,
+    "ast_hash": "6f0325f3057621b015a9d87fb27489f0",
+    "semantic_hash": "6f0325f3057621b015a9d87fb27489f0"
+  },
+  "components/libtommath/s_mp_exptmod_fast.c": {
+    "mtime": 1788404695.244674,
+    "seen": 1788587834.771661,
+    "ast_hash": "2774d129f85faa276221065e986aac13",
+    "semantic_hash": "2774d129f85faa276221065e986aac13"
+  },
+  "components/libtommath/s_mp_fp_log.c": {
+    "mtime": 1788404695.2416732,
+    "seen": 1788587834.771661,
+    "ast_hash": "adeb75c67cd3981c78cd73dd272f4063",
+    "semantic_hash": "adeb75c67cd3981c78cd73dd272f4063"
+  },
+  "components/libtommath/s_mp_fp_log_d.c": {
+    "mtime": 1788404695.2395527,
+    "seen": 1788587834.771662,
+    "ast_hash": "a877543b6f67e07d683b2008f2a5c6fb",
+    "semantic_hash": "a877543b6f67e07d683b2008f2a5c6fb"
+  },
+  "components/libtommath/s_mp_get_bit.c": {
+    "mtime": 1788404695.2518742,
+    "seen": 1788587834.771662,
+    "ast_hash": "9feccce453856429e51e02ba0a16a069",
+    "semantic_hash": "9feccce453856429e51e02ba0a16a069"
+  },
+  "components/libtommath/s_mp_invmod.c": {
+    "mtime": 1788404695.248919,
+    "seen": 1788587834.7716632,
+    "ast_hash": "68ce7a6f1b6bba268d62bbf9c08b532f",
+    "semantic_hash": "68ce7a6f1b6bba268d62bbf9c08b532f"
+  },
+  "components/libtommath/s_mp_invmod_odd.c": {
+    "mtime": 1788404695.231815,
+    "seen": 1788587834.7716632,
+    "ast_hash": "b133405aaa1d3505fd818ddc44e20e33",
+    "semantic_hash": "b133405aaa1d3505fd818ddc44e20e33"
+  },
+  "components/libtommath/s_mp_log_2expt.c": {
+    "mtime": 1788404695.255646,
+    "seen": 1788587834.7716632,
+    "ast_hash": "875140043eb3f5ce922e5a0103b936d4",
+    "semantic_hash": "875140043eb3f5ce922e5a0103b936d4"
+  },
+  "components/libtommath/s_mp_montgomery_reduce_comba.c": {
+    "mtime": 1788404695.2444265,
+    "seen": 1788587834.771664,
+    "ast_hash": "672888a322cd1b8f62e1548257c3b9be",
+    "semantic_hash": "672888a322cd1b8f62e1548257c3b9be"
+  },
+  "components/libtommath/s_mp_mul.c": {
+    "mtime": 1788404695.2463264,
+    "seen": 1788587834.771664,
+    "ast_hash": "589fdd8f808ab2561c616c38038687ff",
+    "semantic_hash": "589fdd8f808ab2561c616c38038687ff"
+  },
+  "components/libtommath/s_mp_mul_balance.c": {
+    "mtime": 1788404695.2342157,
+    "seen": 1788587834.7716649,
+    "ast_hash": "3f3759b451bea6acb30b27b2a7c61739",
+    "semantic_hash": "3f3759b451bea6acb30b27b2a7c61739"
+  },
+  "components/libtommath/s_mp_mul_comba.c": {
+    "mtime": 1788404695.2633693,
+    "seen": 1788587834.7716649,
+    "ast_hash": "81e718cf47273c91c585a8cc731efc54",
+    "semantic_hash": "81e718cf47273c91c585a8cc731efc54"
+  },
+  "components/libtommath/s_mp_mul_high.c": {
+    "mtime": 1788404695.263565,
+    "seen": 1788587834.7716658,
+    "ast_hash": "72d2bb4f70fd2b4af3e7461d0569b83e",
+    "semantic_hash": "72d2bb4f70fd2b4af3e7461d0569b83e"
+  },
+  "components/libtommath/s_mp_mul_high_comba.c": {
+    "mtime": 1788404695.2465112,
+    "seen": 1788587834.7716658,
+    "ast_hash": "7e6fd62b8a250ef40d8a24fccdd43331",
+    "semantic_hash": "7e6fd62b8a250ef40d8a24fccdd43331"
+  },
+  "components/libtommath/s_mp_mul_karatsuba.c": {
+    "mtime": 1788404695.240757,
+    "seen": 1788587834.771667,
+    "ast_hash": "b012bcbf552c3e5cf77627de5a83cd55",
+    "semantic_hash": "b012bcbf552c3e5cf77627de5a83cd55"
+  },
+  "components/libtommath/s_mp_mul_toom.c": {
+    "mtime": 1788404695.2389686,
+    "seen": 1788587834.771667,
+    "ast_hash": "143e8fccb1f01121bc278d4f84cae808",
+    "semantic_hash": "143e8fccb1f01121bc278d4f84cae808"
+  },
+  "components/libtommath/s_mp_prime_is_divisible.c": {
+    "mtime": 1788404695.2422433,
+    "seen": 1788587834.771667,
+    "ast_hash": "e37345c7aa97d834555c09804b3d64b2",
+    "semantic_hash": "e37345c7aa97d834555c09804b3d64b2"
+  },
+  "components/libtommath/s_mp_prime_tab.c": {
+    "mtime": 1788404695.2481875,
+    "seen": 1788587834.771668,
+    "ast_hash": "a3d97276b4ccda7fa9ca7440c24a7389",
+    "semantic_hash": "a3d97276b4ccda7fa9ca7440c24a7389"
+  },
+  "components/libtommath/s_mp_radix_map.c": {
+    "mtime": 1788404695.2312498,
+    "seen": 1788587834.771668,
+    "ast_hash": "f5b636312edf722b5b45c896abac254f",
+    "semantic_hash": "f5b636312edf722b5b45c896abac254f"
+  },
+  "components/libtommath/s_mp_radix_size_overestimate.c": {
+    "mtime": 1788404695.2474396,
+    "seen": 1788587834.771669,
+    "ast_hash": "976c0c56503bce228c7bcec8c41e65ae",
+    "semantic_hash": "976c0c56503bce228c7bcec8c41e65ae"
+  },
+  "components/libtommath/s_mp_rand_platform.c": {
+    "mtime": 1788404695.234794,
+    "seen": 1788587834.771669,
+    "ast_hash": "06e2f1dfadc43204d81535c554ad80bb",
+    "semantic_hash": "06e2f1dfadc43204d81535c554ad80bb"
+  },
+  "components/libtommath/s_mp_rand_source.c": {
+    "mtime": 1788404695.2467024,
+    "seen": 1788587834.77167,
+    "ast_hash": "dc843da2cd69db151d10b89ff8a755cc",
+    "semantic_hash": "dc843da2cd69db151d10b89ff8a755cc"
+  },
+  "components/libtommath/s_mp_sqr.c": {
+    "mtime": 1788404695.2339106,
+    "seen": 1788587834.77167,
+    "ast_hash": "d313481d0cb5ae8c845aa5f16a31816b",
+    "semantic_hash": "d313481d0cb5ae8c845aa5f16a31816b"
+  },
+  "components/libtommath/s_mp_sqr_comba.c": {
+    "mtime": 1788404695.247093,
+    "seen": 1788587834.771671,
+    "ast_hash": "d0258579c958f6f602d0fa77e62b31c7",
+    "semantic_hash": "d0258579c958f6f602d0fa77e62b31c7"
+  },
+  "components/libtommath/s_mp_sqr_karatsuba.c": {
+    "mtime": 1788404695.2551084,
+    "seen": 1788587834.771671,
+    "ast_hash": "8c6923c772bad6221378bf0f6e631f27",
+    "semantic_hash": "8c6923c772bad6221378bf0f6e631f27"
+  },
+  "components/libtommath/s_mp_sqr_toom.c": {
+    "mtime": 1788404695.2507634,
+    "seen": 1788587834.771672,
+    "ast_hash": "ad8e04566d4f36b5ae46e8070b7ab653",
+    "semantic_hash": "ad8e04566d4f36b5ae46e8070b7ab653"
+  },
+  "components/libtommath/s_mp_sub.c": {
+    "mtime": 1788404695.2524934,
+    "seen": 1788587834.771672,
+    "ast_hash": "97bede4791499d4983c9b8cf622324d5",
+    "semantic_hash": "97bede4791499d4983c9b8cf622324d5"
+  },
+  "components/libtommath/s_mp_warray.c": {
+    "mtime": 1788404695.250958,
+    "seen": 1788587834.7716732,
+    "ast_hash": "8c225e7efa1a27302f3123936fc77b85",
+    "semantic_hash": "8c225e7efa1a27302f3123936fc77b85"
+  },
+  "components/libtommath/s_mp_warray_get.c": {
+    "mtime": 1788404695.2430108,
+    "seen": 1788587834.7716742,
+    "ast_hash": "1bda6afc0305e1d8f3bacad6d6d6e4ea",
+    "semantic_hash": "1bda6afc0305e1d8f3bacad6d6d6e4ea"
+  },
+  "components/libtommath/s_mp_warray_put.c": {
+    "mtime": 1788404695.2576914,
+    "seen": 1788587834.7716742,
+    "ast_hash": "36175733d2454f5e42d8e067b8216e42",
+    "semantic_hash": "36175733d2454f5e42d8e067b8216e42"
+  },
+  "components/libtommath/s_mp_zero_buf.c": {
+    "mtime": 1788404695.2637537,
+    "seen": 1788587834.7716749,
+    "ast_hash": "484e0ea14bf52084510016869d4d50f8",
+    "semantic_hash": "484e0ea14bf52084510016869d4d50f8"
+  },
+  "components/libtommath/s_mp_zero_digs.c": {
+    "mtime": 1788404695.2624085,
+    "seen": 1788587834.7716749,
+    "ast_hash": "6cb4837fd439146e1c55d0fc8617e0d9",
+    "semantic_hash": "6cb4837fd439146e1c55d0fc8617e0d9"
+  },
+  "components/libtommath/tommath.h": {
+    "mtime": 1788404695.262982,
+    "seen": 1788587834.7716758,
+    "ast_hash": "d6bbbb5351f4882656f8b718867fbf84",
+    "semantic_hash": "d6bbbb5351f4882656f8b718867fbf84"
+  },
+  "components/libtommath/tommath_c89.h": {
+    "mtime": 1788404695.2404816,
+    "seen": 1788587834.7716758,
+    "ast_hash": "449087ad6de6639bf441c1db4d8a0b1a",
+    "semantic_hash": "449087ad6de6639bf441c1db4d8a0b1a"
+  },
+  "components/libtommath/tommath_class.h": {
+    "mtime": 1788404695.2461545,
+    "seen": 1788587834.771677,
+    "ast_hash": "3237c19f47f006cff1977b9e15b923a5",
+    "semantic_hash": "3237c19f47f006cff1977b9e15b923a5"
+  },
+  "components/libtommath/tommath_cutoffs.h": {
+    "mtime": 1788404695.233042,
+    "seen": 1788587834.771677,
+    "ast_hash": "880ff8bbe3de49a43af222035b674dfe",
+    "semantic_hash": "880ff8bbe3de49a43af222035b674dfe"
+  },
+  "components/libtommath/tommath_private.h": {
+    "mtime": 1788404695.2324452,
+    "seen": 1788587834.771678,
+    "ast_hash": "72d99c36ba01503aecde83ab41f7c02e",
+    "semantic_hash": "72d99c36ba01503aecde83ab41f7c02e"
+  },
+  "components/libtommath/tommath_superclass.h": {
+    "mtime": 1788404695.2494822,
+    "seen": 1788587834.771678,
+    "ast_hash": "7d6f6ac5b347cbd406902bcf0d988b2d",
+    "semantic_hash": "7d6f6ac5b347cbd406902bcf0d988b2d"
+  },
+  "main/components/opencalc_calc.c": {
+    "mtime": 1788671174.083024,
+    "seen": 1788672688.951839,
+    "ast_hash": "25168a855e28d0be49d5d17da299fcc9",
+    "semantic_hash": "25168a855e28d0be49d5d17da299fcc9"
+  },
+  "main/components/opencalc_calc.h": {
+    "mtime": 1788671056.7490664,
+    "seen": 1788672688.951839,
+    "ast_hash": "824fdf2756d105d57f0537499ecc203a",
+    "semantic_hash": "824fdf2756d105d57f0537499ecc203a"
+  },
+  "main/components/opencalc_conics.c": {
+    "mtime": 1788532732.5094934,
+    "seen": 1788587834.775176,
+    "ast_hash": "11a48b6216f521408c089c51ab418259",
+    "semantic_hash": "11a48b6216f521408c089c51ab418259"
+  },
+  "main/components/opencalc_conics.h": {
+    "mtime": 1788532732.4658139,
+    "seen": 1788587834.775176,
+    "ast_hash": "cc554a0bf9d5fc8af44935f6f382197d",
+    "semantic_hash": "cc554a0bf9d5fc8af44935f6f382197d"
+  },
+  "main/components/opencalc_giac.cpp": {
+    "mtime": 1788709371.6788876,
+    "seen": 1788710060.302496,
+    "ast_hash": "66fbc4983b877fc88b6fbae17bf2f00f",
+    "semantic_hash": "66fbc4983b877fc88b6fbae17bf2f00f"
+  },
+  "main/components/opencalc_giac.h": {
+    "mtime": 1788670439.6971223,
+    "seen": 1788672688.9519548,
+    "ast_hash": "e10192b4bedecac58dce1f82b6a709e9",
+    "semantic_hash": "e10192b4bedecac58dce1f82b6a709e9"
+  },
+  "main/components/opencalc_giac_alloc.cpp": {
+    "mtime": 1788655109.5493848,
+    "seen": 1788669890.643332,
+    "ast_hash": "43e5d52447e9cf2cd16a55f0d91c0ace",
+    "semantic_hash": "43e5d52447e9cf2cd16a55f0d91c0ace"
+  },
+  "main/components/opencalc_inequality.c": {
+    "mtime": 1788534278.9653814,
+    "seen": 1788587834.775208,
+    "ast_hash": "dae627f8f35f6ede18165592d60739d0",
+    "semantic_hash": "dae627f8f35f6ede18165592d60739d0"
+  },
+  "main/components/opencalc_inequality.h": {
+    "mtime": 1788533059.9101138,
+    "seen": 1788587834.775209,
+    "ast_hash": "54d7359ba86303b0d8b89605f413010e",
+    "semantic_hash": "54d7359ba86303b0d8b89605f413010e"
+  },
+  "main/components/opencalc_reference.c": {
+    "mtime": 1788464901.6740603,
+    "seen": 1788587834.7752671,
+    "ast_hash": "5972e3513bc23210a269d0fdbae1c71f",
+    "semantic_hash": "5972e3513bc23210a269d0fdbae1c71f"
+  },
+  "main/components/opencalc_reference.h": {
+    "mtime": 1788464901.629944,
+    "seen": 1788587834.7752671,
+    "ast_hash": "011fc1c0dc3855a11da35f356aa1e5c7",
+    "semantic_hash": "011fc1c0dc3855a11da35f356aa1e5c7"
+  },
+  "main/components/opencalc_stats.c": {
+    "mtime": 1788462571.1403232,
+    "seen": 1788587834.775295,
+    "ast_hash": "31604bb54a04deeca62569e558b4d1e0",
+    "semantic_hash": "31604bb54a04deeca62569e558b4d1e0"
+  },
+  "main/components/opencalc_stats.h": {
+    "mtime": 1788461839.519875,
+    "seen": 1788587834.775296,
+    "ast_hash": "62ef1fd6f30738a14ccfe0303cfb226b",
+    "semantic_hash": "62ef1fd6f30738a14ccfe0303cfb226b"
+  },
+  "main/components/opencalc_ui_canvas.c": {
+    "mtime": 1788587602.2087345,
+    "seen": 1788587834.7753248,
+    "ast_hash": "571711eeb545ec30cba1f64b928db2cb",
+    "semantic_hash": "571711eeb545ec30cba1f64b928db2cb"
+  },
+  "main/components/opencalc_ui_canvas.h": {
+    "mtime": 1788587602.2084737,
+    "seen": 1788587834.7753248,
+    "ast_hash": "b7356db1d019cf03ffcf30a57813dbee",
+    "semantic_hash": "b7356db1d019cf03ffcf30a57813dbee"
+  },
+  "main/components/opencalc_ui_work.c": {
+    "mtime": 1788655224.669366,
+    "seen": 1788669890.643616,
+    "ast_hash": "294264c77b1f493eef1d265bdf2f7dc6",
+    "semantic_hash": "294264c77b1f493eef1d265bdf2f7dc6"
+  },
+  "main/components/opencalc_ui_work.h": {
+    "mtime": 1788587262.789775,
+    "seen": 1788587834.775327,
+    "ast_hash": "61869013b814f3033570ca36a284177b",
+    "semantic_hash": "61869013b814f3033570ca36a284177b"
+  },
+  "main/components/opencalc_units.c": {
+    "mtime": 1788562114.3824117,
+    "seen": 1788587834.775327,
+    "ast_hash": "809983ebec4d8d0104a79c6d82633dbc",
+    "semantic_hash": "809983ebec4d8d0104a79c6d82633dbc"
+  },
+  "main/components/opencalc_units.h": {
+    "mtime": 1788562114.3313117,
+    "seen": 1788587834.775328,
+    "ast_hash": "a55a3f8c5eea0638b3b2b4c4b16aca95",
+    "semantic_hash": "a55a3f8c5eea0638b3b2b4c4b16aca95"
+  },
+  "tests/calc_regression.c": {
+    "mtime": 1788671095.15721,
+    "seen": 1788672688.97509,
+    "ast_hash": "2a16d8909f556fa75eca87b089e5ff9e",
+    "semantic_hash": "2a16d8909f556fa75eca87b089e5ff9e"
+  },
+  "tests/conics_regression.c": {
+    "mtime": 1788532732.5519974,
+    "seen": 1788587834.798912,
+    "ast_hash": "80078af88f02d85921f20f0a52e5ff23",
+    "semantic_hash": "80078af88f02d85921f20f0a52e5ff23"
+  },
+  "tests/graph_modes_regression.c": {
+    "mtime": 1788532973.5717437,
+    "seen": 1788587834.798914,
+    "ast_hash": "015c5cc78d651e3a9dea9c45e99c4a11",
+    "semantic_hash": "015c5cc78d651e3a9dea9c45e99c4a11"
+  },
+  "tests/inequality_regression.c": {
+    "mtime": 1788534293.7292104,
+    "seen": 1788587834.798914,
+    "ast_hash": "6224c359a0d6fde87dcac2475a2d9b6c",
+    "semantic_hash": "6224c359a0d6fde87dcac2475a2d9b6c"
+  },
+  "tests/reference_regression.c": {
+    "mtime": 1788465042.8653631,
+    "seen": 1788587834.7989151,
+    "ast_hash": "7d04e635ed342ab70f6057129d3484e5",
+    "semantic_hash": "7d04e635ed342ab70f6057129d3484e5"
+  },
+  "tests/stats_regression.c": {
+    "mtime": 1788462571.1895185,
+    "seen": 1788587834.798916,
+    "ast_hash": "03e49f6032a0ce78fa77a9857e6a08a7",
+    "semantic_hash": "03e49f6032a0ce78fa77a9857e6a08a7"
+  },
+  "tests/units_regression.c": {
+    "mtime": 1788562114.4313126,
+    "seen": 1788587834.798917,
+    "ast_hash": "853f7e8ff4eb38f140c29874515be0e9",
+    "semantic_hash": "853f7e8ff4eb38f140c29874515be0e9"
+  },
+  "tests/variables_regression.c": {
+    "mtime": 1788671095.11271,
+    "seen": 1788672688.975193,
+    "ast_hash": "77d88ad5f7802b72f092caca4c2b8e70",
+    "semantic_hash": "77d88ad5f7802b72f092caca4c2b8e70"
+  },
+  "main/components/opencalc_sensor_hub.c": {
+    "mtime": 1788633001.972094,
+    "seen": 1788633056.5261362,
+    "ast_hash": "a27849f96f5a7f8e6bbf269604b439de",
+    "semantic_hash": "a27849f96f5a7f8e6bbf269604b439de"
+  },
+  "main/components/opencalc_sensor_hub.h": {
+    "mtime": 1788633001.9305017,
+    "seen": 1788633056.526137,
+    "ast_hash": "7fce5fbe8a15361cf31780c174d87ed2",
+    "semantic_hash": "7fce5fbe8a15361cf31780c174d87ed2"
+  },
+  "storage_image/scripts/logger_example.py": {
+    "mtime": 1788588696.7653039,
+    "seen": 1788669890.6672761,
+    "ast_hash": "5a6b87cefd83d6caf101c42b8c86c739",
+    "semantic_hash": "5a6b87cefd83d6caf101c42b8c86c739"
+  },
+  "main/components/opencalc_self_test.c": {
+    "mtime": 1788670814.8942072,
+    "seen": 1788672688.952105,
+    "ast_hash": "0079c21ff7ee71e0ab6d08cf6b7c035c",
+    "semantic_hash": "0079c21ff7ee71e0ab6d08cf6b7c035c"
+  },
+  "main/components/opencalc_self_test.h": {
+    "mtime": 1788670765.7174952,
+    "seen": 1788672688.952106,
+    "ast_hash": "7008aac033e2025a2c28096c5944e8e3",
+    "semantic_hash": "7008aac033e2025a2c28096c5944e8e3"
+  },
+  "main/components/opencalc_ui_navigation.c": {
+    "mtime": 1788671126.0963967,
+    "seen": 1788672688.952256,
+    "ast_hash": "1d18000a185cba162ac27cdb2ad10f76",
+    "semantic_hash": "1d18000a185cba162ac27cdb2ad10f76"
+  },
+  "main/components/opencalc_ui_navigation.h": {
+    "mtime": 1788671126.041796,
+    "seen": 1788672688.952256,
+    "ast_hash": "e229771bac3015fe29e7224cfe6d700c",
+    "semantic_hash": "e229771bac3015fe29e7224cfe6d700c"
+  },
+  "tests/run_host_tests.sh": {
+    "mtime": 1788709961.3584225,
+    "seen": 1788710060.3262122,
+    "ast_hash": "64a6d69f5f9409c6204b8e2597b4667c",
+    "semantic_hash": "64a6d69f5f9409c6204b8e2597b4667c"
+  },
+  "tools/syntax_check_esp.sh": {
+    "mtime": 1788710019.4803689,
+    "seen": 1788710060.326278,
+    "ast_hash": "4ab4ff7e88e24f6262c0c4edf0e25627",
+    "semantic_hash": "4ab4ff7e88e24f6262c0c4edf0e25627"
+  },
+  "main/components/opencalc_graph_model.c": {
+    "mtime": 1788709827.1680317,
+    "seen": 1788710060.3025239,
+    "ast_hash": "86420e8479f265cf2447a6cb5fd1fbe4",
+    "semantic_hash": "86420e8479f265cf2447a6cb5fd1fbe4"
+  },
+  "main/components/opencalc_graph_model.h": {
+    "mtime": 1788709827.121093,
+    "seen": 1788710060.302525,
+    "ast_hash": "1eea42a33ea4ee1f2a603b0dab4c6a50",
+    "semantic_hash": "1eea42a33ea4ee1f2a603b0dab4c6a50"
+  },
+  "main/components/opencalc_script_model.c": {
+    "mtime": 1788710019.3349159,
+    "seen": 1788710060.302677,
+    "ast_hash": "baa8ea8c71cd74916f62130d40b3a5e9",
+    "semantic_hash": "baa8ea8c71cd74916f62130d40b3a5e9"
+  },
+  "main/components/opencalc_script_model.h": {
+    "mtime": 1788710019.286268,
+    "seen": 1788710060.302677,
+    "ast_hash": "290bed94d00966e5ed1ecd7901774d3b",
+    "semantic_hash": "290bed94d00966e5ed1ecd7901774d3b"
+  },
+  "main/components/opencalc_worksheet_model.c": {
+    "mtime": 1788709674.798868,
+    "seen": 1788710060.302912,
+    "ast_hash": "a1517badf7b8750245d490e1c5c107b8",
+    "semantic_hash": "a1517badf7b8750245d490e1c5c107b8"
+  },
+  "main/components/opencalc_worksheet_model.h": {
+    "mtime": 1788709674.755864,
+    "seen": 1788710060.302912,
+    "ast_hash": "b78d297cecaf545402d1564c4ff3e7d3",
+    "semantic_hash": "b78d297cecaf545402d1564c4ff3e7d3"
+  },
+  "main/components/opencalc_workspace_io.c": {
+    "mtime": 1788709726.7714815,
+    "seen": 1788710060.302913,
+    "ast_hash": "e4647b22aa61919e020d48b0ada0cec8",
+    "semantic_hash": "e4647b22aa61919e020d48b0ada0cec8"
+  },
+  "main/components/opencalc_workspace_io.h": {
+    "mtime": 1788709726.728766,
+    "seen": 1788710060.302913,
+    "ast_hash": "d2c0666fe034d3e2efce2c108c948a2a",
+    "semantic_hash": "d2c0666fe034d3e2efce2c108c948a2a"
+  },
+  "tests/graph_model_regression.c": {
+    "mtime": 1788709961.3135257,
+    "seen": 1788710060.326175,
+    "ast_hash": "94382f8f7b7f8df7a5b33ba71df1caa3",
+    "semantic_hash": "94382f8f7b7f8df7a5b33ba71df1caa3"
   }
 }

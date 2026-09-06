@@ -3,6 +3,15 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#define OPENCALC_VARIABLE_NAME_MAX 16
+#define OPENCALC_CUSTOM_VARIABLE_MAX 16
+
+typedef struct {
+    char name[OPENCALC_VARIABLE_NAME_MAX];
+    double real;
+    double imag;
+} opencalc_variable_t;
+
 typedef struct {
     double xmin;
     double xmax;
@@ -15,11 +24,22 @@ typedef struct {
 
 bool graph_eval_expression(const char *expr, double x, double *out);
 bool graph_eval_expression_var(const char *expr, char variable, double value, double *out);
+bool graph_eval_expression_xy(const char *expr, double x, double y, double *out);
 void opencalc_math_set_degrees(bool degrees);
 bool opencalc_math_degrees_enabled(void);
 bool opencalc_math_eval_expression(const char *expr, double *out);
 bool opencalc_math_eval_complex_expression(const char *expr, double *real, double *imag);
 bool opencalc_math_eval_complex_expression_var(const char *expr, char variable, double real_value, double imag_value, double *real, double *imag);
+bool opencalc_math_variable_name_valid(const char *name);
+bool opencalc_math_variable_set(const char *name, double real, double imag);
+bool opencalc_math_variable_get(const char *name, double *real, double *imag);
+bool opencalc_math_variable_delete(const char *name);
+bool opencalc_math_variable_rename(const char *old_name, const char *new_name);
+size_t opencalc_math_variable_count(void);
+bool opencalc_math_variable_at(size_t index, opencalc_variable_t *variable);
+void opencalc_math_variables_reset(void);
+bool opencalc_math_assignment_name(const char *expr, char *name, size_t name_size);
+bool opencalc_math_substitute_variables(const char *expr, char *out, size_t out_size);
 bool opencalc_math_numeric_derivative(const char *expr, char variable, double at, double *real, double *imag);
 bool opencalc_math_numeric_integral(const char *expr, char variable, double a, double b, double *real, double *imag);
 bool opencalc_math_derivative_expression(const char *expr, char *out, size_t out_size);

@@ -2,16 +2,15 @@
 #include "../cartridge.h"
 
 #include "esp_heap_caps.h"
+#include "opencalc_config.h"
 
 #include <new>
 
 static uint8_t* alloc_mapper_buffer(size_t size)
 {
-    uint8_t* ptr = (uint8_t*)heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    if (!ptr) {
-        ptr = (uint8_t*)heap_caps_malloc(size, MALLOC_CAP_8BIT);
-    }
-    return ptr;
+    size_t free_bytes = heap_caps_get_free_size(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (size > free_bytes || free_bytes - size < OPENCALC_PSRAM_RESERVE_BYTES) return nullptr;
+    return (uint8_t*)heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
 }
 
 bool mapper000_cpuRead(Mapper* mapper, uint16_t addr, uint8_t& data)

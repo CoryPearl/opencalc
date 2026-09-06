@@ -88,6 +88,9 @@ class Canvas:
         self.draw.ellipse(tuple(self.p(v) for v in xy), fill=fill, outline=outline,
                           width=self.p(width) if outline else 1)
 
+    def polygon(self, xy: tuple[float, ...], fill: str, outline: str | None = None) -> None:
+        self.draw.polygon(tuple(self.p(v) for v in xy), fill=fill, outline=outline)
+
     def text(self, xy: tuple[float, float], value: str, fill: str = TEXT, size: int = 8,
              bold: bool = False, mono: bool = False, anchor: str | None = None) -> None:
         self.draw.text((self.p(xy[0]), self.p(xy[1])), value, fill=fill,
@@ -310,6 +313,137 @@ def draw_settings(selected: int) -> Image.Image:
     return c.image
 
 
+def draw_app_demo(app_index: int, local_frame: int) -> Image.Image:
+    c = Canvas()
+    draw_header(c, app_index)
+    pulse = min(1.0, local_frame / 8)
+
+    if app_index == 2:  # Table
+        c.rect((8, 36, 312, 61), SURFACE, BORDER, radius=2)
+        c.text((16, 48), "Start  -2.0", TEXT, 7, mono=True, anchor="lm")
+        c.text((127, 48), "Step  0.5", TEXT, 7, mono=True, anchor="lm")
+        c.text((228, 48), "Rows  7", TEXT, 7, mono=True, anchor="lm")
+        cols = ["x", "Y1=x^2", "Y2=sin(x)"]
+        xs = [8, 76, 190, 312]
+        for i, label in enumerate(cols):
+            c.rect((xs[i], 70, xs[i + 1], 91), ACCENT_2, BORDER)
+            c.text(((xs[i] + xs[i + 1]) / 2, 80), label, TEXT, 7, bold=True, anchor="mm")
+        for row in range(6):
+            y = 91 + row * 22
+            values = [f"{-2 + row * .5:.1f}", f"{(-2 + row * .5) ** 2:.2f}",
+                      f"{math.sin(-2 + row * .5):.3f}"]
+            for col, value in enumerate(values):
+                c.rect((xs[col], y, xs[col + 1], y + 22), SURFACE_2 if row == local_frame // 4 % 6 else BG, GRID)
+                c.text(((xs[col] + xs[col + 1]) / 2, y + 11), value, TEXT, 7, mono=True, anchor="mm")
+        c.text((160, 230), "2nd+Window setup   arrows browse", MUTED, 6, anchor="mm")
+    elif app_index == 3:  # Python
+        c.rect((8, 36, 312, 197), SURFACE, BORDER, radius=2)
+        lines = ["n = int(input('Terms: '))", "a, b = 0, 1", "for i in range(n):",
+                 "    print(a)", "    a, b = b, a + b"]
+        for i, line in enumerate(lines):
+            c.text((15, 48 + i * 20), f"{i + 1:>2}  {line}", TEXT if i != 2 else ACCENT, 7, mono=True)
+        if local_frame < 10:
+            c.rect((12, 46 + (local_frame // 3) * 20, 16, 59 + (local_frame // 3) * 20), ACCENT)
+        else:
+            c.rect((8, 202, 312, 231), BG, BORDER, radius=2)
+            c.text((15, 210), "Terms: 8", YELLOW, 7, mono=True)
+            c.text((15, 221), "0  1  1  2  3  5  8  13", GREEN, 7, mono=True)
+    elif app_index == 4:  # Statistics
+        tabs = ["Summary", "Regression", "Plots", "Distributions"]
+        for i, label in enumerate(tabs):
+            x = 8 + i * 76
+            c.rect((x, 36, x + 70, 57), ACCENT_2 if i == 2 else SURFACE, BORDER, radius=2)
+            c.text((x + 35, 46), label, TEXT, 6, bold=i == 2, anchor="mm")
+        c.rect((8, 66, 312, 222), SURFACE, BORDER)
+        for i, h in enumerate([34, 57, 83, 66, 111, 94, 72, 45]):
+            x = 22 + i * 34
+            c.rect((x, 207 - h, x + 22, 207), "#6f9ee8")
+        c.line((16, 207, 303, 207), BORDER)
+        c.text((18, 76), "Histogram  L1", TEXT, 8, bold=True)
+        c.text((296, 76), "n=42", MUTED, 7, mono=True, anchor="ra")
+    elif app_index == 5:  # Lists
+        for i in range(6):
+            x = 7 + i * 51
+            c.rect((x, 36, x + 47, 58), ACCENT_2 if i == 0 else SURFACE, ACCENT if i == 0 else BORDER, radius=2)
+            c.text((x + 23, 47), f"L{i + 1}", TEXT, 7, bold=i == 0, anchor="mm")
+        c.rect((7, 67, 313, 220), SURFACE, BORDER)
+        c.text((20, 78), "INDEX", MUTED, 6)
+        c.text((90, 78), "VALUE", MUTED, 6)
+        values = [2, 5, 8, 13, 21, 34]
+        for i, value in enumerate(values):
+            y = 91 + i * 20
+            active = i == (local_frame // 3) % len(values)
+            if active:
+                c.rect((14, y - 3, 180, y + 14), ACCENT_2)
+            c.text((30, y + 5), str(i + 1), MUTED, 7, mono=True, anchor="mm")
+            c.text((96, y + 5), str(value), TEXT, 8, mono=True, anchor="mm")
+            c.rect((203, y, 203 + value * 2.5, y + 9), "#8f9db4")
+        c.text((223, 205), "sum 83", GREEN, 7, mono=True)
+    elif app_index == 6:  # Matrices
+        c.text((10, 39), "[A]  3 x 3", TEXT, 8, bold=True)
+        vals = [[2, 1, 0], [-1, 3, 2], [4, 0, 1]]
+        for row in range(3):
+            for col in range(3):
+                x, y = 28 + col * 53, 65 + row * 38
+                active = row * 3 + col == (local_frame // 2) % 9
+                c.rect((x, y, x + 44, y + 29), ACCENT_2 if active else SURFACE, ACCENT if active else BORDER)
+                c.text((x + 22, y + 14), str(vals[row][col]), TEXT, 9, mono=True, anchor="mm")
+        c.rect((205, 55, 307, 192), SURFACE, BORDER, radius=2)
+        for i, action in enumerate(["det(A)", "A^-1", "rref(A)", "transpose", "augment"]):
+            c.text((216, 72 + i * 22), action, ACCENT if i == 2 else TEXT, 7, mono=True)
+        c.text((15, 214), "rref(A) = identity", GREEN, 7, mono=True)
+    elif app_index == 7:  # Solver
+        choices = ["Equation Solver", "System Solver", "Polynomial Solver", "Numeric Solver"]
+        for i, label in enumerate(choices):
+            y = 38 + i * 27
+            c.rect((10, y, 155, y + 22), ACCENT_2 if i == 2 else SURFACE, ACCENT if i == 2 else BORDER, radius=2)
+            c.text((18, y + 11), label, TEXT, 7, bold=i == 2, anchor="lm")
+        c.rect((166, 38, 310, 196), SURFACE, BORDER, radius=2)
+        c.text((178, 51), "x^3 - 6x^2 + 11x - 6", TEXT, 6, mono=True)
+        c.text((178, 76), "Exact roots", MUTED, 7, bold=True)
+        for i, root in enumerate(["x1 = 1", "x2 = 2", "x3 = 3"]):
+            c.text((187, 99 + i * 23), root, GREEN, 8, mono=True)
+        c.text((178, 177), "verified by substitution", MUTED, 6)
+    elif app_index == 9:  # Finance
+        labels = [("N", "60"), ("I%", "5.25"), ("PV", "25000"), ("PMT", "-474.66"), ("FV", "0")]
+        for i, (label, value) in enumerate(labels):
+            col, row = i % 2, i // 2
+            x, y = 15 + col * 153, 43 + row * 50
+            c.text((x, y), label, MUTED, 7, bold=True)
+            c.rect((x, y + 13, x + 135, y + 38), ACCENT_2 if i == local_frame // 4 % 5 else SURFACE, BORDER, radius=2)
+            c.text((x + 126, y + 25), value, TEXT, 8, mono=True, anchor="rm")
+        c.rect((168, 193, 303, 222), ACCENT_2, ACCENT, radius=2)
+        c.text((235, 207), "Solve PMT", TEXT, 8, bold=True, anchor="mm")
+    elif app_index == 10:  # Conics
+        c.rect((8, 37, 133, 221), SURFACE, BORDER, radius=2)
+        for i, label in enumerate(["Circle", "Parabola", "Ellipse", "Hyperbola", "General Conic", "Conic Graphs"]):
+            c.text((18, 54 + i * 25), label, ACCENT if i == 2 else TEXT, 7, bold=i == 2)
+        c.rect((143, 37, 312, 221), BG, BORDER)
+        c.line((227, 45, 227, 212), GRID)
+        c.line((151, 129, 304, 129), GRID)
+        c.ellipse((169, 77, 285, 181), outline="#d0d7e2", width=2)
+        c.ellipse((181, 126, 185, 130), fill=YELLOW)
+        c.ellipse((269, 126, 273, 130), fill=YELLOW)
+        c.text((155, 47), "x^2/9 + y^2/4 = 1", TEXT, 6, mono=True)
+        c.text((155, 202), "center (0,0)   e=0.745", MUTED, 6)
+    elif app_index == 11:  # Inequality
+        c.rect((8, 37, 135, 221), SURFACE, BORDER, radius=2)
+        c.text((17, 50), "SYSTEMS", TEXT, 8, bold=True)
+        c.text((17, 77), "y <= 2x + 3", "#7ab8ff", 7, mono=True)
+        c.text((17, 101), "y > -x + 1", "#c879f2", 7, mono=True)
+        c.text((17, 137), "solution", MUTED, 6)
+        c.text((17, 153), "intersection", MUTED, 6)
+        c.text((17, 168), "(-0.67, 1.67)", GREEN, 7, mono=True)
+        c.rect((145, 37, 312, 221), BG, BORDER)
+        c.polygon((146, 220, 146, 135, 310, 53, 310, 220), "#173451")
+        c.polygon((146, 220, 146, 70, 310, 220), "#382647")
+        c.line((146, 135, 310, 53), "#7ab8ff", 2)
+        for x in range(146, 311, 8):
+            y = 70 + (x - 146) * .91
+            c.line((x, y, min(x + 4, 310), min(y + 4, 220)), "#c879f2", 1)
+    return c.image
+
+
 def draw_game_menu(selected: int = 0) -> Image.Image:
     c = Canvas()
     c.rect((0, 0, 320, 22), HEADER)
@@ -400,26 +534,24 @@ def draw_tetris(local_frame: int) -> Image.Image:
 
 
 def tour_frame(frame: int) -> Image.Image:
-    if frame < 85:
-        return draw_calculator(frame)
-    if frame < 120:
-        selected = 0 if frame < 101 else 1
-        return draw_home(selected)
-    if frame < 175:
-        return draw_graph(frame - 120)
-    if frame < 202:
-        path = [1, 0, 4, 8]
-        selected = path[min(len(path) - 1, (frame - 175) // 7)]
-        return draw_home(selected)
-    if frame < 235:
-        local = frame - 202
-        selected = 0 if local < 10 else (1 if local < 20 else 3)
-        return draw_settings(selected)
-    if frame < 248:
-        return draw_home(8)
-    if frame < 265:
-        return draw_game_menu(0)
-    return draw_tetris(frame - 265)
+    if frame < 28:
+        return draw_calculator(int(frame * 84 / 27))
+    if frame < 43:
+        return draw_home(min(11, (frame - 28) * 12 // 15))
+
+    scene = (frame - 43) // 20
+    local = (frame - 43) % 20
+    if scene < 11:
+        app_index = scene + 1
+        if app_index == 1:
+            return draw_graph(int(local * 54 / 19))
+        if app_index == 8:
+            return draw_settings(min(4, local // 4))
+        return draw_app_demo(app_index, local)
+
+    if frame < 278:
+        return draw_game_menu(min(4, (frame - 263) // 3))
+    return draw_tetris(frame - 278)
 
 
 def main() -> None:

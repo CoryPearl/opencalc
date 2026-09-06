@@ -2,6 +2,7 @@
 
 #include "board_init.h"
 #include "opencalc_config.h"
+#include "opencalc_ui_canvas.h"
 #include "doomgeneric/d_main.h"
 #include "doomgeneric/doomgeneric.h"
 #include "doomgeneric/doomkeys.h"
@@ -50,6 +51,9 @@ static char *s_doom_argv[] = {
 };
 static const int s_doom_argc = sizeof(s_doom_argv) / sizeof(s_doom_argv[0]);
 enum { OPENCALC_DOOM_NEXT_WEAPON_KEY = 'n' };
+
+#define DOOM_ZONE_BYTES (4U * 1024U * 1024U)
+_Static_assert(sizeof(pixel_t) == sizeof(uint32_t), "Doom and UI canvas pixels must match");
 
 static void doom_log_resources(const char *stage)
 {
@@ -249,12 +253,23 @@ bool opencalc_doom_start(void)
         return true;
     }
 
+    size_t psram_free = heap_caps_get_free_size(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    size_t psram_largest = heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    size_t required = DOOM_ZONE_BYTES + OPENCALC_PSRAM_RESERVE_BYTES;
+    if (psram_free < required || psram_largest < DOOM_ZONE_BYTES) {
+        ESP_LOGE(TAG,
+                 "Not enough PSRAM for Doom: free=%u largest=%u required=%u",
+                 (unsigned)psram_free, (unsigned)psram_largest, (unsigned)required);
+        return false;
+    }
+
     ESP_LOGI(TAG, "Starting Doom with /data/doom1.wad");
     doom_log_resources("before Doom init");
     key_nextweapon = OPENCALC_DOOM_NEXT_WEAPON_KEY;
     board_display_lock();
     board_draw_text_screen("doom");
     board_display_unlock();
+    DG_ScreenBuffer = (pixel_t *)opencalc_ui_canvas_pixels();
     if (!doomgeneric_Create(s_doom_argc, s_doom_argv)) {
         ESP_LOGE(TAG, "Doom initialization failed");
         doom_log_resources("after failed Doom init");

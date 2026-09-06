@@ -40,6 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef ESP_PLATFORM
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
+#include "opencalc_config.h"
 #define EIGENMATH_EXT_RAM EXT_RAM_BSS_ATTR
 #define ceilingfunc eigenmath_ceilingfunc
 #define floorfunc eigenmath_floorfunc
@@ -54,7 +55,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EIGENMATH_BLOCKSIZE 2000
 #endif
 #ifndef EIGENMATH_MAXBLOCKS
+#ifdef ESP_PLATFORM
+#define EIGENMATH_MAXBLOCKS 48
+#else
 #define EIGENMATH_MAXBLOCKS 256
+#endif
+#endif
+
+#ifndef EIGENMATH_MAX_TENSOR_ELEMENTS
+#define EIGENMATH_MAX_TENSOR_ELEMENTS 16384
+#endif
+
+#ifndef EIGENMATH_MAX_OUTPUT
+#define EIGENMATH_MAX_OUTPUT 16384
 #endif
 
 #define STACKSIZE EIGENMATH_STACKSIZE // evaluation stack
@@ -1019,6 +1032,8 @@ alloc_tensor(int nelem)
 	int i;
 	struct atom *p;
 	struct tensor *t;
+	if (nelem <= 0 || nelem > EIGENMATH_MAX_TENSOR_ELEMENTS)
+		stopf("tensor too large");
 	p = alloc_atom();
 	t = alloc_mem(sizeof (struct tensor) + nelem * sizeof (struct atom *));
 	p->atomtype = TENSOR;
@@ -1046,9 +1061,14 @@ alloc_mem(int n)
 {
 	void *p;
 #ifdef ESP_PLATFORM
-	p = heap_caps_malloc(n, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-	if (p == NULL)
-		p = malloc(n);
+	size_t free_bytes;
+	if (n <= 0)
+		stopf("invalid allocation size");
+	free_bytes = heap_caps_get_free_size(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+	if ((size_t)n > free_bytes ||
+	    free_bytes - (size_t)n < OPENCALC_PSRAM_RESERVE_BYTES)
+		stopf("out of memory");
+	p = heap_caps_malloc((size_t)n, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
 #else
 	p = malloc(n);
 #endif
@@ -17404,20 +17424,24 @@ outbuf_init(void)
 void
 outbuf_puts(char *s)
 {
-	int len, m;
+	int len, m, required;
+	char *resized;
 
 	len = (int) strlen(s);
+	if (len < 0 || len > EIGENMATH_MAX_OUTPUT ||
+	    outbuf_index > EIGENMATH_MAX_OUTPUT - len)
+		stopf("result too large");
 
-	// Let outbuf_index + len == 1000
-
-	// Then m == 2000 hence there is always room for the terminator '\0'
-
-	m = 1000 * ((outbuf_index + len) / 1000 + 1); // m is a multiple of 1000
+	required = outbuf_index + len + 1;
+	m = 1000 * ((required + 999) / 1000);
+	if (m > EIGENMATH_MAX_OUTPUT + 1)
+		m = EIGENMATH_MAX_OUTPUT + 1;
 
 	if (m > outbuf_length) {
-		outbuf = realloc(outbuf, m);
-		if (outbuf == NULL)
+		resized = realloc(outbuf, m);
+		if (resized == NULL)
 			stopf("out of memory");
+		outbuf = resized;
 		outbuf_length = m;
 	}
 
@@ -17428,18 +17452,22 @@ outbuf_puts(char *s)
 void
 outbuf_putc(int c)
 {
-	int m;
+	int m, required;
+	char *resized;
 
-	// Let outbuf_index + 1 == 1000
+	if (outbuf_index >= EIGENMATH_MAX_OUTPUT)
+		stopf("result too large");
 
-	// Then m == 2000 hence there is always room for the terminator '\0'
-
-	m = 1000 * ((outbuf_index + 1) / 1000 + 1); // m is a multiple of 1000
+	required = outbuf_index + 2;
+	m = 1000 * ((required + 999) / 1000);
+	if (m > EIGENMATH_MAX_OUTPUT + 1)
+		m = EIGENMATH_MAX_OUTPUT + 1;
 
 	if (m > outbuf_length) {
-		outbuf = realloc(outbuf, m);
-		if (outbuf == NULL)
+		resized = realloc(outbuf, m);
+		if (resized == NULL)
 			stopf("out of memory");
+		outbuf = resized;
 		outbuf_length = m;
 	}
 

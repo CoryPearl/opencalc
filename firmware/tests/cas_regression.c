@@ -18,9 +18,23 @@ static int expect_cas(const char *expr, const char *expected)
     return 0;
 }
 
+static int expect_numeric_passthrough(const char *expr)
+{
+    char out[128] = "unchanged";
+    if (opencalc_cas_eval(expr, out, sizeof(out))) {
+        fprintf(stderr, "FAIL %s: ordinary arithmetic was consumed by CAS as <%s>\n", expr, out);
+        return 1;
+    }
+    printf("PASS %s -> numeric evaluator\n", expr);
+    return 0;
+}
+
 int main(void)
 {
     int failed = 0;
+
+    failed |= expect_numeric_passthrough("1+1");
+    failed |= expect_numeric_passthrough("8^8");
 
     failed |= expect_cas("expand((x+3)^2)", "x^2+6*x+9");
     failed |= expect_cas("EXPAND((x-4)^2)", "x^2-8*x+16");
@@ -31,6 +45,7 @@ int main(void)
     failed |= expect_cas("factor(x^3-6*x^2+11*x-6)", "(x-1)(x-2)(x-3)");
     failed |= expect_cas("solve(x^2-5*x+6=0)", "x=3 or 2");
     failed |= expect_cas("solve(x^2+1=0)", "x=0+1i or 0-1i");
+    failed |= expect_cas("solve(x^2+2x+4)", "x=-1+1.732050808i or -1-1.732050808i");
     failed |= expect_cas("solve(2*y+4=0,y)", "y=-2");
     failed |= expect_cas("deriv((x+1)*(x-1)+x^3,x)", "3*x^2+2*x");
     failed |= expect_cas("int(3*x^2+2*x+1,x)", "x^3+x^2+x+C");

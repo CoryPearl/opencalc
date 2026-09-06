@@ -1,8 +1,8 @@
 // opencalc_snake.c
 //
 // Snake for the OpenCalc board (320x240 ILI9341, ESP32-S3). Same drawing
-// approach as opencalc_tetris.c / opencalc_ui.c: one RGB888 framebuffer in
-// PSRAM, simple software primitives, the same 5x7 bitmap font, and the
+// approach as opencalc_tetris.c / opencalc_ui.c: the shared RGB888 UI canvas,
+// simple software primitives, the same 5x7 bitmap font, and the
 // same board_draw_rgb888_frame_320x240() push per frame. The board/panel
 // layout (left info column at x=4..97, arena at x=110,y=20,200x200) also
 // matches opencalc_tetris.c so all the mini-apps feel like one family.
@@ -15,7 +15,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "esp_attr.h"
 #include "esp_timer.h"
 
 #include <stdio.h>
@@ -25,6 +24,7 @@
 #include "opencalc_audio.h"
 #include "opencalc_persist.h"
 #include "opencalc_snake.h"
+#include "opencalc_ui_canvas.h"
 #include "snake_core.h"
 
 #define UI_W 320
@@ -42,7 +42,7 @@
 #define C_SNAKE_BODY 0x36c95fu
 #define C_FOOD    0xf75b5bu
 
-static EXT_RAM_BSS_ATTR uint32_t s_frame[UI_W * UI_H];
+static uint32_t *s_frame;
 
 static const uint8_t FONT[40][7] = {
     {0x0e,0x11,0x13,0x15,0x19,0x11,0x0e}, {0x04,0x0c,0x04,0x04,0x04,0x04,0x0e},
@@ -247,6 +247,7 @@ static void draw_frame(void)
 
 void opencalc_snake_init(void)
 {
+    s_frame = opencalc_ui_canvas_pixels();
     memset(&s_game, 0, sizeof(s_game));
     s_active = false;
     s_high_score = (long)opencalc_persist_get_u32("hs_snake", 0);

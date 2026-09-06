@@ -37,9 +37,9 @@
         "other_text_thickness": 0.15,
         "other_text_upright": false,
         "pads": {
-          "drill": 2.1082,
-          "height": 1.1176,
-          "width": 2.6162
+          "drill": 0.254,
+          "height": 0.508,
+          "width": 0.508
         },
         "silk_line_width": 0.1,
         "silk_text_italic": false,
@@ -490,7 +490,7 @@
       "plot": "../../../../",
       "pos_files": "../../../../",
       "specctra_dsn": "",
-      "step": "../../../../opencalc_pcb_V5.stl",
+      "step": "../../../../opencalc_pcb_V5.step",
       "svg": "",
       "vrml": ""
     },
@@ -598,7 +598,7 @@
     },
     "net_format_name": "",
     "page_layout_descr_file": "",
-    "plot_directory": "",
+    "plot_directory": "../../../../",
     "space_save_all_events": true,
     "spice_current_sheet_as_root": false,
     "spice_external_command": "spice \"%I\"",

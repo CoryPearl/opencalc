@@ -8,16 +8,31 @@ set(OPENCALC_SOURCES
         "components/SD.cpp"
         "components/opencalc_audio.c"
         "components/opencalc_breakout.c"
+        "components/opencalc_calc.c"
         "components/opencalc_cas.c"
+        "components/opencalc_conics.c"
         "components/opencalc_doom.c"
         "components/opencalc_eigenmath.c"
+        "components/opencalc_graph_model.c"
+        "components/opencalc_inequality.c"
         "components/opencalc_mario.cpp"
         "components/opencalc_math.c"
         "components/opencalc_persist.c"
         "components/opencalc_power.c"
+        "components/opencalc_reference.c"
+        "components/opencalc_sensor_hub.c"
+        "components/opencalc_self_test.c"
+        "components/opencalc_script_model.c"
         "components/opencalc_snake.c"
+        "components/opencalc_stats.c"
         "components/opencalc_tetris.c"
+        "components/opencalc_units.c"
         "components/opencalc_ui.c"
+        "components/opencalc_ui_canvas.c"
+        "components/opencalc_ui_navigation.c"
+        "components/opencalc_ui_work.c"
+        "components/opencalc_worksheet_model.c"
+        "components/opencalc_workspace_io.c"
         "components/storage.c"
         "components/usb_msc.c"
         "components/tiny-python.c"
@@ -149,33 +164,30 @@ set_source_files_properties("components/eigenmath/eigenmath.c" PROPERTIES
     COMPILE_DEFINITIONS "OPENCALC_EIGENMATH_EMBEDDED=1"
 )
 if(OPENCALC_GIAC_ENABLED)
-    # The vendored Giac headers predate GCC 15/C++26 and emit hundreds of
-    # compatibility diagnostics from the otherwise small OpenCalc adapter.
+    # The vendored Giac headers predate GCC 15/C++20. Keep compatibility
+    # diagnostics local to the adapter that includes them.
     set_source_files_properties("components/opencalc_giac.cpp" PROPERTIES
-        COMPILE_OPTIONS "-w"
+        COMPILE_OPTIONS "-Wno-unknown-pragmas;-Wno-deprecated-enum-enum-conversion;-Wno-template-id-cdtor;-Wno-deprecated-declarations;-Wno-register;-Wno-reorder"
     )
 endif()
 target_compile_definitions(${COMPONENT_LIB} PRIVATE DOOMGENERIC_RESX=320 DOOMGENERIC_RESY=200)
 target_compile_definitions(${COMPONENT_LIB} PRIVATE COMPOSITE_VIDEO=1 OPENCALC_NONBLOCKING_DOOM_TICS=1)
-target_compile_options(${COMPONENT_LIB} PRIVATE
-    -Wno-error
-    -Wno-dangling-pointer
-    -Wno-format
-    -Wno-format-truncation
-    -Wno-implicit-fallthrough
-    -Wno-error=missing-field-initializers
-    -Wno-error=unterminated-string-initialization
-    -Wno-error=format
-    -Wno-error=format-truncation
-    -Wno-error=implicit-fallthrough
-    -Wno-error=type-limits
-    -Wno-error=unused-but-set-parameter
-    -Wno-error=unused-variable
-    -Wno-error=unused-const-variable
-    -Wno-missing-field-initializers
-    -Wno-type-limits
-    -Wno-unused-but-set-parameter
-    -Wno-unused-but-set-variable
-    -Wno-unused-const-variable
-    -Wno-unused-variable
+file(GLOB OPENCALC_DOOM_VENDOR_SOURCES "components/doomgeneric/*.c")
+set_source_files_properties(${OPENCALC_DOOM_VENDOR_SOURCES} PROPERTIES
+    COMPILE_OPTIONS "-Wno-error;-Wno-dangling-pointer;-Wno-format;-Wno-format-truncation;-Wno-implicit-fallthrough;-Wno-missing-field-initializers;-Wno-type-limits;-Wno-unused-but-set-parameter;-Wno-unused-but-set-variable;-Wno-unused-const-variable;-Wno-unused-variable"
+)
+set(OPENCALC_MARIO_VENDOR_SOURCES
+    "components/mario/bus.cpp"
+    "components/mario/apu2A03.cpp"
+    "components/mario/cartridge.cpp"
+    "components/mario/cpu6502.cpp"
+    "components/mario/mapper.cpp"
+    "components/mario/ppu2C02.cpp"
+    "components/mario/mappers/mapper000.cpp"
+)
+set_source_files_properties(${OPENCALC_MARIO_VENDOR_SOURCES} PROPERTIES
+    COMPILE_OPTIONS "-Wno-error;-Wno-unused-parameter;-Wno-sign-compare"
+)
+set_source_files_properties("components/eigenmath/eigenmath.c" PROPERTIES
+    COMPILE_OPTIONS "-Wno-error;-Wno-unused-parameter;-Wno-sign-compare"
 )

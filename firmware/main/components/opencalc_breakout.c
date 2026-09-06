@@ -2,7 +2,7 @@
 //
 // Breakout for the OpenCalc board (320x240 ILI9341, ESP32-S3). Same
 // drawing approach and layout family as opencalc_tetris.c /
-// opencalc_snake.c: one RGB888 framebuffer in PSRAM, the same 5x7 bitmap
+// opencalc_snake.c: the shared RGB888 UI canvas, the same 5x7 bitmap
 // font, the same left info column (x=4..97) and 200x200 arena at
 // (110,20) used by Snake.
 //
@@ -18,7 +18,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "esp_attr.h"
 #include "esp_timer.h"
 
 #include <stdio.h>
@@ -28,6 +27,7 @@
 #include "opencalc_audio.h"
 #include "opencalc_persist.h"
 #include "opencalc_breakout.h"
+#include "opencalc_ui_canvas.h"
 #include "breakout_core.h"
 
 #define UI_W 320
@@ -76,7 +76,7 @@ static const uint32_t POWERUP_COLOR[5] = {
 
 static const char *POWERUP_LABEL[5] = { "", "B", "+", "S", "W" };
 
-static EXT_RAM_BSS_ATTR uint32_t s_frame[UI_W * UI_H];
+static uint32_t *s_frame;
 
 static const uint8_t FONT[40][7] = {
     {0x0e,0x11,0x13,0x15,0x19,0x11,0x0e}, {0x04,0x0c,0x04,0x04,0x04,0x04,0x0e},
@@ -311,6 +311,7 @@ static void draw_frame(void)
 
 void opencalc_breakout_init(void)
 {
+    s_frame = opencalc_ui_canvas_pixels();
     memset(&s_game, 0, sizeof(s_game));
     s_active = false;
     s_high_score = (long)opencalc_persist_get_u32("hs_breakout", 0);
