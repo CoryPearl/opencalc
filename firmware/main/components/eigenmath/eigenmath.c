@@ -37,6 +37,25 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <time.h>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+#ifndef M_E
+#define M_E 2.71828182845904523536
+#endif
+
+static char *eigen_strdup(const char *src)
+{
+	size_t len = strlen(src) + 1;
+	char *dst = malloc(len);
+
+	if (dst != NULL)
+		memcpy(dst, src, len);
+
+	return dst;
+}
+
 #ifdef ESP_PLATFORM
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
@@ -18768,7 +18787,7 @@ push_string(char *s)
 {
 	struct atom *p;
 	p = alloc_str();
-	s = strdup(s);
+	s = eigen_strdup(s);
 	if (s == NULL)
 		stopf("out of memory");
 	p->u.str = s;
@@ -18815,7 +18834,7 @@ lookup(char *s)
 		stopf("symbol table full");
 
 	p = alloc_atom();
-	s = strdup(s);
+	s = eigen_strdup(s);
 	if (s == NULL)
 		stopf("out of memory");
 	p->atomtype = USYM;
@@ -19081,7 +19100,7 @@ init_symbol_table(void)
 
 	for (i = 0; i < n; i++) {
 		p = alloc_atom();
-		s = strdup(stab[i].str);
+		s = eigen_strdup(stab[i].str);
 		if (s == NULL)
 			stopf("out of memory");
 		if (stab[i].func) {
