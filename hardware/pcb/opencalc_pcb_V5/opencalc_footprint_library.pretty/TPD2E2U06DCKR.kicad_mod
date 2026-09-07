@@ -186,7 +186,7 @@
 		(uuid "4e57b1d8-f821-430a-bb65-a818a78d3f12")
 	)
 	(embedded_fonts no)
-	(model "/Users/corypearl/Desktop/opencalc/hardware/pcb/opencalc_pcb_v5/kikad_parts/TPD2E2U06DCKR/DCK0003A.stp"
+	(model "${KIPRJMOD}/kikad_parts/TPD2E2U06DCKR/DCK0003A.stp"
 		(offset
 			(xyz 0 0 0)
 		)

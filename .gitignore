@@ -1,2 +1,13 @@
 firmware/build
 docs/notes.txt
+*/.DS_Store
+*/.kicad_prl
+*/.bak
+.vscode
+hardware/pcb/opencalc_pcb_V5/fp-info-cache
+hardware/pcb/opencalc_pcb_v5/fp-info-cache - not working
+firmware/main/graphify-out/cache/
+firmware/graphify-out/.graphify_python
+firmware/graphify-out/.graphify_root
+firmware/tools/__pycache__
+hardware/pcb/opencalc_pcb_v5/opencalc_pcb_V5-backups

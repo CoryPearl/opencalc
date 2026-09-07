@@ -1,6 +1,6 @@
 # OpenCalc OS
 
-OpenCalc OS is the open-source ESP-IDF operating environment for the OpenCalc ESP32-S3 graphing calculator. It brings up the ILI9341 LCD, button matrix, USB mass storage and CDC serial, script storage, the 12-app calculator interface, numerical and symbolic math engines, power management, and the optional five-game launcher.
+OpenCalc OS is the open-source ESP-IDF operating environment for the OpenCalc ESP32-S3 graphing calculator. It brings up the selected ILI9341 or ST7789 LCD, button matrix, USB mass storage and CDC serial, script storage, the 12-app calculator interface, numerical and symbolic math engines, power management, and the optional five-game launcher.
 
 Large worksheet state is stored in a versioned, CRC-checked FAT snapshot with
 atomic backup recovery. Calculator history and active input, graph equations
@@ -41,7 +41,7 @@ SUM:                           862          30988          29366         249058
 
 ## Current Firmware Status
 
-Current target: ESP32-S3 with 16 MB flash, 8 MB PSRAM, ILI9341 320x240 LCD, 10x5 diode-isolated keypad matrix, one USB-C data/power connection, LiPo battery support, PWM backlight control, battery ADC, optional game audio, and optional ADS1115/MCP23017 scientific I/O.
+Current target: ESP32-S3 with 16 MB flash, 8 MB PSRAM, 320x240 landscape LCD, 10x5 diode-isolated keypad matrix, one USB-C data/power connection, LiPo battery support, PWM backlight control, battery ADC, optional game audio, and optional ADS1115/MCP23017 scientific I/O. V5 uses the HS280S030RX/ST7789 panel; the existing prototype uses ILI9341.
 
 The firmware is now split across both ESP32-S3 cores:
 
@@ -117,6 +117,7 @@ Important current toggles:
 #define OPENCALC_ENABLE_GAME_AUDIO 0
 #define OPENCALC_USE_NEW_AUDIO_PCB 0
 #define OPENCALC_ENABLE_SCIENTIFIC_IO 0
+#define OPENCALC_USE_ST7789_DISPLAY 0
 #define OPENCALC_ENABLE_SERIAL_BUTTON_INPUT 0
 #define OPENCALC_FLASH_STORAGE_IMAGE 1
 #define OPENCALC_TARGET_FPS 45
@@ -376,6 +377,7 @@ GPIO13/GPIO21 behavior. For the revised hardware use:
 #define OPENCALC_USE_REAL_PCB 1
 #define OPENCALC_USE_NEW_AUDIO_PCB 1
 #define OPENCALC_ENABLE_SCIENTIFIC_IO 1
+#define OPENCALC_USE_ST7789_DISPLAY 1
 ```
 
 The script-visible channel map is:

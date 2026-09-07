@@ -19,6 +19,7 @@
 #define OPENCALC_ENABLE_POWER_STATUS_LED 0 // Active-high LED: legacy GPIO21 or scientific-I/O MCP23017 GPA1
 #define OPENCALC_ENABLE_SCIENTIFIC_IO 0 // ADS1115 + MCP23017 sensor header on the new PCB
 #define OPENCALC_USE_AO3401A_BACKLIGHT 0 // 0 = old TPS22918 active-high; 1 = new AO3401A active-low
+#define OPENCALC_USE_ST7789_DISPLAY 0 // 0 = tested ILI9341 board; 1 = V5 HS280S030RX/ST7789 panel
 #define OPENCALC_EXPORT_USB_STORAGE_TO_HOST 0 // 0 keeps /data mounted for app/game testing; 1 shows flash drive on the laptop
 #define OPENCALC_USB_CDC_STARTUP_BANNER_DELAY_MS 100
 #define OPENCALC_USB_OWNERSHIP_TIMEOUT_MS 3000UL // Wait for TinyUSB's asynchronous MSC mount-complete event
@@ -82,6 +83,10 @@
 
 #if OPENCALC_USE_NEW_AUDIO_PCB != 0 && OPENCALC_USE_NEW_AUDIO_PCB != 1
 #error "OPENCALC_USE_NEW_AUDIO_PCB must be 0 or 1"
+#endif
+
+#if OPENCALC_USE_ST7789_DISPLAY != 0 && OPENCALC_USE_ST7789_DISPLAY != 1
+#error "OPENCALC_USE_ST7789_DISPLAY must be 0 or 1"
 #endif
 
 #if OPENCALC_AUDIO_SAMPLE_RATE < 8000 || OPENCALC_AUDIO_SAMPLE_RATE > 48000

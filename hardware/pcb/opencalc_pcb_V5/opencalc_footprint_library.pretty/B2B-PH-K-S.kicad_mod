@@ -235,7 +235,7 @@
 		(uuid "4adade46-7e46-4cfc-8730-b263d001e5a6")
 	)
 	(embedded_fonts no)
-	(model "/Users/corypearl/Desktop/opencalc/hardware/pcb/opencalc_pcb_v5/kikad_parts/B2B-PH-K-S/B2B-PH-K-S.step"
+	(model "${KIPRJMOD}/kikad_parts/B2B-PH-K-S/B2B-PH-K-S.step"
 		(offset
 			(xyz -1 -0.5 0.5)
 		)

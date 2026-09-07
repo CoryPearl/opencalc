@@ -1637,7 +1637,7 @@
 		(uuid "da467bc9-a39d-4808-af14-b9905806b4e4")
 	)
 	(embedded_fonts no)
-	(model "/Users/corypearl/Desktop/opencalc/hardware/pcb/opencalc_pcb_v5/kikad_parts/BQ24074RGTR/RGT0016C.stp"
+	(model "${KIPRJMOD}/kikad_parts/BQ24074RGTR/RGT0016C.stp"
 		(offset
 			(xyz 0 0 0)
 		)

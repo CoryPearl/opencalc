@@ -1,7 +1,7 @@
 /**
  * board_init.c
  *
- * ILI9341 SPI LCD initialisation for ESP32-S3.
+ * SPI LCD initialisation for ESP32-S3.
  * And button matrix initilization
  */
 
@@ -945,7 +945,11 @@ void board_init(void)
         ESP_ERROR_CHECK(s_lcd_transfer_done == NULL ? ESP_ERR_NO_MEM : ESP_OK);
     }
 
+#if OPENCALC_USE_ST7789_DISPLAY
+    ESP_LOGI(TAG, "Initialising ST7789 on SPI2, %dx%d", LCD_H_RES, LCD_V_RES);
+#else
     ESP_LOGI(TAG, "Initialising ILI9341 on SPI2, %dx%d", LCD_H_RES, LCD_V_RES);
+#endif
     ESP_LOGI(TAG,
              "LCD pins: SCLK=%d MOSI=%d MISO=%d CS=%d DC=%d RST=%d BCKL=%d",
              PIN_NUM_LCD_SCLK,
@@ -987,15 +991,20 @@ void board_init(void)
         esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)LCD_HOST,
                                  &io_cfg, &io_handle));
 
-    /* 3. ILI9341 panel */
+    /* 3. Panel controller selected for the fitted LCD module. */
     esp_lcd_panel_handle_t panel_handle = NULL;
     esp_lcd_panel_dev_config_t panel_cfg = {
         .reset_gpio_num = PIN_NUM_LCD_RST,
         .rgb_ele_order  = LCD_RGB_ELEMENT_ORDER_BGR,
         .bits_per_pixel = 16,
     };
+#if OPENCALC_USE_ST7789_DISPLAY
+    ESP_ERROR_CHECK(
+        esp_lcd_new_panel_st7789(io_handle, &panel_cfg, &panel_handle));
+#else
     ESP_ERROR_CHECK(
         esp_lcd_new_panel_ili9341(io_handle, &panel_cfg, &panel_handle));
+#endif
 
     ESP_ERROR_CHECK(esp_lcd_panel_reset(panel_handle));
     ESP_ERROR_CHECK(esp_lcd_panel_init(panel_handle));
@@ -1003,7 +1012,7 @@ void board_init(void)
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
     backlight_on();
 
-    /* Put the native 240x320 ILI9341 GRAM into landscape addressing. */
+    /* Put the native 240x320 panel GRAM into landscape addressing. */
     ESP_ERROR_CHECK(esp_lcd_panel_swap_xy(panel_handle, true));
     ESP_ERROR_CHECK(esp_lcd_panel_mirror(panel_handle, true, true));
     lcd_clear_physical_panel(panel_handle);

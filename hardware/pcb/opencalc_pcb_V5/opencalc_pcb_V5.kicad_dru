@@ -1,0 +1,32 @@
+(version 1)
+
+# Manufacturer land patterns are tighter than the board-wide 0.20 mm rule.
+(rule "J1 0.5 mm FPC pad clearance"
+  (constraint clearance (min 0.15mm))
+  (condition "A.Reference == 'J1' && B.Reference == 'J1'"))
+
+(rule "J3 USB-C pad clearance"
+  (constraint clearance (min 0.18mm))
+  (condition "A.Reference == 'J3' && B.Reference == 'J3'"))
+
+# Keep the normal 0.50 mm plane clearance except at this routed analog via.
+(rule "APIN2 internal plane clearance"
+  (constraint clearance (min 0.40mm))
+  (condition "(A.NetName == '/APIN2' && B.Type == 'Zone') || (B.NetName == '/APIN2' && A.Type == 'Zone')"))
+
+# These dimensions are intentional properties of the selected footprints.
+(rule "BQ24074 exposed-pad thermal vias"
+  (constraint hole_size (min 0.25mm))
+  (condition "A.Reference == 'U4' && A.Pad_Number == 'V'"))
+
+(rule "USB shell edge clearance"
+  (constraint edge_clearance (min 0.40mm))
+  (condition "A.Reference == 'J3' || B.Reference == 'J3'"))
+
+(rule "ROW9 pull-up edge clearance"
+  (constraint edge_clearance (min 0.35mm))
+  (condition "A.Reference == 'R22' || B.Reference == 'R22'"))
+
+(rule "USB shell solid plane connection"
+  (constraint zone_connection solid)
+  (condition "A.Reference == 'J3' && (A.Pad_Number == '9' || A.Pad_Number == '16')"))

@@ -575,7 +575,7 @@
 		(uuid "db979cdf-f723-4005-90f7-a60c7292ce8d")
 	)
 	(embedded_fonts no)
-	(model "/Users/corypearl/Desktop/opencalc/hardware/pcb/opencalc_pcb_v5/kikad_parts/USB4085-GF.A/USB4085-GF-A.STEP"
+	(model "${KIPRJMOD}/kikad_parts/USB4085-GF.A/USB4085-GF-A.STEP"
 		(offset
 			(xyz 3 -4 0)
 		)

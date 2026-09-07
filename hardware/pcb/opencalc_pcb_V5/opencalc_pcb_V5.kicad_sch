@@ -13898,6 +13898,56 @@
 	)
 	(wire
 		(pts
+			(xy 551.18 125.73) (xy 553.72 125.73)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "bfb47851-c2cd-4130-b8e0-6a478e4a9501")
+	)
+	(wire
+		(pts
+			(xy 553.72 125.73) (xy 553.72 133.35)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "cd3d31ef-35a0-41ca-91ac-061181ced316")
+	)
+	(wire
+		(pts
+			(xy 553.72 133.35) (xy 561.34 133.35)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "bc1655ab-abdb-42b7-a7eb-a33a556eb4da")
+	)
+	(wire
+		(pts
+			(xy 551.18 118.11) (xy 561.34 118.11)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2a024149-8173-41a0-8099-87f1b75347df")
+	)
+	(wire
+		(pts
+			(xy 561.34 118.11) (xy 561.34 125.73)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e2481f52-c9d7-44bc-93e3-348a9492bb3d")
+	)
+	(wire
+		(pts
 			(xy 88.9 327.66) (xy 116.84 327.66)
 		)
 		(stroke
@@ -18407,7 +18457,7 @@
 	)
 	(symbol
 		(lib_id "Device:C")
-		(at 551.18 129.54 0)
+		(at 561.34 129.54 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -18416,7 +18466,7 @@
 		(fields_autoplaced yes)
 		(uuid "04ec3747-8293-4b68-831f-2ecb34bcdb06")
 		(property "Reference" "C10"
-			(at 554.99 128.2699 0)
+			(at 565.15 128.2699 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -18425,7 +18475,7 @@
 			)
 		)
 		(property "Value" "100nF"
-			(at 554.99 130.8099 0)
+			(at 565.15 130.8099 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -18434,7 +18484,7 @@
 			)
 		)
 		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder"
-			(at 552.1452 133.35 0)
+			(at 562.3052 133.35 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -18443,7 +18493,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 551.18 129.54 0)
+			(at 561.34 129.54 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -18452,7 +18502,7 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
-			(at 551.18 129.54 0)
+			(at 561.34 129.54 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -22980,7 +23030,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10kΩ"
+		(property "Value" "100kΩ"
 			(at 341.63 295.9099 0)
 			(effects
 				(font
@@ -31613,7 +31663,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(dnp no)
+		(dnp yes)
 		(fields_autoplaced yes)
 		(uuid "9a35b91f-a935-4364-ab57-2fa985367d2f")
 		(property "Reference" "R34"
@@ -31625,7 +31675,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "DNP"
 			(at 265.43 175.2599 0)
 			(effects
 				(font

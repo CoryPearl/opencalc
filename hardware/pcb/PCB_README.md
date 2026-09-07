@@ -23,7 +23,7 @@ Compared with earlier prototypes, the V5 direction focuses on:
 - Better antenna keepout/placement.
 - Full case designed in CAD.
 - Logo artwork on the PCB.
-- Full power-off slide switch plus firmware software-off sleep.
+- Hardware regulator-off slide switch plus firmware software-off sleep.
 - USB serial monitoring and USB mass storage through the same USB-C connector.
 - Optional speaker/audio hardware for games.
 - Scientific sensor expansion using MCP23017T-E/SO digital I/O and
@@ -39,7 +39,9 @@ USB-C VBUS feeds the charger/power-path stage, then the regulator creates the bo
 - 3.3 V regulator: `TPS63802DLAR` buck-boost regulator using the `74479275147` 4.7 uH inductor.
 - Battery connection: single-cell protected Li-ion/LiPo solder pads or large plated pads for `VBAT` and `GND`.
 - Battery monitor: 1M/1M resistor divider from `VBAT` to GPIO7 / ADC1 channel 6, with 100 nF from the ADC node to GND.
-- Hardware power switch: `JS102011SAQN` slide switch may be used as a full battery disconnect.
+- Hardware power switch: `JS102011SAQN` drives the TPS63802 `EN` pin. It turns
+  off the 3.3 V system rail but does not disconnect the battery from the
+  BQ24074 charger/power-path IC.
 - Status LEDs: red power LED, plus charger/power-good indicators if populated.
 
 Use a protected single-cell Li-ion/LiPo pack unless protection is added elsewhere.
@@ -53,7 +55,8 @@ Use a protected single-cell Li-ion/LiPo pack unless protection is added elsewher
 
 ## Display
 
-- LCD target: 320x240 ILI9341-compatible SPI display, mechanically represented by the current display model in `opencalc_pcb_V5`.
+- LCD target: 240x320 `HS280S030RX` SPI module using the ST7789T3/ST7789V
+  controller, operated in 320x240 landscape orientation.
 - Connector: `FH12-18S-0.5SH(55)` 18-pin FPC connector.
 - Firmware uses write-only SPI for the new PCB: LCD MISO is not connected.
 - Firmware display nets:
@@ -66,6 +69,8 @@ Use a protected single-cell Li-ion/LiPo pack unless protection is added elsewher
 - Touch pins are not wired on this PCB revision and are disabled in firmware.
 - Backlight is controlled from GPIO47 through the AO3401A 3.3 V high-side backlight circuit. Do not drive the LCD LED/backlight from 5 V.
 - For this V5 backlight circuit, firmware should use `OPENCALC_USE_AO3401A_BACKLIGHT 1`.
+- V5 firmware must use `OPENCALC_USE_ST7789_DISPLAY 1`; leave it at `0` only
+  for an older ILI9341 prototype.
 
 ## Game Audio
 
@@ -75,6 +80,10 @@ The new PCB adds game audio. The ESP32-S3 does not have an analog DAC, so firmwa
 - Speaker: `CMS-151504-SMT-TR` or compatible small speaker.
 - `AUDIO_SD` -> MCP23017 `GPA0`, PAM8302 shutdown control.
 - `AUDIO_OUT` -> GPIO41, ESP32-S3 PDM audio output.
+- Fit a low-pass reconstruction filter between GPIO41 and C16/PAM8302A input;
+  C16 alone is an AC-coupling capacitor, not a PDM low-pass filter.
+- `R34` is DNP and `R36` is 100 kOhm to GND so the amplifier remains shut down
+  while the MCP23017 is resetting.
 - GPIO13 / GPIO21 -> scientific-I/O SDA / SCL.
 - GPIO41 is no longer charger status.
 - GPIO13 is no longer LCD MISO.
@@ -215,6 +224,7 @@ Recommended V5 firmware profile:
 #define OPENCALC_USE_REAL_PCB 1
 #define OPENCALC_USE_NEW_AUDIO_PCB 1
 #define OPENCALC_USE_AO3401A_BACKLIGHT 1
+#define OPENCALC_USE_ST7789_DISPLAY 1
 #define OPENCALC_ENABLE_SCIENTIFIC_IO 1
 ```
 
@@ -240,7 +250,41 @@ Any extra user GPIO header pins should be confirmed against the firmware pin map
 
 The current firmware uses software-off sleep. In software-off mode, firmware turns off the LCD/backlight and puts the ESP32-S3 into the configured low-power sleep path. ON/HOME wakes the device through the keypad wake path.
 
-The optional hardware slide switch can still be used as a true full battery disconnect, but firmware does not depend on a power-hold latch.
+The hardware slide switch disables the TPS63802 3.3 V regulator. The charger
+and its battery connection remain live, allowing charging while the system
+rail is off. Add a separate series battery switch only if a physical battery
+disconnect is required.
+
+## V5 Pre-Fabrication Audit
+
+The KiCad project now has a closed board outline, a valid local footprint
+library mapping, zero unrouted nets, and project-specific rules for the selected
+fine-pitch connector footprints. The charger input capacitors C10 (100 nF) and
+C11 (4.7 uF) are wired in parallel from `USB_VBUS` to GND, and `AUDIO_SD` is
+routed through to the PAM8302A.
+
+Resolve these product decisions before ordering a production run:
+
+- Add and validate the GPIO41 PDM low-pass filter before C16. Keep the filter
+  close to the amplifier input and away from LCD/backlight switching traces.
+- The charger is presently configured for roughly 1.4 A through `R15=1.1 kOhm`,
+  but the USB-C circuit does not detect the source-advertised CC current. Use a
+  CC/current-detection solution or lower the hardware input limit to a value
+  safe for every intended source.
+- Add low-leakage ESD protection and suitable RC input limiting to A0-A3 if the
+  rear header will be handled by students or connected while powered.
+- The fixed 10 kOhm charger `TS` resistor intentionally disables battery-pack
+  temperature sensing. A production battery should use a compatible NTC unless
+  equivalent pack-level thermal protection is guaranteed.
+- Verify the selected board house accepts 0.254 mm finished thermal vias and
+  the connector manufacturers' 0.15/0.18 mm copper clearances.
+- ERC's four remaining errors are the expected undriven A0-A3 external inputs.
+  The remaining ERC warnings come from imported symbols with unspecified pin
+  electrical types; they should be cleaned before release so future real errors
+  are easier to see.
+- Schematic-parity checking still reports imported-footprint metadata,
+  duplicated custom thermal/shell pads, and board-only mechanical footprints.
+  Reconcile those 143 non-routing differences before freezing production files.
 
 Graph split views, graph styling, and `/data/graph.bmp` backgrounds are software
 features and require no V5 PCB changes. Their framebuffer and worker storage use

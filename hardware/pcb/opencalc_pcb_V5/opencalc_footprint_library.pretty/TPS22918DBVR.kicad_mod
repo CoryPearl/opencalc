@@ -579,7 +579,7 @@
 		(uuid "57caf458-5b2c-4fac-a87d-151253b93a77")
 	)
 	(embedded_fonts no)
-	(model "/Users/corypearl/Desktop/opencalc/hardware/pcb/opencalc_pcb_v5/kikad_parts/TPS22918DBVR/DBV0006A.stp"
+	(model "${KIPRJMOD}/kikad_parts/TPS22918DBVR/DBV0006A.stp"
 		(offset
 			(xyz 0 0 0)
 		)

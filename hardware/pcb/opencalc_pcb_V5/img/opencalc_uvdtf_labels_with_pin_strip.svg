@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+ width="56mm" height="50mm" viewBox="0 0 56 50">
+<rect width="56.0" height="41.5" fill="none"/>
+<style>
+  text {
+    font-family: "DejaVu Sans", Arial, sans-serif;
+    font-weight: 700;
+    dominant-baseline: middle;
+  }
+</style>
+
+<text x="5.6250" y="4.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">y=</text>
+<text x="8.4500" y="4.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">/plot</text>
+<text x="10.8250" y="4.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">A+</text>
+<text x="15.6250" y="4.7700" font-size="0.8190" fill="#FFFFFF" text-anchor="middle">window</text>
+<text x="18.4500" y="4.7700" font-size="0.7471" fill="#56B4FF" text-anchor="middle">tblset</text>
+<text x="20.8250" y="4.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">a-</text>
+<text x="25.6250" y="4.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">zoom</text>
+<text x="28.4500" y="4.7700" font-size="0.6989" fill="#56B4FF" text-anchor="middle">format</text>
+<text x="30.8250" y="4.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">DB</text>
+<text x="35.6250" y="4.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">trace</text>
+<text x="38.4500" y="4.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">calc</text>
+<text x="45.6250" y="4.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">graph</text>
+<text x="48.4500" y="4.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">table</text>
+<text x="50.8250" y="4.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">LSA</text>
+<text x="5.6250" y="7.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">2nd</text>
+<text x="10.8250" y="7.7700" font-size="0.6290" fill="#55E58A" text-anchor="middle">games</text>
+<text x="15.6250" y="7.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">mode</text>
+<text x="18.4500" y="7.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">quit</text>
+<text x="25.6250" y="7.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">stat</text>
+<text x="28.4500" y="7.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">list</text>
+<text x="35.6250" y="7.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">←</text>
+<text x="45.6250" y="7.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">↑</text>
+<text x="48.4500" y="7.7700" font-size="0.6341" fill="#56B4FF" text-anchor="middle">bright+</text>
+<text x="5.6250" y="10.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">alpha</text>
+<text x="8.4500" y="10.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">lock</text>
+<text x="15.6250" y="10.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">XθTn</text>
+<text x="25.6250" y="10.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">back</text>
+<text x="35.6250" y="10.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">↓</text>
+<text x="38.4500" y="10.7700" font-size="0.6341" fill="#56B4FF" text-anchor="middle">bright-</text>
+<text x="45.6250" y="10.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">→</text>
+<text x="5.6250" y="13.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">math</text>
+<text x="8.4500" y="13.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">ops</text>
+<text x="10.8250" y="13.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">A</text>
+<text x="15.6250" y="13.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">[]</text>
+<text x="18.4500" y="13.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">[]</text>
+<text x="20.8250" y="13.7700" font-size="0.5242" fill="#55E58A" text-anchor="middle">frac/B</text>
+<text x="25.6250" y="13.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">prgm</text>
+<text x="28.4500" y="13.7700" font-size="0.6341" fill="#56B4FF" text-anchor="middle">scripts</text>
+<text x="30.8250" y="13.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">C</text>
+<text x="35.6250" y="13.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">vars</text>
+<text x="38.4500" y="13.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">conv</text>
+<text x="40.8250" y="13.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">D</text>
+<text x="45.6250" y="13.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">del</text>
+<text x="48.4500" y="13.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">clear</text>
+<text x="50.8250" y="13.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">E</text>
+<text x="5.6250" y="16.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">√</text>
+<text x="8.4500" y="16.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">root</text>
+<text x="10.8250" y="16.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">F</text>
+<text x="15.6250" y="16.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">sin</text>
+<text x="18.4500" y="16.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">asin</text>
+<text x="20.8250" y="16.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">csc</text>
+<text x="25.6250" y="16.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">cos</text>
+<text x="28.4500" y="16.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">acos</text>
+<text x="30.8250" y="16.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">sec</text>
+<text x="35.6250" y="16.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">tan</text>
+<text x="38.4500" y="16.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">atan</text>
+<text x="40.8250" y="16.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">cot</text>
+<text x="45.6250" y="16.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">π</text>
+<text x="48.4500" y="16.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">e</text>
+<text x="50.8250" y="16.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">J</text>
+<text x="5.6250" y="19.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">x²</text>
+<text x="8.4500" y="19.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">x^□</text>
+<text x="10.8250" y="19.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">K</text>
+<text x="15.6250" y="19.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">,</text>
+<text x="18.4500" y="19.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">E</text>
+<text x="20.8250" y="19.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">L</text>
+<text x="25.6250" y="19.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">(</text>
+<text x="28.4500" y="19.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">{</text>
+<text x="30.8250" y="19.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">M</text>
+<text x="35.6250" y="19.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">)</text>
+<text x="38.4500" y="19.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">}</text>
+<text x="40.8250" y="19.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">N</text>
+<text x="45.6250" y="19.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">+</text>
+<text x="50.8250" y="19.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">O</text>
+<text x="5.6250" y="22.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">log</text>
+<text x="8.4500" y="22.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">10^</text>
+<text x="10.8250" y="22.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">P</text>
+<text x="15.6250" y="22.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">7</text>
+<text x="20.8250" y="22.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">Q</text>
+<text x="25.6250" y="22.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">8</text>
+<text x="30.8250" y="22.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">R</text>
+<text x="35.6250" y="22.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">9</text>
+<text x="40.8250" y="22.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">S</text>
+<text x="45.6250" y="22.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">×</text>
+<text x="50.8250" y="22.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">T</text>
+<text x="5.6250" y="25.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">ln</text>
+<text x="8.4500" y="25.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">e^</text>
+<text x="10.8250" y="25.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">U</text>
+<text x="15.6250" y="25.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">4</text>
+<text x="20.8250" y="25.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">V</text>
+<text x="25.6250" y="25.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">5</text>
+<text x="30.8250" y="25.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">W</text>
+<text x="35.6250" y="25.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">6</text>
+<text x="40.8250" y="25.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">X</text>
+<text x="45.6250" y="25.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">−</text>
+<text x="50.8250" y="25.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">Y</text>
+<text x="5.6250" y="28.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">sto</text>
+<text x="8.4500" y="28.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">get</text>
+<text x="10.8250" y="28.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">Z</text>
+<text x="15.6250" y="28.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">1</text>
+<text x="20.8250" y="28.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">G</text>
+<text x="25.6250" y="28.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">2</text>
+<text x="30.8250" y="28.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">H</text>
+<text x="35.6250" y="28.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">3</text>
+<text x="40.8250" y="28.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">I</text>
+<text x="45.6250" y="28.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">÷</text>
+<text x="50.8250" y="28.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">%</text>
+<text x="5.6250" y="31.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">on</text>
+<text x="8.4500" y="31.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">home</text>
+<text x="10.8250" y="31.7700" font-size="0.8800" fill="#55E58A" text-anchor="middle">off</text>
+<text x="15.6250" y="31.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">0</text>
+<text x="25.6250" y="31.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">.</text>
+<text x="28.4500" y="31.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">#</text>
+<text x="35.6250" y="31.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">(−)</text>
+<text x="38.4500" y="31.7700" font-size="0.8800" fill="#56B4FF" text-anchor="middle">ans</text>
+<text x="45.6250" y="31.7700" font-size="0.8800" fill="#FFFFFF" text-anchor="middle">enter</text>
+
+<rect x="9.0000" y="44.5000" width="38.0" height="1.5" rx="0.20" ry="0.20" fill="#000000"/>
+<text x="10.2667" y="44.9800" font-size="0.4200" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">1</text>
+<text x="10.2667" y="45.5500" font-size="0.4200" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">2</text>
+<text x="12.8000" y="44.9800" font-size="0.4200" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">3</text>
+<text x="12.8000" y="45.5500" font-size="0.4200" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">4</text>
+<text x="15.3333" y="44.9800" font-size="0.4200" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">5</text>
+<text x="15.3333" y="45.5500" font-size="0.4200" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">6</text>
+<text x="17.8667" y="44.9800" font-size="0.4200" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">7</text>
+<text x="17.8667" y="45.5500" font-size="0.4200" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">8</text>
+<text x="20.4000" y="44.9800" font-size="0.4200" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">9</text>
+<text x="20.4000" y="45.5500" font-size="0.3400" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">10</text>
+<text x="22.9333" y="44.9800" font-size="0.3400" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">11</text>
+<text x="22.9333" y="45.5500" font-size="0.3400" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">12</text>
+<text x="25.4667" y="44.9800" font-size="0.3400" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">13</text>
+<text x="25.4667" y="45.5500" font-size="0.3400" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">14</text>
+<text x="28.0000" y="44.9800" font-size="0.3400" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">15</text>
+<text x="28.0000" y="45.5500" font-size="0.3400" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">16</text>
+<text x="30.5333" y="44.9800" font-size="0.3400" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">17</text>
+<text x="30.5333" y="45.5500" font-size="0.3400" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">18</text>
+<text x="33.0667" y="44.9800" font-size="0.3400" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">19</text>
+<text x="33.0667" y="45.5500" font-size="0.3400" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">20</text>
+<text x="35.6000" y="44.9800" font-size="0.3400" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">21</text>
+<text x="35.6000" y="45.5500" font-size="0.3400" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">22</text>
+<text x="38.1333" y="44.9800" font-size="0.3400" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">23</text>
+<text x="38.1333" y="45.5500" font-size="0.3400" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">24</text>
+<text x="40.6667" y="44.9800" font-size="0.3400" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">25</text>
+<text x="40.6667" y="45.5500" font-size="0.3400" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">26</text>
+<text x="43.2000" y="44.9800" font-size="0.3400" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">27</text>
+<text x="43.2000" y="45.5500" font-size="0.3400" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">28</text>
+<text x="45.7333" y="44.9800" font-size="0.3400" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">29</text>
+<text x="45.7333" y="45.5500" font-size="0.3400" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700">30</text>
+</svg>

@@ -16,7 +16,7 @@ SCALE = 2
 WIDTH = LOGICAL_W * SCALE
 HEIGHT = LOGICAL_H * SCALE
 FPS = 10
-FRAME_COUNT = 300
+FRAME_COUNT = 320
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "open_calc_ui_calculator_demo.gif"
@@ -112,12 +112,8 @@ def draw_icon(c: Canvas, kind: str, x: float, y: float, size: float, color: str)
     elif kind == "graph":
         c.line((x + 3, y + size - 4, x + size - 2, y + size - 4), color)
         c.line((x + 4, y + size - 2, x + 4, y + 2), color)
-        points = []
-        for i in range(12):
-            px = x + 5 + i * (size - 10) / 11
-            py = cy + math.sin(i / 11 * math.pi * 1.7) * (size * .24)
-            points.extend((px, py))
-        c.line(tuple(points), color, 1)
+        c.line((x + 5, y + size - 7, x + size / 4 + 3, y + size / 4,
+                x + size - 4, y + size / 2), color, 1)
     elif kind in {"table", "matrix"}:
         c.rect((x + pad, y + pad, x + size - pad, y + size - pad), BG, color)
         c.line((cx, y + pad, cx, y + size - pad), color)
@@ -138,14 +134,17 @@ def draw_icon(c: Canvas, kind: str, x: float, y: float, size: float, color: str)
         c.rect((x + 3, cy - 4, x + size - 3, cy - 2), color)
         c.rect((x + 3, cy + 3, x + size - 3, cy + 5), color)
     elif kind == "settings":
-        c.ellipse((cx - 5, cy - 5, cx + 5, cy + 5), outline=color, width=2)
-        c.ellipse((cx - 1.5, cy - 1.5, cx + 1.5, cy + 1.5), fill=color)
-        for angle in range(0, 360, 45):
-            dx = math.cos(math.radians(angle)) * 7
-            dy = math.sin(math.radians(angle)) * 7
-            c.line((cx + dx * .72, cy + dy * .72, cx + dx, cy + dy), color, 2)
+        for dx, dy in [(0, -7), (0, 7), (-7, 0), (7, 0),
+                       (-5, -5), (5, -5), (-5, 5), (5, 5)]:
+            c.rect((cx + dx - 1.5, cy + dy - 1.5,
+                    cx + dx + 1.5, cy + dy + 1.5), color)
+        c.rect((cx - 5, cy - 5, cx + 5, cy + 5), BG, color)
+        c.rect((cx - 2, cy - 2, cx + 2, cy + 2), BG)
     elif kind == "finance":
-        c.text((cx, cy), "$", color, 12, bold=True, anchor="mm")
+        c.line((cx, y + 3, cx, y + size - 3), color)
+        c.line((cx + 5, y + 6, cx - 3, y + 6, cx - 5, cy,
+                cx + 4, cy, cx + 2, y + size - 6,
+                cx - 6, y + size - 6), color)
     elif kind == "conics":
         c.ellipse((x + 3, y + 3, x + size - 3, y + size - 3), outline=color, width=1)
     elif kind == "inequality":
@@ -297,6 +296,7 @@ def draw_settings(selected: int) -> Image.Image:
         "Auto sleep on",
         "Power save off",
         "Theme dark",
+        "Audio 65%",
         "Reset to factory",
     ]
     for i, item in enumerate(items):
@@ -308,8 +308,95 @@ def draw_settings(selected: int) -> Image.Image:
             c.rect((269, y + 4, 292, y + 14), ACCENT if on else BORDER, radius=5)
             knob_x = 286 if on else 275
             c.ellipse((knob_x - 4, y + 5, knob_x + 4, y + 13), fill=TEXT)
-    footer = "left, right - brightness" if selected == 0 else "enter - toggle"
+    footer = "left, right - brightness" if selected == 0 else (
+        "left, right - audio" if selected == 4 else (
+            "enter - reset" if selected == 5 else "enter - toggle"
+        )
+    )
     c.text((18, 220), footer, MUTED, 7)
+    return c.image
+
+
+def draw_python_demo(local_frame: int) -> Image.Image:
+    c = Canvas()
+
+    if local_frame < 7:
+        draw_header(c, 3)
+        items = [
+            ("Run script", "Open /scripts and run"),
+            ("Debug script", "Breakpoints, step and inspect"),
+            ("Edit script", "Choose a file and edit text"),
+            ("New script", "Create and edit a new .py"),
+            ("Delete script", "Choose a file and delete it"),
+        ]
+        for index, (label, detail) in enumerate(items):
+            y = 34 + index * 34
+            selected = index == 0
+            c.rect((18, y, 302, y + 28), ACCENT_2 if selected else SURFACE)
+            c.text((28, y + 5), label, TEXT, 7, bold=selected)
+            c.text((134, y + 5), detail, MUTED, 6)
+        c.text((18, 220), "up, down - select  enter - open", MUTED, 7)
+        return c.image
+
+    if local_frame < 14:
+        draw_header(c, 3)
+        c.text((18, 32), "Run script", ACCENT, 7)
+        scripts = ["fib.py", "logger_example.py"]
+        for index, name in enumerate(scripts):
+            y = 50 + index * 20
+            selected = index == 1
+            c.rect((18, y, 302, y + 17), ACCENT_2 if selected else SURFACE)
+            c.text((28, y + 5), name, TEXT, 7, bold=selected)
+        c.text((18, 220), "enter - run  back - menu", MUTED, 7)
+        return c.image
+
+    if local_frame < 24:
+        draw_header(c, 3)
+        c.text((10, 32), "logger_example.py", ACCENT, 7)
+        c.rect((8, 46, 312, 47), BORDER)
+        lines = [
+            "sensors.rate(128)",
+            "sensors.list_clear(1)",
+            "previous = sensors.analog_read(0)",
+            "sensors.list_append(1, previous)",
+            "for sample in range(1, 60):",
+            "    value = sensors.analog_read(0)",
+            "    sensors.list_append(1, value)",
+            "    y0 = 220 - int(previous * 60)",
+            "    y1 = 220 - int(value * 60)",
+            "    graphics.line((sample-1)*5,y0,sample*5,y1,65535)",
+            "    previous = value",
+            "    sensors.delay(50)",
+        ]
+        for index, line in enumerate(lines):
+            c.text((16, 54 + index * 12), line, TEXT, 6, mono=True)
+        cursor_line = min(len(lines) - 1, (local_frame - 14) // 2)
+        if cursor_visible(local_frame):
+            c.rect((14, 53 + cursor_line * 12, 16, 64 + cursor_line * 12), ACCENT)
+        c.text((10, 208), "editing logger_example.py", MUTED, 6)
+        c.rect((0, 220, 320, 240), HEADER)
+        c.text((8, 226), "Trace-breakpoint  2nd Enter-save", MUTED, 6)
+        return c.image
+
+    # Finish acquisition early enough to leave the saved-list result readable.
+    progress = min(1.0, (local_frame - 24) / 12.0)
+    sample_count = max(2, int(60 * progress))
+    points: list[float] = []
+    for sample in range(sample_count):
+        voltage = 1.65 + 0.72 * math.sin(sample * 0.25) + 0.18 * math.sin(sample * 0.71)
+        x = 12 + sample * 4.85
+        y = 190 - voltage * 43
+        points.extend((x, y))
+    c.line(tuple(points), TEXT, 1)
+    draw_header(c, 3)
+    c.text((10, 32), "logger_example.py", ACCENT, 7)
+    c.rect((8, 46, 312, 47), BORDER)
+    c.text((10, 54), "A0", MUTED, 6, mono=True)
+    if progress >= 1.0:
+        c.text((10, 198), "Saved 60 samples to L1", GREEN, 7, mono=True)
+    c.rect((0, 220, 320, 240), HEADER)
+    c.text((8, 226), "finished" if progress >= 1.0 else "running...",
+           TEXT if progress >= 1.0 else YELLOW, 7)
     return c.image
 
 
@@ -336,31 +423,21 @@ def draw_app_demo(app_index: int, local_frame: int) -> Image.Image:
                 c.rect((xs[col], y, xs[col + 1], y + 22), SURFACE_2 if row == local_frame // 4 % 6 else BG, GRID)
                 c.text(((xs[col] + xs[col + 1]) / 2, y + 11), value, TEXT, 7, mono=True, anchor="mm")
         c.text((160, 230), "2nd+Window setup   arrows browse", MUTED, 6, anchor="mm")
-    elif app_index == 3:  # Python
-        c.rect((8, 36, 312, 197), SURFACE, BORDER, radius=2)
-        lines = ["n = int(input('Terms: '))", "a, b = 0, 1", "for i in range(n):",
-                 "    print(a)", "    a, b = b, a + b"]
-        for i, line in enumerate(lines):
-            c.text((15, 48 + i * 20), f"{i + 1:>2}  {line}", TEXT if i != 2 else ACCENT, 7, mono=True)
-        if local_frame < 10:
-            c.rect((12, 46 + (local_frame // 3) * 20, 16, 59 + (local_frame // 3) * 20), ACCENT)
-        else:
-            c.rect((8, 202, 312, 231), BG, BORDER, radius=2)
-            c.text((15, 210), "Terms: 8", YELLOW, 7, mono=True)
-            c.text((15, 221), "0  1  1  2  3  5  8  13", GREEN, 7, mono=True)
     elif app_index == 4:  # Statistics
-        tabs = ["Summary", "Regression", "Plots", "Distributions"]
-        for i, label in enumerate(tabs):
-            x = 8 + i * 76
-            c.rect((x, 36, x + 70, 57), ACCENT_2 if i == 2 else SURFACE, BORDER, radius=2)
-            c.text((x + 35, 46), label, TEXT, 6, bold=i == 2, anchor="mm")
-        c.rect((8, 66, 312, 222), SURFACE, BORDER)
-        for i, h in enumerate([34, 57, 83, 66, 111, 94, 72, 45]):
-            x = 22 + i * 34
-            c.rect((x, 207 - h, x + 22, 207), "#6f9ee8")
-        c.line((16, 207, 303, 207), BORDER)
-        c.text((18, 76), "Histogram  L1", TEXT, 8, bold=True)
-        c.text((296, 76), "n=42", MUTED, 7, mono=True, anchor="ra")
+        c.text((16, 34), "STATS", TEXT, 7, bold=True)
+        c.text((62, 34), "choose a workflow", MUTED, 6)
+        choices = ["Summary Statistics", "Regression", "Statistical Plots",
+                   "Distributions", "Confidence Intervals", "Hypothesis Tests",
+                   "One-Variable Stats"]
+        selected = min(6, local_frame // 3)
+        for i, label in enumerate(choices):
+            y = 48 + i * 22
+            active = i == selected
+            c.rect((14, y, 306, y + 20), ACCENT_2 if active else SURFACE)
+            c.rect((14, y, 18, y + 20), ACCENT if active else BORDER)
+            c.text((24, y + 5), str(i + 1), ACCENT if active else MUTED, 6)
+            c.text((42, y + 5), label, TEXT, 7, bold=active)
+        c.text((16, 220), "1-7 open   arrows select   Back home", MUTED, 6)
     elif app_index == 5:  # Lists
         for i in range(6):
             x = 7 + i * 51
@@ -393,17 +470,22 @@ def draw_app_demo(app_index: int, local_frame: int) -> Image.Image:
             c.text((216, 72 + i * 22), action, ACCENT if i == 2 else TEXT, 7, mono=True)
         c.text((15, 214), "rref(A) = identity", GREEN, 7, mono=True)
     elif app_index == 7:  # Solver
-        choices = ["Equation Solver", "System Solver", "Polynomial Solver", "Numeric Solver"]
+        c.text((16, 34), "SOLVER", TEXT, 7, bold=True)
+        c.text((70, 34), "choose a method", MUTED, 6)
+        choices = [("Equation Solver", "exact and numeric"),
+                   ("System Solver", "linear and nonlinear"),
+                   ("Polynomial Solver", "roots and factors"),
+                   ("Numeric Solver", "bounded search"),
+                   ("Saved Problems", "reopen worksheets")]
         for i, label in enumerate(choices):
-            y = 38 + i * 27
-            c.rect((10, y, 155, y + 22), ACCENT_2 if i == 2 else SURFACE, ACCENT if i == 2 else BORDER, radius=2)
-            c.text((18, y + 11), label, TEXT, 7, bold=i == 2, anchor="lm")
-        c.rect((166, 38, 310, 196), SURFACE, BORDER, radius=2)
-        c.text((178, 51), "x^3 - 6x^2 + 11x - 6", TEXT, 6, mono=True)
-        c.text((178, 76), "Exact roots", MUTED, 7, bold=True)
-        for i, root in enumerate(["x1 = 1", "x2 = 2", "x3 = 3"]):
-            c.text((187, 99 + i * 23), root, GREEN, 8, mono=True)
-        c.text((178, 177), "verified by substitution", MUTED, 6)
+            y = 51 + i * 31
+            active = i == min(4, local_frame // 4)
+            c.rect((14, y, 306, y + 27), ACCENT_2 if active else SURFACE)
+            c.rect((14, y, 18, y + 27), ACCENT if active else BORDER)
+            c.text((24, y + 8), str(i + 1), ACCENT if active else MUTED, 6)
+            c.text((43, y + 5), label[0], TEXT, 7, bold=active)
+            c.text((164, y + 15), label[1], MUTED, 6)
+        c.text((16, 220), "1-5 open   arrows select   Back home", MUTED, 6)
     elif app_index == 9:  # Finance
         labels = [("N", "60"), ("I%", "5.25"), ("PV", "25000"), ("PMT", "-474.66"), ("FV", "0")]
         for i, (label, value) in enumerate(labels):
@@ -539,19 +621,24 @@ def tour_frame(frame: int) -> Image.Image:
     if frame < 43:
         return draw_home(min(11, (frame - 28) * 12 // 15))
 
-    scene = (frame - 43) // 20
-    local = (frame - 43) % 20
-    if scene < 11:
-        app_index = scene + 1
-        if app_index == 1:
-            return draw_graph(int(local * 54 / 19))
-        if app_index == 8:
-            return draw_settings(min(4, local // 4))
-        return draw_app_demo(app_index, local)
+    scene_start = 43
+    for app_index in range(1, len(APPS)):
+        duration = 40 if app_index == 3 else 20
+        if frame < scene_start + duration:
+            local = frame - scene_start
+            if app_index == 1:
+                return draw_graph(int(local * 54 / 19))
+            if app_index == 3:
+                return draw_python_demo(local)
+            if app_index == 8:
+                return draw_settings(min(5, local // 3))
+            return draw_app_demo(app_index, local)
+        scene_start += duration
 
-    if frame < 278:
-        return draw_game_menu(min(4, (frame - 263) // 3))
-    return draw_tetris(frame - 278)
+    game_menu_end = scene_start + 15
+    if frame < game_menu_end:
+        return draw_game_menu(min(4, (frame - scene_start) // 3))
+    return draw_tetris(frame - game_menu_end)
 
 
 def main() -> None:

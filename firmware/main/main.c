@@ -33,7 +33,7 @@ static void serial_button_task(void *arg)
 
     printf("\nSerial button input enabled. Type a number 1-50, then Enter.\n");
     printf("Each entry is normal / 2nd / alpha where applicable.\n");
-    printf("01 y=/plot/uppercase      02 window/tblset/lowercase 03 zoom/format/help database  04 trace/calc   05 graph/table\n");
+    printf("01 y=/plot/uppercase      02 window/tblset/lowercase 03 zoom/format/help database  04 trace/calc   05 graph/table/LSA\n");
     printf("06 2nd/ /games          07 mode/quit     08 stat/list    09 left         10 up/bright+\n");
     printf("11 alpha/lock   12 XthetaTn      13 back         14 down/bright- 15 right\n");
     printf("16 math/ops/A   17 []/[]/frac/B  18 prgm/scripts/C 19 vars/conv/D 20 del/clear/E\n");

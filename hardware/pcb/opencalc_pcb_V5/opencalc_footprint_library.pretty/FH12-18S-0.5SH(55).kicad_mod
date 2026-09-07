@@ -369,7 +369,7 @@
 		(uuid "c8022108-93b4-4e68-8d72-b397e6113915")
 	)
 	(embedded_fonts no)
-	(model "/Users/corypearl/Desktop/opencalc/hardware/pcb/opencalc_pcb_v5/kikad_parts/FH12-18S-0.5SH(55)/FH12-18S-0.5SH(55).STEP"
+	(model "${KIPRJMOD}/kikad_parts/FH12-18S-0.5SH(55)/FH12-18S-0.5SH(55).STEP"
 		(offset
 			(xyz 21.7 -12 -158)
 		)

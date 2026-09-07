@@ -25,7 +25,9 @@ Blog: [https://corypearl.github.io/opencalc/blog.html](https://corypearl.github.
   unit-aware expressions such as `8 m / 2 s`.
 - **Integrated CAS and graphing:** Giac/KhiCAS symbolic math linked to Cartesian,
   parametric, polar, and sequence graphs, tables, roots, derivatives, tangents,
-  integrals, and points of interest.
+  integrals, and points of interest. `Alpha` + `Graph` opens exact symbolic
+  analysis for the selected graph, including its derivative, integral, roots,
+  asymptotes, tangent line, and integral shading.
 - **A complete math toolkit:** Statistics, Lists, Matrices, Solver, Finance,
   Conics, Inequalities, and a searchable science and engineering reference.
 - **Reference Center:** press `Alpha` + `Zoom` for an interactive periodic table
@@ -118,15 +120,24 @@ serial monitoring, storage, and charging.
 
 ## Current Status
 
-OpenCalc is an advanced working prototype, not a production-complete calculator.
-Display, keypad, USB, storage, power, core calculator/graphing flows, and all five
-games have been exercised on current hardware. The Giac/KhiCAS-derived CAS and
-the new asynchronous Tiny Python path build and pass their available host tests;
-both still need broader long-running device validation. The largest remaining
-risks are CAS heap/output edge cases, repeated script run/input/exit reliability,
-99x99 matrix stress, specialized statistics workflows, sampled non-Cartesian
-intersections, and final UI/LCD polish. See the [app-by-app status](firmware/APP_STATUS.md)
-for the exact implemented boundary.
+OpenCalc OS has grown into a capable working prototype. The calculator, graphing,
+CAS, scripting, USB storage, power controls, and all five games are working on the
+current hardware. It is already useful, but it still needs more testing and polish
+before it is ready to be called a finished product.
+
+| Area | Where it stands |
+| --- | ---: |
+| Automated test groups | 12/12 passing |
+| Features completed | About 80% |
+| Everyday usability | About 75% |
+| Reliability confidence | About 60% |
+| Ready for release | About 40% |
+
+The biggest jobs left are longer CAS and script tests, checking that saved work
+survives interruptions, stress-testing very large matrices, and testing the V5
+audio and scientific I/O on real hardware. A fresh ESP-IDF build is also required
+before the next release. See the [app-by-app status](firmware/APP_STATUS.md) for
+more detail.
 
 ## Credits
 
@@ -134,7 +145,7 @@ for the exact implemented boundary.
 - CAS engines: [Giac/Xcas](https://xcas.univ-grenoble-alpes.fr/) by Bernard Parisse and contributors, with the [KhiCAS](https://github.com/KhiCAS) ESP32 port lineage under GPL-3.0-or-later; [Eigenmath](https://github.com/georgeweigt/eigenmath) remains as a BSD-2-Clause fallback.
 - Doom engine: id Software's GPL Doom source, Simon Howard's Chocolate Doom work, and [doomgeneric](https://github.com/ozkl/doomgeneric) by ozkl, under GPL-2.0-or-later notices.
 - NES emulation: [Anemoia-ESP32](https://github.com/Shim06/Anemoia-ESP32) by Shim06 and contributors, under GPLv3.
-- Platform: [Espressif ESP-IDF](https://github.com/espressif/esp-idf), TinyUSB, and the ESP LCD ILI9341 component under their respective licenses.
+- Platform: [Espressif ESP-IDF](https://github.com/espressif/esp-idf), TinyUSB, and the ESP LCD ILI9341/ST7789 panel drivers under their respective licenses.
 - Prototype project funding was provided in part by [PCBWay](https://pcbway.com).
 
 Complete copyright, license, and game-data details are recorded in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Doom WADs and NES ROMs are separate game data and are not licensed under the OpenCalc firmware license.
