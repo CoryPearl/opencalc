@@ -68,6 +68,15 @@ public:
         return pos < 0 ? 0 : (uint32_t)pos;
     }
 
+    size_t size() const
+    {
+        struct stat st;
+        if (!fp_ || fstat(fileno(fp_), &st) != 0 || st.st_size < 0) {
+            return 0;
+        }
+        return (size_t)st.st_size;
+    }
+
     void close()
     {
         if (fp_) {

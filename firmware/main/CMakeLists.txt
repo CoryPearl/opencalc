@@ -159,6 +159,7 @@ idf_component_register(
     REQUIRES ${OPENCALC_PRIVATE_REQUIRES}
 )
 
+target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-error=format-truncation)
 target_compile_definitions(${COMPONENT_LIB} PRIVATE PY_MAX_TOKENS=128)
 set_source_files_properties("components/eigenmath/eigenmath.c" PROPERTIES
     COMPILE_DEFINITIONS "OPENCALC_EIGENMATH_EMBEDDED=1"

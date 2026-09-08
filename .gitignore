@@ -1,13 +1,42 @@
-firmware/build
+# Operating-system and editor state
+.DS_Store
+.vscode/
+.idea/
+**/.claude/settings*.json
+*.swp
+*.swo
+*~
+
+# Local notes, caches, and generated analysis
 docs/notes.txt
-*/.DS_Store
-*/.kicad_prl
-*/.bak
-.vscode
-hardware/pcb/opencalc_pcb_V5/fp-info-cache
-hardware/pcb/opencalc_pcb_v5/fp-info-cache - not working
-firmware/main/graphify-out/cache/
-firmware/graphify-out/.graphify_python
-firmware/graphify-out/.graphify_root
-firmware/tools/__pycache__
-hardware/pcb/opencalc_pcb_v5/opencalc_pcb_V5-backups
+graphify-out/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+coverage/
+*.log
+
+# ESP-IDF generated files and downloaded components
+firmware/build/
+firmware/managed_components/
+firmware/sdkconfig
+firmware/sdkconfig.old
+firmware/*.plist
+
+# KiCad and FreeCAD local state, autosaves, and backups
+fp-info-cache
+*.kicad_prl
+_autosave-*
+*-backups/
+*.kicad_sch-bak
+*.kicad_pcb-bak
+*.FCBak
+*.bak
+*.lck
+
+# Users must supply their own legally obtained NES ROM.
+firmware/storage_image/*.nes
+
+# Generated fabrication archives belong in release artifacts, not source control.
+hardware/pcb/**/img/*[Gg]erber*.zip

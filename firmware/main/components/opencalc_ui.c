@@ -12183,7 +12183,7 @@ static bool finance_commit_tvm_entry(void)
     *field = value;
     if (!isfinite(finance_periodic_rate())) {
         *field = previous;
-        snprintf(s_fin_status, sizeof(s_fin_status), "I% is outside the compounding domain");
+        snprintf(s_fin_status, sizeof(s_fin_status), "I%% is outside the compounding domain");
         return false;
     }
     finance_reset_entry();
