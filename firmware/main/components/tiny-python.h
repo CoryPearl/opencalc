@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <limits.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,6 +60,9 @@ extern "C" {
 #ifndef PY_MAX_TOTAL_CONTAINER_ITEMS
 #define PY_MAX_TOTAL_CONTAINER_ITEMS 4096
 #endif
+
+/* Pass this as the statement limit to allow a script to run until cancelled. */
+#define PY_EXECUTION_UNLIMITED ULONG_MAX
 
 typedef enum {
     PY_VALUE_NONE = 0,
@@ -141,6 +145,7 @@ struct py_runtime {
     void *native_user_data;
     unsigned long statement_limit;
     unsigned long call_depth_limit;
+    uint64_t random_state;
     volatile int abort_requested;
     py_profile_t profile;
     size_t call_depth;

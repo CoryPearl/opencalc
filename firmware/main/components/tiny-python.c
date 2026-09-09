@@ -22,6 +22,10 @@ Public API:
 
 ------------------- Example Code -------------------
 
+#ifndef ESP_PLATFORM
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include "tiny-python.h"
 #include <stdio.h>
 
@@ -54,6 +58,7 @@ int main(void) {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #if defined(__GNUC__)
 #define PY_NOINLINE __attribute__((noinline))
@@ -64,6 +69,9 @@ int main(void) {
 #ifdef ESP_PLATFORM
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
+#include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "opencalc_config.h"
 #endif
 
@@ -134,6 +142,8 @@ typedef enum {
     TOK_BREAK,
     TOK_CONTINUE,
     TOK_GLOBAL,
+    TOK_IMPORT,
+    TOK_AS,
     TOK_AND,
     TOK_OR,
     TOK_NOT,
@@ -982,6 +992,10 @@ static int lex(parser_t *p) {
                 token.type = TOK_CONTINUE;
             } else if (strcmp(token.text, "global") == 0) {
                 token.type = TOK_GLOBAL;
+            } else if (strcmp(token.text, "import") == 0) {
+                token.type = TOK_IMPORT;
+            } else if (strcmp(token.text, "as") == 0) {
+                token.type = TOK_AS;
             } else if (strcmp(token.text, "and") == 0) {
                 token.type = TOK_AND;
             } else if (strcmp(token.text, "or") == 0) {
@@ -2526,6 +2540,216 @@ static PY_NOINLINE py_value_t parse_atom(parser_t *p) {
 static py_value_t call_method_with_args(parser_t *p, py_value_t target,
                                         const char *name, py_value_t *args, int argc);
 
+static int py_standard_module(const char *name) {
+    return strcmp(name, "math") == 0 || strcmp(name, "random") == 0 ||
+           strcmp(name, "time") == 0;
+}
+
+static int py_known_module(const char *name) {
+    return py_standard_module(name) || strcmp(name, "graphics") == 0 ||
+           strcmp(name, "keys") == 0 || strcmp(name, "storage") == 0 ||
+           strcmp(name, "audio") == 0 || strcmp(name, "sensors") == 0;
+}
+
+static uint64_t py_random_next(py_t *py) {
+    uint64_t state = py->random_state;
+    if (state == 0) state = UINT64_C(0x9e3779b97f4a7c15);
+    state ^= state >> 12;
+    state ^= state << 25;
+    state ^= state >> 27;
+    py->random_state = state;
+    return state * UINT64_C(2685821657736338717);
+}
+
+static double py_random_unit(py_t *py) {
+    return (double)(py_random_next(py) >> 11) * (1.0 / 9007199254740992.0);
+}
+
+static double py_time_seconds(int monotonic) {
+#ifdef ESP_PLATFORM
+    if (monotonic) return (double)esp_timer_get_time() / 1000000.0;
+    return (double)time(NULL);
+#else
+    struct timespec now;
+    clock_gettime(monotonic ? CLOCK_MONOTONIC : CLOCK_REALTIME, &now);
+    return (double)now.tv_sec + (double)now.tv_nsec / 1000000000.0;
+#endif
+}
+
+static int py_sleep_cancellable(py_t *py, double seconds) {
+    if (!isfinite(seconds) || seconds < 0.0) {
+        py_error(py, "sleep length must be a non-negative finite number");
+        return 0;
+    }
+    while (seconds > 0.0) {
+        double slice = seconds > 0.01 ? 0.01 : seconds;
+        if (py->abort_requested) {
+            py_error(py, "execution stopped by sandbox");
+            return 0;
+        }
+#ifdef ESP_PLATFORM
+        TickType_t ticks = pdMS_TO_TICKS((uint32_t)ceil(slice * 1000.0));
+        vTaskDelay(ticks > 0 ? ticks : 1);
+#else
+        struct timespec delay;
+        delay.tv_sec = (time_t)slice;
+        delay.tv_nsec = (long)((slice - (double)delay.tv_sec) * 1000000000.0);
+        nanosleep(&delay, NULL);
+#endif
+        seconds -= slice;
+    }
+#ifdef ESP_PLATFORM
+    taskYIELD();
+#endif
+    return 1;
+}
+
+static int py_module_attribute(parser_t *p, py_value_t target, const char *name,
+                               py_value_t *result) {
+    if (target.type != PY_VALUE_MODULE) return 0;
+    if (strcmp(target.string_value, "math") == 0) {
+        if (strcmp(name, "pi") == 0) *result = py_float(3.14159265358979323846);
+        else if (strcmp(name, "e") == 0) *result = py_float(2.71828182845904523536);
+        else if (strcmp(name, "tau") == 0) *result = py_float(6.28318530717958647692);
+        else if (strcmp(name, "inf") == 0) *result = py_float(INFINITY);
+        else if (strcmp(name, "nan") == 0) *result = py_float(NAN);
+        else {
+            py_error(p->py, "unknown module attribute");
+            return 0;
+        }
+        return 1;
+    }
+    py_error(p->py, "module attributes are not available");
+    return 0;
+}
+
+/* Returns 1 when handled, 0 on a handled error, and -1 for host fallback. */
+static int py_call_standard_module(parser_t *p, const char *module, const char *name,
+                                   py_value_t *args, int argc, py_value_t *result) {
+    if (strcmp(module, "math") == 0) {
+        double a = argc > 0 && py_is_number(args[0]) ? py_number_as_double(args[0]) : 0.0;
+        double b = argc > 1 && py_is_number(args[1]) ? py_number_as_double(args[1]) : 0.0;
+        double value = 0.0;
+        int numeric_args = argc == 1 && py_is_number(args[0]);
+
+        if (strcmp(name, "isfinite") == 0 && numeric_args) { *result = py_bool(isfinite(a)); return 1; }
+        if (strcmp(name, "isinf") == 0 && numeric_args) { *result = py_bool(isinf(a)); return 1; }
+        if (strcmp(name, "isnan") == 0 && numeric_args) { *result = py_bool(isnan(a)); return 1; }
+        if (strcmp(name, "atan2") == 0 && argc == 2 && py_is_number(args[0]) && py_is_number(args[1])) value = atan2(a, b);
+        else if (strcmp(name, "pow") == 0 && argc == 2 && py_is_number(args[0]) && py_is_number(args[1])) value = pow(a, b);
+        else if (strcmp(name, "hypot") == 0 && argc == 2 && py_is_number(args[0]) && py_is_number(args[1])) value = hypot(a, b);
+        else if (strcmp(name, "fmod") == 0 && argc == 2 && py_is_number(args[0]) && py_is_number(args[1]) && b != 0.0) value = fmod(a, b);
+        else if (strcmp(name, "copysign") == 0 && argc == 2 && py_is_number(args[0]) && py_is_number(args[1])) value = copysign(a, b);
+        else if (strcmp(name, "log") == 0 && (argc == 1 || argc == 2) && py_is_number(args[0]) && a > 0.0 &&
+                 (argc == 1 || (py_is_number(args[1]) && b > 0.0 && b != 1.0))) value = argc == 1 ? log(a) : log(a) / log(b);
+        else if (strcmp(name, "gcd") == 0 && argc == 2 && py_is_integer_value(args[0]) && py_is_integer_value(args[1])) {
+            uint64_t x = args[0].int_value < 0 ? (uint64_t)(-(args[0].int_value + 1)) + 1 : (uint64_t)args[0].int_value;
+            uint64_t y = args[1].int_value < 0 ? (uint64_t)(-(args[1].int_value + 1)) + 1 : (uint64_t)args[1].int_value;
+            while (y != 0) { uint64_t remainder = x % y; x = y; y = remainder; }
+            if (x > INT64_MAX) { py_error(p->py, "gcd result is out of range"); return 0; }
+            *result = py_int((int64_t)x);
+            return 1;
+        } else if (strcmp(name, "factorial") == 0 && argc == 1 && py_is_integer_value(args[0]) &&
+                   args[0].int_value >= 0 && args[0].int_value <= 20) {
+            int64_t factorial = 1;
+            for (int64_t i = 2; i <= args[0].int_value; ++i) factorial *= i;
+            *result = py_int(factorial);
+            return 1;
+        } else if (numeric_args) {
+            if (strcmp(name, "sin") == 0) value = sin(a);
+            else if (strcmp(name, "cos") == 0) value = cos(a);
+            else if (strcmp(name, "tan") == 0) value = tan(a);
+            else if (strcmp(name, "asin") == 0 && a >= -1.0 && a <= 1.0) value = asin(a);
+            else if (strcmp(name, "acos") == 0 && a >= -1.0 && a <= 1.0) value = acos(a);
+            else if (strcmp(name, "atan") == 0) value = atan(a);
+            else if (strcmp(name, "sinh") == 0) value = sinh(a);
+            else if (strcmp(name, "cosh") == 0) value = cosh(a);
+            else if (strcmp(name, "tanh") == 0) value = tanh(a);
+            else if (strcmp(name, "sqrt") == 0 && a >= 0.0) value = sqrt(a);
+            else if (strcmp(name, "exp") == 0) value = exp(a);
+            else if (strcmp(name, "log10") == 0 && a > 0.0) value = log10(a);
+            else if (strcmp(name, "log2") == 0 && a > 0.0) value = log2(a);
+            else if (strcmp(name, "floor") == 0) { *result = py_int((int64_t)floor(a)); return 1; }
+            else if (strcmp(name, "ceil") == 0) { *result = py_int((int64_t)ceil(a)); return 1; }
+            else if (strcmp(name, "trunc") == 0) { *result = py_int((int64_t)trunc(a)); return 1; }
+            else if (strcmp(name, "fabs") == 0) value = fabs(a);
+            else if (strcmp(name, "degrees") == 0) value = a * (180.0 / 3.14159265358979323846);
+            else if (strcmp(name, "radians") == 0) value = a * (3.14159265358979323846 / 180.0);
+            else return -1;
+        } else return -1;
+
+        if (!isfinite(value)) { py_error(p->py, "math domain or range error"); return 0; }
+        *result = py_float(value);
+        return 1;
+    }
+
+    if (strcmp(module, "random") == 0) {
+        if (strcmp(name, "seed") == 0 && argc <= 1) {
+            if (argc == 1 && args[0].type != PY_VALUE_NONE && !py_is_integer_value(args[0])) return -1;
+            uint64_t seed = argc == 0 || args[0].type == PY_VALUE_NONE
+                                ? (uint64_t)(py_time_seconds(0) * 1000000.0)
+                                : (uint64_t)args[0].int_value;
+            p->py->random_state = seed != 0 ? seed : UINT64_C(0x9e3779b97f4a7c15);
+            *result = py_none();
+            return 1;
+        }
+        if (strcmp(name, "random") == 0 && argc == 0) { *result = py_float(py_random_unit(p->py)); return 1; }
+        if (strcmp(name, "uniform") == 0 && argc == 2 && py_is_number(args[0]) && py_is_number(args[1])) {
+            double a = py_number_as_double(args[0]);
+            double b = py_number_as_double(args[1]);
+            *result = py_float(a + (b - a) * py_random_unit(p->py));
+            return 1;
+        }
+        if (strcmp(name, "choice") == 0 && argc == 1) {
+            int count = py_iterable_count(args[0]);
+            if (count <= 0) { py_error(p->py, "cannot choose from an empty sequence"); return 0; }
+            *result = py_iterable_item(p->py, args[0], (int)(py_random_next(p->py) % (uint64_t)count));
+            return !py_has_error(p->py);
+        }
+        if ((strcmp(name, "randrange") == 0 && argc >= 1 && argc <= 3) ||
+            (strcmp(name, "randint") == 0 && argc == 2)) {
+            int start = 0, stop = 0, step = 1;
+            if (strcmp(name, "randint") == 0) {
+                start = read_int_arg(p, args[0], "randint() expects integers");
+                stop = read_int_arg(p, args[1], "randint() expects integers");
+                if (stop == INT_MAX) { py_error(p->py, "randint() range is too large"); return 0; }
+                stop++;
+            } else if (argc == 1) {
+                stop = read_int_arg(p, args[0], "randrange() expects integers");
+            } else {
+                start = read_int_arg(p, args[0], "randrange() expects integers");
+                stop = read_int_arg(p, args[1], "randrange() expects integers");
+                if (argc == 3) step = read_int_arg(p, args[2], "randrange() expects integers");
+            }
+            if (py_has_error(p->py)) return 0;
+            if (step == 0) { py_error(p->py, "empty range for random selection"); return 0; }
+            int64_t distance = step > 0 ? (int64_t)stop - start : (int64_t)start - stop;
+            int64_t magnitude = step > 0 ? step : -(int64_t)step;
+            int64_t count = distance > 0 ? (distance + magnitude - 1) / magnitude : 0;
+            if (count <= 0) { py_error(p->py, "empty range for random selection"); return 0; }
+            *result = py_int((int64_t)start + (int64_t)step * (int64_t)(py_random_next(p->py) % (uint64_t)count));
+            return 1;
+        }
+        return -1;
+    }
+
+    if (strcmp(module, "time") == 0) {
+        if (strcmp(name, "time") == 0 && argc == 0) { *result = py_float(py_time_seconds(0)); return 1; }
+        if (strcmp(name, "monotonic") == 0 && argc == 0) { *result = py_float(py_time_seconds(1)); return 1; }
+        if (strcmp(name, "monotonic_ns") == 0 && argc == 0) {
+            *result = py_int((int64_t)(py_time_seconds(1) * 1000000000.0));
+            return 1;
+        }
+        if (strcmp(name, "sleep") == 0 && argc == 1 && py_is_number(args[0])) {
+            if (!py_sleep_cancellable(p->py, py_number_as_double(args[0]))) return 0;
+            *result = py_none();
+            return 1;
+        }
+        return -1;
+    }
+    return -1;
+}
+
 static PY_NOINLINE py_value_t call_method(parser_t *p, py_value_t target, const char *name) {
     py_value_t *args = NULL;
     py_value_t result;
@@ -2570,8 +2794,10 @@ static PY_NOINLINE py_value_t call_method_with_args(parser_t *p, py_value_t targ
 
     if (target.type == PY_VALUE_MODULE) {
         py_value_t result = py_none();
+        int standard = py_call_standard_module(p, target.string_value, name, args, argc, &result);
+        if (standard >= 0) return standard ? result : py_none();
         if (p->py->native_callback == NULL) {
-            py_error(p->py, "OpenCalc module host is not configured");
+            py_error(p->py, "unknown module function");
             return py_none();
         }
         if (!p->py->native_callback(p->py, target.string_value, name, args,
@@ -2810,11 +3036,15 @@ static PY_NOINLINE py_value_t parse_primary(parser_t *p) {
 
     while (!py_has_error(p->py)) {
         if (match(p, TOK_DOT)) {
-            token_t method = *current(p);
-            if (!expect(p, TOK_IDENT, "expected method name")) {
+            token_t attribute = *current(p);
+            if (!expect(p, TOK_IDENT, "expected attribute name")) {
                 return py_none();
             }
-            value = call_method(p, value, method.text);
+            if (current(p)->type == TOK_LPAREN) {
+                value = call_method(p, value, attribute.text);
+            } else if (!py_module_attribute(p, value, attribute.text, &value)) {
+                return py_none();
+            }
         } else if (match(p, TOK_LBRACKET)) {
           if (match(p, TOK_COLON)) {
             if (!parse_slice_tail(p, value, 0, py_none(), &value)) {
@@ -3139,6 +3369,8 @@ static const char *token_source(token_t *token) {
         case TOK_BREAK: return "break";
         case TOK_CONTINUE: return "continue";
         case TOK_GLOBAL: return "global";
+        case TOK_IMPORT: return "import";
+        case TOK_AS: return "as";
         case TOK_AND: return "and";
         case TOK_OR: return "or";
         case TOK_NOT: return "not";
@@ -3701,7 +3933,6 @@ static int parse_while(parser_t *p) {
     char condition_src[PY_MAX_LINE];
     py_value_t condition;
     int previous_exec_enabled;
-    int guard = 0;
 
     if (!expect(p, TOK_WHILE, "expected 'while'")) {
         return 0;
@@ -3741,10 +3972,6 @@ static int parse_while(parser_t *p) {
     p->exec_enabled = previous_exec_enabled;
 
     while (!py_has_error(p->py) && previous_exec_enabled && py_truthy(condition)) {
-        if (++guard > 10000) {
-            py_error(p->py, "while loop limit reached");
-            return 0;
-        }
         p->pos = body_start;
         p->exec_enabled = 1;
         if (!parse_block(p)) {
@@ -3783,7 +4010,6 @@ static int parse_for(parser_t *p) {
     int previous_exec_enabled;
     size_t body_start;
     size_t after_loop;
-    int guard = 0;
 
     if (!expect(p, TOK_FOR, "expected 'for'")) {
         return 0;
@@ -3869,10 +4095,6 @@ static int parse_for(parser_t *p) {
                          : (i < py_iterable_count(iterable)));
          i += range_loop ? step : 1) {
         py_value_t item = range_loop ? py_int(i) : py_iterable_item(p->py, iterable, i);
-        if (++guard > 10000) {
-            py_error(p->py, "for loop limit reached");
-            return 0;
-        }
         if (!py_set_var(p->py, var_name.text, item)) {
             return 0;
         }
@@ -3932,6 +4154,25 @@ static int parse_global(parser_t *p) {
     return 1;
 }
 
+static int parse_import(parser_t *p) {
+    if (!expect(p, TOK_IMPORT, "expected 'import'")) return 0;
+    do {
+        token_t module = *current(p);
+        token_t alias = module;
+        if (!expect(p, TOK_IDENT, "expected module name")) return 0;
+        if (!py_known_module(module.text)) {
+            py_error(p->py, "module is not available");
+            return 0;
+        }
+        if (match(p, TOK_AS)) {
+            alias = *current(p);
+            if (!expect(p, TOK_IDENT, "expected import alias")) return 0;
+        }
+        if (p->exec_enabled && !py_set_var(p->py, alias.text, py_module(module.text))) return 0;
+    } while (match(p, TOK_COMMA));
+    return 1;
+}
+
 static int py_before_statement(parser_t *p, const token_t *token) {
     unsigned long limit;
     if (!p->exec_enabled) return 1;
@@ -3939,7 +4180,7 @@ static int py_before_statement(parser_t *p, const token_t *token) {
     p->py->current_col = token->col;
     p->py->profile.statements++;
     limit = p->py->statement_limit != 0 ? p->py->statement_limit : 100000UL;
-    if (p->py->profile.statements > limit) {
+    if (limit != PY_EXECUTION_UNLIMITED && p->py->profile.statements > limit) {
         py_error(p->py, "statement limit exceeded");
         return 0;
     }
@@ -3981,6 +4222,9 @@ static int parse_statement(parser_t *p) {
     }
     if (token->type == TOK_GLOBAL) {
         return parse_global(p);
+    }
+    if (token->type == TOK_IMPORT) {
+        return parse_import(p);
     }
     if (token->type == TOK_LBRACE) {
         return parse_block(p);
@@ -4075,9 +4319,12 @@ void py_init(py_t *py) {
     py_set_var(py, "storage", py_module("storage"));
     py_set_var(py, "audio", py_module("audio"));
     py_set_var(py, "math", py_module("math"));
+    py_set_var(py, "random", py_module("random"));
+    py_set_var(py, "time", py_module("time"));
     py_set_var(py, "sensors", py_module("sensors"));
     py->statement_limit = 100000UL;
     py->call_depth_limit = PY_MAX_TRACE_DEPTH;
+    py->random_state = UINT64_C(0x6f70656e63616c63);
 }
 
 void py_deinit(py_t *py) {

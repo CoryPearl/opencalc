@@ -36,7 +36,8 @@ Blog: [https://corypearl.github.io/opencalc/blog.html](https://corypearl.github.
 - **Reference Center:** press `Alpha` + `Zoom` for an interactive periodic table
   and browsable math, physics, and engineering formulas and explanations.
 - **Programmable on the device:** edit, run, upload, and debug Tiny Python programs with
-  calculator math, graphics, keys, storage, audio, and hardware APIs.
+  `math`, `random`, `time`, cancellable forever loops, calculator math,
+  graphics, keys, storage, audio, and hardware APIs.
 - **[Built for science and electronics](guied.MD#scientific-data-logging):** use Tiny Python,
   12 bidirectional digital pins, four 16-bit analog inputs, and shared I2C to
   control experiments, plot live sensor data, and analyze recordings in Stats.

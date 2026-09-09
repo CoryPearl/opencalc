@@ -23,6 +23,7 @@ This is not CPython. It is a compact interpreter for running simple scripts on d
 - `if`, `elif`, and `else`
 - `while`
 - `for ... in range(...)` plus iteration over lists, tuples, strings, and dictionaries
+- Python-style `import math`, `import random`, `import time`, and `import ... as ...`
 - Membership tests with `in` and `not in`
 - Comments with `#`
 - Single-line statements and nested indented blocks
@@ -48,6 +49,56 @@ This is not CPython. It is a compact interpreter for running simple scripts on d
 - Configurable statement and call-depth limits plus cooperative cancellation
 - A native-module callback for exposing bounded host services without adding
   platform dependencies to the interpreter
+- Cancellable long-running loops: an embedding host may select
+  `PY_EXECUTION_UNLIMITED` while retaining cooperative stop checks
+
+## Standard Modules
+
+`math`, `random`, and `time` are built into the interpreter and can be imported
+normally. They are also preloaded for compatibility with older OpenCalc
+scripts.
+
+```python
+import math
+import random
+import time
+
+random.seed(42)
+print(math.sin(math.pi / 2))
+print(random.randint(1, 6))
+time.sleep(0.1)
+```
+
+The compact `math` subset includes `sin`, `cos`, `tan`, inverse and hyperbolic
+trigonometry, `sqrt`, `exp`, logarithms, `floor`, `ceil`, `trunc`, `fabs`,
+`degrees`, `radians`, `atan2`, `pow`, `hypot`, `fmod`, `copysign`, `factorial`,
+`gcd`, finite-value checks, and the constants `pi`, `e`, `tau`, `inf`, and
+`nan`. `random` provides `seed`, `random`, `uniform`, `randrange`, `randint`,
+and `choice`. `time` provides `time`, `monotonic`, `monotonic_ns`, and a
+cancellable `sleep`.
+
+## CircuitPython Compatibility Audit
+
+Tiny Python is not CircuitPython, MicroPython, or CPython. It now accepts the
+common `import math`, `random`, and `time` pattern, but it remains a small
+source interpreter designed for calculator scripts. It does not currently
+provide:
+
+- exceptions (`try`, `except`, `raise`) or exception objects
+- classes, object instances, decorators, lambdas, comprehensions, generators,
+  context managers, or async/await
+- `from ... import ...`, Python package discovery, or importing user `.py`
+  modules from storage
+- arbitrary-precision integers, full Unicode, `bytes`, `bytearray`, `set`, or
+  a tracing garbage collector
+- CircuitPython's `board`, `digitalio`, `analogio`, `busio`, `displayio`,
+  networking, USB HID/MIDI, or external driver-library compatibility
+- CPython bytecode, C-extension modules, or complete standard-library parity
+
+OpenCalc instead exposes bounded calculator-specific `graphics`, `keys`,
+`storage`, `audio`, and `sensors` modules. Achieving broad CircuitPython
+compatibility would require embedding or porting a MicroPython-derived runtime,
+not continuing to add isolated syntax cases to this interpreter.
 
 On OpenCalc OS, `sensors` is a preloaded host module. It exposes the optional
 MCP23017 `D0-D11` header, ADS1115 `A0-A3` acquisition, bounded analog/digital
@@ -253,17 +304,24 @@ requests cancellation. Errors retain a compact call traceback, and the profile
 records executed statements, user-function calls, maximum call depth, and active
 run time.
 
-OpenCalc installs statement, recursion-depth, and active-time limits from
-`main/config.h`. The callback yields periodically to FreeRTOS and checks stop and
-deadline state at each executed statement. Input and debugger waits are
-interruptible; debugger pause time is excluded from the run deadline. The model
-protects the OS from normal script loops, recursion overflow, parse/runtime
-errors, and rejected module calls, but it cannot provide MMU-style isolation
-from a bug inside native firmware.
+OpenCalc configures recursion and execution policy in `main/config.h`. With
+`OPENCALC_SCRIPT_ALLOW_FOREVER_LOOPS=1`, `while True` and long `for` loops keep
+running until they finish or the user presses Back/Clear. The worker still
+yields periodically to FreeRTOS and checks cancellation at every executed
+statement. Setting the option to `0` restores the statement and active-time
+limits. Input, debugger waits, and `time.sleep()` are interruptible. This model
+protects the OS from normal recursion overflow, cancellation, parser errors,
+and rejected module calls, but it cannot provide MMU-style isolation from a bug
+inside native firmware.
 
-OpenCalc scripts have six preloaded modules:
+OpenCalc scripts preload the standard `math`, `random`, and `time` modules plus
+five device modules. Normal import statements are supported and recommended:
 
 ```python
+import math
+import random
+import time
+
 graphics.clear(0x101820)
 graphics.line(10, 60, 200, 60, 0x4aa3ff)
 graphics.rect(20, 80, 40, 25, 0x33d17a)
@@ -278,6 +336,8 @@ print(storage.read("result.txt"))
 audio.tone(880, 80, 25)
 print(math.eval("sqrt(2)"))
 print(math.cas("factor(x^2-1)"))
+print(random.randint(1, 6))
+time.sleep(0.1)
 print(sensors.available())
 ```
 

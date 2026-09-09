@@ -7059,10 +7059,12 @@ static int script_debug_callback(py_t *py, py_debug_event_t event,
         return 0;
     }
     int64_t now = esp_timer_get_time();
+#if !OPENCALC_SCRIPT_ALLOW_FOREVER_LOOPS
     if ((uint64_t)(now - s_script_started_us) > OPENCALC_SCRIPT_TIMEOUT_MS * 1000ULL) {
         py_runtime_error(py, "script execution time limit exceeded");
         return 0;
     }
+#endif
     if (!s_script_debug_mode ||
         (!s_script_debug_step && (line >= SCRIPT_BREAKPOINT_MAX || !s_script_breakpoints[line]))) {
         return 1;
@@ -15938,7 +15940,10 @@ static void script_worker_task(void *arg)
         py_set_native_callback(&s_script_py, script_native_callback, NULL);
         py_set_gpio_callbacks(&s_script_py, script_sensor_gpio_mode,
                               script_sensor_gpio_write, script_sensor_gpio_read, NULL);
-        py_set_execution_limits(&s_script_py, OPENCALC_SCRIPT_STATEMENT_LIMIT,
+        py_set_execution_limits(&s_script_py,
+                                OPENCALC_SCRIPT_ALLOW_FOREVER_LOOPS
+                                    ? PY_EXECUTION_UNLIMITED
+                                    : OPENCALC_SCRIPT_STATEMENT_LIMIT,
                                 OPENCALC_SCRIPT_CALL_DEPTH_LIMIT);
         s_script_debug_mode = request.debug;
         s_script_debug_step = request.debug;

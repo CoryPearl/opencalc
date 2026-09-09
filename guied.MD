@@ -1091,7 +1091,8 @@ When the script finishes, press `Enter` or Back to return to the script list.
 Tiny Python supports integers, floats, booleans, strings, lists, tuples,
 dictionaries, `None`, basic f-strings, assignment, augmented assignment,
 functions, recursion, `if`/`elif`/`else`, `while`, iterable `for`, `range`,
-`break`, `continue`, and `pass`.
+`break`, `continue`, `pass`, and normal imports for `math`, `random`, and
+`time`.
 
 Common builtins include `len`, `int`, `float`, `str`, `bool`, `abs`, `min`,
 `max`, `pow`, `sum`, `round`, `range`, `enumerate`, `sorted`, `list`, `tuple`,
@@ -1102,10 +1103,10 @@ repetition, `append`, `extend`, `insert`, `pop`, `remove`, `clear`, `reverse`,
 `copy`, `count`, and `index`. Dictionaries support key lookup/assignment,
 iteration, `get`, `keys`, `values`, and `items`.
 
-Tiny Python is not CPython. It does not currently include imports, exceptions,
-classes, comprehensions, generators, decorators, lambdas, `with`, async syntax,
-the CPython standard library, arbitrary-size integers, Unicode, bytecode, or a
-garbage collector.
+Tiny Python is not CPython or CircuitPython. It does not currently include
+exceptions, classes, comprehensions, generators, decorators, lambdas, `with`,
+async syntax, filesystem package imports, the full standard library,
+arbitrary-size integers, full Unicode, bytecode, or a garbage collector.
 
 [Back to contents](#contents)
 
@@ -1131,8 +1132,10 @@ safe during flash-cache operations. Parser/program buffers and dynamic
 containers remain in PSRAM. The UI task remains the only owner of LCD drawing
 and keypad dispatch. Output uses a protected buffer;
 input uses task notifications. Configurable statement, recursion-depth, and
-active-time limits stop ordinary infinite loops, runaway recursion, and long
-runs. Debugger and input pauses do not consume the active-time budget.
+execution policy is configured in `main/config.h`. The default allows forever
+loops for controls and experiments while still yielding to the OS; Back or
+Clear stops them cooperatively. Disable
+`OPENCALC_SCRIPT_ALLOW_FOREVER_LOOPS` to restore statement/time limits.
 
 This is cooperative containment, not process isolation. A defect in a native C
 service can still affect the OS. The asynchronous path is host tested but needs
@@ -1193,12 +1196,26 @@ audio backend.
 ### Math
 
 ```python
+import math
 print(math.eval("sqrt(2)"))
 print(math.cas("factor(x^2-1)"))
+print(math.sin(math.pi / 2))
 ```
 
-Scalar helpers include `sin`, `cos`, `tan`, `sqrt`, `log`, `log10`, `exp`,
-`floor`, and `ceil`.
+The compact module includes common trigonometry, logarithms, rounding helpers,
+`factorial`, `gcd`, finite-value checks, and constants such as `pi` and `e`.
+
+### Random and time
+
+```python
+import random
+import time
+
+random.seed(42)
+print(random.randint(1, 6))
+time.sleep(0.1)
+print(time.monotonic())
+```
 
 [Back to contents](#contents)
 

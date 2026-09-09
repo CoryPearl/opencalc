@@ -33,6 +33,17 @@ static int test_debug(py_t *py, py_debug_event_t event, size_t line,
     return 1;
 }
 
+static int stop_long_running_script(py_t *py, py_debug_event_t event, size_t line,
+                                    const char *function, void *user_data)
+{
+    (void)py;
+    (void)line;
+    (void)function;
+    unsigned long *statements = (unsigned long *)user_data;
+    if (event == PY_DEBUG_STATEMENT && ++(*statements) > 12000UL) return 0;
+    return 1;
+}
+
 static int test_native(py_t *py, const char *module, const char *function,
                        const py_value_t *args, size_t arg_count,
                        py_value_t *result, void *user_data)
@@ -357,6 +368,27 @@ static int run_development_api_case(void)
     return 0;
 }
 
+static int run_forever_loop_cancel_case(void)
+{
+    py_t py;
+    char output[64];
+    unsigned long statements = 0;
+
+    py_init(&py);
+    py_set_execution_limits(&py, PY_EXECUTION_UNLIMITED, 4);
+    py_set_debug_callback(&py, stop_long_running_script, &statements);
+    int ok = py_run_source(&py, "while True:\n    pass\n", output, sizeof(output));
+    if (ok || statements <= 10000UL || strstr(py.error, "stopped") == NULL) {
+        fprintf(stderr, "FAIL forever_loop_cancel: statements=%lu error <%s>\n",
+                statements, py.error);
+        py_deinit(&py);
+        return 1;
+    }
+    py_deinit(&py);
+    printf("PASS forever_loop_cancel\n");
+    return 0;
+}
+
 int main(void)
 {
     int failed = 0;
@@ -467,6 +499,27 @@ int main(void)
                        "[1, 3, 5]\n[1, 2, 3] [(4, 'a'), (5, 'b')]\nfallback 7\n",
                        NULL, 0);
 
+    failed |= run_case("standard_modules",
+                       "import math, random\n"
+                       "import time as clock\n"
+                       "print(round(math.pi, 5), round(math.e, 5), math.factorial(6), math.gcd(54, 24))\n"
+                       "print(math.isfinite(math.inf), math.isnan(math.nan), round(math.degrees(math.pi), 1))\n"
+                       "random.seed(123)\n"
+                       "first = random.randint(1, 6)\n"
+                       "random.seed(123)\n"
+                       "second = random.randint(1, 6)\n"
+                       "pick = random.choice('abc')\n"
+                       "print(first == second, first >= 1 and first <= 6, pick in 'abc')\n"
+                       "before = clock.monotonic()\n"
+                       "clock.sleep(0.001)\n"
+                       "print(clock.monotonic() >= before, clock.time() > 0)\n",
+                       "3.14159 2.71828 720 6\nFalse True 180\nTrue True True\nTrue True\n",
+                       NULL, 0);
+
+    failed |= run_error_case("unavailable_import",
+                             "import socket\n",
+                             "module is not available");
+
     failed |= run_error_case("integer_add_overflow",
                              "print(9223372036854775807 + 1)\n",
                              "integer overflow");
@@ -497,5 +550,6 @@ int main(void)
     failed |= run_same_runtime_case();
     failed |= run_error_recovery_case();
     failed |= run_development_api_case();
+    failed |= run_forever_loop_cancel_case();
     return failed ? 1 : 0;
 }

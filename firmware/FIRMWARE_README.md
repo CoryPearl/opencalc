@@ -319,15 +319,24 @@ and `Graph` cycles Console, Variables, Traceback, and Profile views. `Back` or
 `Clear` requests a controlled stop. The same diagnostic views remain available
 after a run completes.
 
-Every run has configurable statement, call-depth, and active-time limits in
-`main/config.h`. The worker yields regularly so the FreeRTOS watchdog and UI can
-run, and loops, recursion overflow, user cancellation, parser errors, and module
-errors unwind through the normal interpreter cleanup path. Debugger pauses do
-not consume the active-time budget. This is cooperative containment for Tiny
-Python bytecode/source execution; it is not process isolation from defects in a
-native C driver.
+Script policy is configurable in `main/config.h`. By default,
+`OPENCALC_SCRIPT_ALLOW_FOREVER_LOOPS=1` lets `while True` and long-running
+experiments continue until completion or a Back/Clear stop request. The worker
+still yields regularly so the FreeRTOS watchdog and UI can run, checks
+cancellation at every statement, bounds recursion and containers, and makes
+`time.sleep()` interruptible. Set the option to `0` to restore the configured
+statement and active-time limits. This is cooperative containment; it is not
+process isolation from defects in a native C driver.
 
-The following modules are preloaded, so scripts do not use `import`:
+`math`, `random`, and `time` support normal Python imports (including aliases)
+and remain preloaded for old scripts. Device modules are also preloaded:
+
+- `math` provides common trigonometry, logarithms, rounding helpers,
+  `factorial`, `gcd`, finite-value checks, and `pi`, `e`, `tau`, `inf`, and
+  `nan`. OpenCalc adds `math.eval` and `math.cas` for calculator/CAS access.
+- `random` provides `seed`, `random`, `uniform`, `randrange`, `randint`, and
+  `choice`.
+- `time` provides `time`, `monotonic`, `monotonic_ns`, and cancellable `sleep`.
 
 - `graphics.clear`, `pixel`, `line`, `rect`, and `text` queue bounded drawing
   commands that are replayed by the UI task.
@@ -359,9 +368,11 @@ The following modules are preloaded, so scripts do not use `import`:
   and `0x48` devices are blocked so scripts cannot corrupt system I/O state.
 - `sensors.delay(ms)` provides paced acquisition. Existing `graphics` calls can
   plot each sample as it arrives; see `storage_image/scripts/logger.py`.
-- `math.eval` evaluates numeric calculator expressions, `math.cas` evaluates a
-  symbolic expression, and common scalar functions include `sin`, `cos`, `tan`,
-  `sqrt`, `log`, `log10`, `exp`, `floor`, and `ceil`.
+
+Tiny Python is not CircuitPython. It lacks exceptions, classes, generators,
+comprehensions, async, arbitrary-precision integers, filesystem package
+imports, and CircuitPython's extensive hardware and driver-module ecosystem.
+See `main/components/tiny-python-readme.md` for the full compatibility audit.
 
 Example flashed script:
 
@@ -437,7 +448,8 @@ cc -std=c11 -Wall -Wextra -Werror -I main/components tests/tiny_python_regressio
 
 The regression pass covers arithmetic, range and container iteration,
 membership, collection methods, sequence operations, Python-style numeric
-semantics, common builtins, recursion, `input()`, `py_run_file()`, repeated
+semantics, standard module imports, math/random/time behavior, cancellable
+long-running loops, common builtins, recursion, `input()`, `py_run_file()`, repeated
 interpreter lifecycle, repeated same-runtime execution, syntax-error recovery,
 debug/profile callbacks, native module dispatch, bounded execution, and reuse
 after a forced limit error.
