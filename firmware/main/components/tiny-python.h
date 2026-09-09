@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
 #ifndef PY_MAX_VARS
-#define PY_MAX_VARS 32
+#define PY_MAX_VARS 48
 #endif
 
 #ifndef PY_MAX_NAME
@@ -42,7 +42,7 @@ extern "C" {
 #endif
 
 #ifndef PY_MAX_PROGRAM
-#define PY_MAX_PROGRAM 2048
+#define PY_MAX_PROGRAM 8192
 #endif
 
 #ifndef PY_MAX_TRACE_DEPTH
@@ -164,7 +164,7 @@ void py_set_input_callback(py_t *py, int (*callback)(char *buffer, size_t buffer
 void py_use_stdio(py_t *py); // Convenience helper: routes print() to stdout and input() to stdin.
 void py_set_gpio_callbacks(py_t *py, int (*mode_callback)(int pin, int mode, void *user_data), int (*write_callback)(int pin, int value, void *user_data), int (*read_callback)(int pin, int *value, void *user_data), void *user_data); // Enables pinMode(), digitalWrite(), and digitalRead().
 void py_set_debug_callback(py_t *py, py_debug_callback_t callback, void *user_data); // Called before executed statements and on call/return/error events. Return zero to abort safely.
-void py_set_native_callback(py_t *py, py_native_callback_t callback, void *user_data); // Backs graphics.*, keys.*, storage.*, audio.*, and math.* module calls.
+void py_set_native_callback(py_t *py, py_native_callback_t callback, void *user_data); // Backs host modules such as graphics, storage, audio, sensors, and calculator math.
 void py_set_execution_limits(py_t *py, unsigned long statement_limit, unsigned long call_depth_limit); // Zero keeps the corresponding default.
 void py_request_abort(py_t *py); // Cooperatively stops execution at the next statement or function boundary.
 void py_runtime_error(py_t *py, const char *message); // Reports a host/module error through the normal traceback path.

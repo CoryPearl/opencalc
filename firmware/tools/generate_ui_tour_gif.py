@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import math
+import shutil
 from functools import lru_cache
 from pathlib import Path
 
@@ -19,7 +20,8 @@ FPS = 10
 FRAME_COUNT = 320
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "open_calc_ui_calculator_demo.gif"
+OUTPUT = ROOT / "img" / "open_calc_ui_calculator_demo.gif"
+WEBSITE_OUTPUT = ROOT.parent / "docs" / "img" / OUTPUT.name
 
 FONT_REGULAR = Path("/System/Library/Fonts/Supplemental/Verdana.ttf")
 FONT_BOLD = Path("/System/Library/Fonts/Supplemental/Verdana Bold.ttf")
@@ -642,6 +644,7 @@ def tour_frame(frame: int) -> Image.Image:
 
 
 def main() -> None:
+    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     frames = [tour_frame(frame) for frame in range(FRAME_COUNT)]
     frames[0].save(
         OUTPUT,
@@ -652,7 +655,10 @@ def main() -> None:
         optimize=True,
         disposal=2,
     )
+    WEBSITE_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(OUTPUT, WEBSITE_OUTPUT)
     print(f"Wrote {OUTPUT} ({FRAME_COUNT / FPS:.1f}s, {WIDTH}x{HEIGHT}, {FPS} fps)")
+    print(f"Updated website copy at {WEBSITE_OUTPUT}")
 
 
 if __name__ == "__main__":

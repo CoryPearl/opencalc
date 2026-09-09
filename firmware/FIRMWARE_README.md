@@ -328,21 +328,25 @@ cancellation at every statement, bounds recursion and containers, and makes
 statement and active-time limits. This is cooperative containment; it is not
 process isolation from defects in a native C driver.
 
-`math`, `random`, and `time` support normal Python imports (including aliases)
-and remain preloaded for old scripts. Device modules are also preloaded:
+`math`, `random`, `time`, and `statistics` support normal Python imports
+(including aliases) and remain preloaded for old scripts. Device modules are
+also preloaded:
 
 - `math` provides common trigonometry, logarithms, rounding helpers,
-  `factorial`, `gcd`, finite-value checks, and `pi`, `e`, `tau`, `inf`, and
-  `nan`. OpenCalc adds `math.eval` and `math.cas` for calculator/CAS access.
+  `factorial`, `gcd`, `lcm`, `prod`, `isclose`, finite-value checks, and `pi`,
+  `e`, `tau`, `inf`, and `nan`. OpenCalc adds `math.eval` and `math.cas` for
+  calculator/CAS access.
 - `random` provides `seed`, `random`, `uniform`, `randrange`, `randint`, and
-  `choice`.
-- `time` provides `time`, `monotonic`, `monotonic_ns`, and cancellable `sleep`.
+  `choice`, plus shuffle, random-bit, and normal-distribution helpers.
+- `time` provides wall/monotonic clocks, ticks helpers, and cancellable sleeps.
+- `statistics` provides mean, median, variance, and standard-deviation helpers.
 
 - `graphics.clear`, `pixel`, `line`, `rect`, and `text` queue bounded drawing
   commands that are replayed by the UI task.
 - `keys.down(button)` reads calculator button numbers `1` through `50`.
-- `storage.exists`, `read`, `write`, and `remove` operate only on simple file
-  names inside `/data/user/`; absolute paths and parent traversal are rejected.
+- `storage.exists`, `read`, `write`, `append`, `size`, `rename`, and `remove`
+  operate only on simple file names inside `/data/user/`; absolute paths and
+  parent traversal are rejected.
 - `audio.available`, `volume`, and `tone` use the configured OpenCalc audio
   backend.
 - `sensors.available`, `mode`, `digital_read`, and `digital_write` control
@@ -369,10 +373,13 @@ and remain preloaded for old scripts. Device modules are also preloaded:
 - `sensors.delay(ms)` provides paced acquisition. Existing `graphics` calls can
   plot each sample as it arrives; see `storage_image/scripts/logger.py`.
 
-Tiny Python is not CircuitPython. It lacks exceptions, classes, generators,
-comprehensions, async, arbitrary-precision integers, filesystem package
-imports, and CircuitPython's extensive hardware and driver-module ecosystem.
-See `main/components/tiny-python-readme.md` for the full compatibility audit.
+`board.D0-D11`, `board.A0-A3`, and the procedural `digitalio`, `analogio`, and
+`busio` modules provide familiar aliases for the same protected sensor service.
+They are not drop-in CircuitPython object APIs. Tiny Python still lacks
+exceptions, classes, generators, comprehensions, async, arbitrary-precision
+integers, filesystem package imports, and CircuitPython's external driver
+ecosystem. See [the capability audit](TINY_PYTHON_AUDIT.md) for the exact
+boundary.
 
 Example flashed script:
 
@@ -404,10 +411,12 @@ The complete physical connector numbering, electrical limits, event-pin
 behavior, and wiring examples are in the
 [Rear 30-Pin Header guide](../guied.MD#rear-30-pin-header).
 
-The `sensors` module is preloaded; do not write `import sensors`. A minimal
-hardware check is:
+The `sensors` module is preloaded for old scripts; explicit imports are also
+supported and recommended. A minimal hardware check is:
 
 ```python
+import sensors
+
 print("hub", sensors.available())
 sensors.mode(0, OUTPUT)
 sensors.digital_write(0, 1)

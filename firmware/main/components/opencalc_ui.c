@@ -6893,6 +6893,24 @@ static int script_native_callback(py_t *py, const char *module,
     if (strcmp(module, "sensors") == 0) {
         return script_native_sensors(py, function, args, arg_count, result);
     }
+    if (strcmp(module, "digitalio") == 0) {
+        const char *mapped = strcmp(function, "read") == 0 ? "digital_read" :
+                             strcmp(function, "write") == 0 ? "digital_write" : function;
+        return script_native_sensors(py, mapped, args, arg_count, result);
+    }
+    if (strcmp(module, "analogio") == 0) {
+        const char *mapped = strcmp(function, "read") == 0 ? "analog_read" :
+                             strcmp(function, "raw") == 0 ? "analog_raw" :
+                             strcmp(function, "differential") == 0 ? "analog_diff" : function;
+        return script_native_sensors(py, mapped, args, arg_count, result);
+    }
+    if (strcmp(module, "busio") == 0) {
+        const char *mapped = strcmp(function, "present") == 0 ? "i2c_present" :
+                             strcmp(function, "read8") == 0 ? "i2c_read8" :
+                             strcmp(function, "read16") == 0 ? "i2c_read16" :
+                             strcmp(function, "write8") == 0 ? "i2c_write8" : function;
+        return script_native_sensors(py, mapped, args, arg_count, result);
+    }
     if (strcmp(module, "keys") == 0 && strcmp(function, "down") == 0 && arg_count == 1) {
         int button = 0;
         if (!script_arg_int(&args[0], &button) || button < 1 || button > 50) {
@@ -6974,6 +6992,47 @@ static int script_native_callback(py_t *py, const char *module,
                 return 0;
             }
             script_value_bool(result, true);
+            return 1;
+        }
+        if (strcmp(function, "append") == 0 && arg_count == 2 && args[1].type == PY_VALUE_STRING) {
+            FILE *file = fopen(path, "a");
+            if (file == NULL) {
+                py_runtime_error(py, "storage.append() could not open file");
+                return 0;
+            }
+            size_t length = strlen(args[1].string_value);
+            bool ok = fwrite(args[1].string_value, 1, length, file) == length;
+            fclose(file);
+            if (!ok) {
+                py_runtime_error(py, "storage.append() failed");
+                return 0;
+            }
+            script_value_bool(result, true);
+            return 1;
+        }
+        if (strcmp(function, "size") == 0 && arg_count == 1) {
+            FILE *file = fopen(path, "rb");
+            if (file == NULL || fseek(file, 0, SEEK_END) != 0) {
+                if (file != NULL) fclose(file);
+                py_runtime_error(py, "storage.size() could not read file");
+                return 0;
+            }
+            long size = ftell(file);
+            fclose(file);
+            if (size < 0) {
+                py_runtime_error(py, "storage.size() failed");
+                return 0;
+            }
+            script_value_int(result, size);
+            return 1;
+        }
+        if (strcmp(function, "rename") == 0 && arg_count == 2) {
+            char destination[192];
+            if (!script_storage_path(&args[1], destination, sizeof(destination))) {
+                py_runtime_error(py, "storage destination must be a simple relative name");
+                return 0;
+            }
+            script_value_bool(result, rename(path, destination) == 0);
             return 1;
         }
         if (strcmp(function, "remove") == 0 && arg_count == 1) {

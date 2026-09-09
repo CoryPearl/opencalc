@@ -23,13 +23,13 @@ This is not CPython. It is a compact interpreter for running simple scripts on d
 - `if`, `elif`, and `else`
 - `while`
 - `for ... in range(...)` plus iteration over lists, tuples, strings, and dictionaries
-- Python-style `import math`, `import random`, `import time`, and `import ... as ...`
+- Python-style imports and aliases for built-in and OpenCalc modules
 - Membership tests with `in` and `not in`
 - Comments with `#`
 - Single-line statements and nested indented blocks
 - Builtins: `len`, `int`, `float`, `str`, `bool`, `abs`, `min`, `max`,
-  `pow`, `sum`, `round`, `range`, `enumerate`, `sorted`, `list`, `tuple`,
-  `any`, `all`, and `input`
+  `pow`, `sum`, `round`, `range`, `enumerate`, `reversed`, `zip`, `divmod`,
+  `bin`, `oct`, `hex`, `sorted`, `list`, `tuple`, `any`, `all`, and `input`
 - Python-style negative floor division/modulo, negative powers, string ordering,
   and operand-returning `and`/`or`
 - GPIO builtins: `pinMode`, `digitalWrite`, `digitalRead`, with `INPUT`,
@@ -54,35 +54,39 @@ This is not CPython. It is a compact interpreter for running simple scripts on d
 
 ## Standard Modules
 
-`math`, `random`, and `time` are built into the interpreter and can be imported
-normally. They are also preloaded for compatibility with older OpenCalc
-scripts.
+`math`, `random`, `time`, and `statistics` are built into the interpreter and
+can be imported normally. They are also preloaded for compatibility with older
+OpenCalc scripts.
 
 ```python
 import math
 import random
 import time
+import statistics
 
 random.seed(42)
 print(math.sin(math.pi / 2))
 print(random.randint(1, 6))
 time.sleep(0.1)
+print(statistics.mean([2, 4, 6]))
 ```
 
 The compact `math` subset includes `sin`, `cos`, `tan`, inverse and hyperbolic
 trigonometry, `sqrt`, `exp`, logarithms, `floor`, `ceil`, `trunc`, `fabs`,
 `degrees`, `radians`, `atan2`, `pow`, `hypot`, `fmod`, `copysign`, `factorial`,
-`gcd`, finite-value checks, and the constants `pi`, `e`, `tau`, `inf`, and
-`nan`. `random` provides `seed`, `random`, `uniform`, `randrange`, `randint`,
-and `choice`. `time` provides `time`, `monotonic`, `monotonic_ns`, and a
-cancellable `sleep`.
+`gcd`, `lcm`, `prod`, `isclose`, finite-value checks, and the constants `pi`,
+`e`, `tau`, `inf`, and `nan`. `random` provides `seed`, `random`, `uniform`,
+`randrange`, `randint`, `choice`, `shuffle`, `getrandbits`, `gauss`, and
+`normalvariate`. `time` provides `time`, `monotonic`, `monotonic_ns`,
+`ticks_ms`, `ticks_us`, `ticks_diff`, and cancellable second, millisecond, and
+microsecond sleeps. `statistics` provides mean, median, population/sample
+variance, and population/sample standard deviation.
 
 ## CircuitPython Compatibility Audit
 
-Tiny Python is not CircuitPython, MicroPython, or CPython. It now accepts the
-common `import math`, `random`, and `time` pattern, but it remains a small
-source interpreter designed for calculator scripts. It does not currently
-provide:
+Tiny Python keeps OpenCalc's existing compact syntax and execution model. It is
+not CircuitPython, MicroPython, or CPython. It provides familiar imports and
+procedural hardware APIs, but it does not currently provide:
 
 - exceptions (`try`, `except`, `raise`) or exception objects
 - classes, object instances, decorators, lambdas, comprehensions, generators,
@@ -91,14 +95,19 @@ provide:
   modules from storage
 - arbitrary-precision integers, full Unicode, `bytes`, `bytearray`, `set`, or
   a tracing garbage collector
-- CircuitPython's `board`, `digitalio`, `analogio`, `busio`, `displayio`,
-  networking, USB HID/MIDI, or external driver-library compatibility
+- CircuitPython's class-based `DigitalInOut`, `AnalogIn`, or bus objects,
+  `displayio`, networking, USB HID/MIDI, or external driver-library compatibility
 - CPython bytecode, C-extension modules, or complete standard-library parity
 
-OpenCalc instead exposes bounded calculator-specific `graphics`, `keys`,
-`storage`, `audio`, and `sensors` modules. Achieving broad CircuitPython
-compatibility would require embedding or porting a MicroPython-derived runtime,
-not continuing to add isolated syntax cases to this interpreter.
+OpenCalc exposes bounded `graphics`, `keys`, `storage`, `audio`, and `sensors`
+modules plus procedural `board`, `digitalio`, `analogio`, and `busio` aliases.
+These aliases use the protected scientific-I/O service rather than exposing raw
+ESP32 pins. OpenCalc also offers features aimed at calculator and lab work that
+CircuitPython does not provide as one integrated API: CAS evaluation, direct
+logging into calculator lists, bounded trigger/capture operations, and an
+on-device debugger/profiler. See
+[`TINY_PYTHON_AUDIT.md`](../../TINY_PYTHON_AUDIT.md) for the detailed support
+matrix and remaining gaps.
 
 On OpenCalc OS, `sensors` is a preloaded host module. It exposes the optional
 MCP23017 `D0-D11` header, ADS1115 `A0-A3` acquisition, bounded analog/digital
@@ -108,10 +117,13 @@ persistent calculator lists `L1-L6`. See `FIRMWARE_README.md` and
 
 ## OpenCalc Sensor Quick Start
 
-The module is preloaded by OpenCalc OS, so scripts call `sensors` directly and
-must not use `import sensors`. Check availability before accessing hardware:
+The module is preloaded by OpenCalc OS, so old scripts can call `sensors`
+directly. Explicit imports are supported and recommended. Check availability
+before accessing hardware:
 
 ```python
+import sensors
+
 if not sensors.available():
     print("Scientific I/O is disabled or missing")
 ```
@@ -174,6 +186,19 @@ if sensors.i2c_present(0x76):
     device_id = sensors.i2c_read8(0x76, 0xD0)
     sensors.i2c_write8(0x76, 0xF4, 0x27)
 ```
+
+The same hardware can use shorter CircuitPython-style procedural names:
+
+```python
+import board, digitalio, analogio, busio
+
+digitalio.mode(board.D0, digitalio.OUTPUT)
+digitalio.write(board.D0, digitalio.HIGH)
+print(analogio.read(board.A0))
+print(busio.present(0x76))
+```
+
+These are compatibility aliases, not CircuitPython object constructors.
 
 Sensor API reference:
 
@@ -314,13 +339,16 @@ protects the OS from normal recursion overflow, cancellation, parser errors,
 and rejected module calls, but it cannot provide MMU-style isolation from a bug
 inside native firmware.
 
-OpenCalc scripts preload the standard `math`, `random`, and `time` modules plus
-five device modules. Normal import statements are supported and recommended:
+OpenCalc scripts preload the standard `math`, `random`, `time`, and
+`statistics` modules plus the OpenCalc device modules. Normal import statements
+are supported and recommended:
 
 ```python
 import math
 import random
 import time
+import statistics
+import board, digitalio, analogio, busio
 
 graphics.clear(0x101820)
 graphics.line(10, 60, 200, 60, 0x4aa3ff)
@@ -337,6 +365,8 @@ audio.tone(880, 80, 25)
 print(math.eval("sqrt(2)"))
 print(math.cas("factor(x^2-1)"))
 print(random.randint(1, 6))
+print(statistics.mean([2, 4, 6]))
+print(analogio.read(board.A0))
 time.sleep(0.1)
 print(sensors.available())
 ```

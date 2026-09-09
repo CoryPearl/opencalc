@@ -70,6 +70,24 @@ static int test_native(py_t *py, const char *module, const char *function,
         result->float_value = 1.25;
         return 1;
     }
+    if (strcmp(module, "digitalio") == 0 && strcmp(function, "read") == 0 &&
+        arg_count == 1 && args[0].type == PY_VALUE_INT) {
+        result->type = PY_VALUE_BOOL;
+        result->int_value = 1;
+        return 1;
+    }
+    if (strcmp(module, "analogio") == 0 && strcmp(function, "read") == 0 &&
+        arg_count == 1 && args[0].type == PY_VALUE_INT) {
+        result->type = PY_VALUE_FLOAT;
+        result->float_value = 2.5;
+        return 1;
+    }
+    if (strcmp(module, "busio") == 0 && strcmp(function, "present") == 0 &&
+        arg_count == 1 && args[0].type == PY_VALUE_INT) {
+        result->type = PY_VALUE_BOOL;
+        result->int_value = 1;
+        return 1;
+    }
     return 0;
 }
 
@@ -219,6 +237,38 @@ static int run_file_case(void)
     return 0;
 }
 
+static int run_large_source_case(void)
+{
+    char *source = calloc(1, 6000);
+    py_t py;
+    char output[32];
+    size_t used = 0;
+    if (source == NULL) return 1;
+
+    for (int i = 0; i < 20; ++i) {
+        used += (size_t)snprintf(source + used, 6000 - used,
+                                "# Padding verifies files larger than the old two kilobyte source limit without hiding parser complexity. %03d........................................\n",
+                                i);
+    }
+    used += (size_t)snprintf(source + used, 6000 - used, "x = 0\n");
+    for (int i = 0; i < 30; ++i) {
+        used += (size_t)snprintf(source + used, 6000 - used, "x = x + 1\n");
+    }
+    snprintf(source + used, 6000 - used, "print(x)\n");
+
+    py_init(&py);
+    int ok = py_run_source(&py, source, output, sizeof(output));
+    free(source);
+    if (!ok || strcmp(output, "30\n") != 0) {
+        fprintf(stderr, "FAIL large_source: %s output <%s>\n", py.error, output);
+        py_deinit(&py);
+        return 1;
+    }
+    py_deinit(&py);
+    printf("PASS large_source\n");
+    return 0;
+}
+
 static int run_streaming_input_case(void)
 {
     const char *inputs[] = {"8"};
@@ -302,6 +352,16 @@ static int run_error_recovery_case(void)
         py_deinit(&py);
         return 1;
     }
+    for (int iteration = 0; iteration < 20; ++iteration) {
+        if (py_run_source(&py,
+                          "def this_function_name_is_too_long():\n"
+                          "    return 1\n",
+                          output, sizeof(output)) || py.func_count != 0) {
+            fprintf(stderr, "FAIL error_recovery: rejected function consumed a slot\n");
+            py_deinit(&py);
+            return 1;
+        }
+    }
     if (!py_run_source(&py, "print(6 * 7)\n", output, sizeof(output)) || strcmp(output, "42\n") != 0) {
         fprintf(stderr, "FAIL error_recovery: %s output <%s>\n", py.error, output);
         py_deinit(&py);
@@ -334,6 +394,16 @@ static int run_development_api_case(void)
                        "print(sensors.analog_read(0))\n",
                        output, sizeof(output)) || strcmp(output, "True\n1.25\n") != 0) {
         fprintf(stderr, "FAIL development_api sensors: %s output <%s>\n", py.error, output);
+        py_deinit(&py);
+        return 1;
+    }
+    if (!py_run_source(&py,
+                       "import board, digitalio, analogio, busio\n"
+                       "print(board.D10, board.A3, digitalio.PULL_UP)\n"
+                       "print(digitalio.read(board.D1), analogio.read(board.A2), busio.present(64))\n",
+                       output, sizeof(output)) || strcmp(output, "10 3 2\nTrue 2.5 True\n") != 0) {
+        fprintf(stderr, "FAIL development_api compatibility modules: %s output <%s>\n",
+                py.error, output);
         py_deinit(&py);
         return 1;
     }
@@ -495,8 +565,13 @@ int main(void)
     failed |= run_case("python_style_builtins",
                        "print(range(1, 6, 2))\n"
                        "print(sorted([3, 1, 2]), enumerate('ab', 4))\n"
+                       "print(reversed([1, 2, 3]), zip('ab', [4, 5]))\n"
+                       "print(bin(10), oct(9), hex(255), divmod(-7, 3))\n"
                        "print(0 or 'fallback', 'value' and 7)\n",
-                       "[1, 3, 5]\n[1, 2, 3] [(4, 'a'), (5, 'b')]\nfallback 7\n",
+                       "[1, 3, 5]\n[1, 2, 3] [(4, 'a'), (5, 'b')]\n"
+                       "[3, 2, 1] [('a', 4), ('b', 5)]\n"
+                       "0b1010 0o11 0xff (-3, 2)\n"
+                       "fallback 7\n",
                        NULL, 0);
 
     failed |= run_case("standard_modules",
@@ -510,15 +585,35 @@ int main(void)
                        "second = random.randint(1, 6)\n"
                        "pick = random.choice('abc')\n"
                        "print(first == second, first >= 1 and first <= 6, pick in 'abc')\n"
+                       "items = [1, 2, 3, 4]\n"
+                       "random.shuffle(items)\n"
+                       "print(sorted(items), random.getrandbits(5) >= 0, math.prod([2, 3, 4]), math.lcm(6, 8))\n"
+                       "print(math.isclose(0.1 + 0.2, 0.3))\n"
                        "before = clock.monotonic()\n"
-                       "clock.sleep(0.001)\n"
-                       "print(clock.monotonic() >= before, clock.time() > 0)\n",
-                       "3.14159 2.71828 720 6\nFalse True 180\nTrue True True\nTrue True\n",
+                       "clock.sleep_ms(1)\n"
+                       "after = clock.ticks_ms()\n"
+                       "print(clock.monotonic() >= before, clock.time() > 0, clock.ticks_diff(after, after) == 0)\n",
+                       "3.14159 2.71828 720 6\nFalse True 180\nTrue True True\n"
+                       "[1, 2, 3, 4] True 24 24\nTrue\nTrue True True\n",
                        NULL, 0);
+
+    failed |= run_case("statistics_module",
+                       "import statistics\n"
+                       "data = [1, 2, 3]\n"
+                       "print(statistics.mean(data), statistics.median(data))\n"
+                       "print(statistics.pvariance(data), statistics.stdev(data))\n",
+                       "2 2\n0.666667 1\n", NULL, 0);
 
     failed |= run_error_case("unavailable_import",
                              "import socket\n",
                              "module is not available");
+    failed |= run_error_case("long_variable_name",
+                             "this_variable_name_is_too_long = 1\n",
+                             "variable name too long");
+    failed |= run_error_case("long_function_name",
+                             "def this_function_name_is_too_long():\n"
+                             "    return 1\n",
+                             "function name too long");
 
     failed |= run_error_case("integer_add_overflow",
                              "print(9223372036854775807 + 1)\n",
@@ -545,6 +640,7 @@ int main(void)
                              "container too large");
 
     failed |= run_file_case();
+    failed |= run_large_source_case();
     failed |= run_streaming_input_case();
     failed |= run_repeated_lifecycle_case();
     failed |= run_same_runtime_case();

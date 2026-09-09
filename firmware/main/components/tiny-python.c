@@ -69,6 +69,7 @@ int main(void) {
 #ifdef ESP_PLATFORM
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
+#include "esp_rom_sys.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -106,11 +107,7 @@ static void py_heap_free(void *memory) {
 }
 
 #ifndef PY_MAX_TOKENS
-#ifdef ESP_PLATFORM
-#define PY_MAX_TOKENS 128
-#else
-#define PY_MAX_TOKENS 512
-#endif
+#define PY_MAX_TOKENS 384
 #endif
 
 #ifndef PY_MAX_LINE
@@ -118,7 +115,7 @@ static void py_heap_free(void *memory) {
 #endif
 
 #ifndef PY_MAX_PROGRAM
-#define PY_MAX_PROGRAM 2048
+#define PY_MAX_PROGRAM 8192
 #endif
 
 typedef enum {
@@ -536,6 +533,17 @@ static double py_number_as_double(py_value_t value) {
     return (double)value.int_value;
 }
 
+static int py_copy_bounded(py_t *py, char *destination, size_t destination_size,
+                           const char *source, const char *error) {
+    size_t length = strlen(source);
+    if (length >= destination_size) {
+        py_error(py, error);
+        return 0;
+    }
+    memcpy(destination, source, length + 1);
+    return 1;
+}
+
 static py_var_t *py_find_var(py_t *py, const char *name) {
     size_t i;
     for (i = 0; i < py->var_count; ++i) {
@@ -556,7 +564,8 @@ static int py_set_var(py_t *py, const char *name, py_value_t value) {
         py_error(py, "variable table full");
         return 0;
     }
-    snprintf(py->vars[py->var_count].name, PY_MAX_NAME, "%s", name);
+    if (!py_copy_bounded(py, py->vars[py->var_count].name, PY_MAX_NAME,
+                         name, "variable name too long")) return 0;
     py->vars[py->var_count].value = value;
     py->var_count++;
     return 1;
@@ -585,6 +594,21 @@ static int py_set_func(py_t *py, const char *name, char params[][PY_MAX_NAME], s
     py_func_t *func = py_find_func(py, name);
     size_t i;
 
+    if (strlen(name) >= PY_MAX_NAME) {
+        py_error(py, "function name too long");
+        return 0;
+    }
+    if (strlen(body) >= PY_MAX_FUNC_BODY) {
+        py_error(py, "function body too long");
+        return 0;
+    }
+    for (i = 0; i < param_count; ++i) {
+        if (strlen(params[i]) >= PY_MAX_NAME) {
+            py_error(py, "function parameter name too long");
+            return 0;
+        }
+    }
+
     if (func == NULL) {
         if (py->func_count >= PY_MAX_FUNCS) {
             py_error(py, "function table full");
@@ -593,12 +617,15 @@ static int py_set_func(py_t *py, const char *name, char params[][PY_MAX_NAME], s
         func = &py->funcs[py->func_count++];
     }
 
-    snprintf(func->name, sizeof(func->name), "%s", name);
+    if (!py_copy_bounded(py, func->name, sizeof(func->name),
+                         name, "function name too long")) return 0;
     func->param_count = param_count;
     for (i = 0; i < param_count; ++i) {
-        snprintf(func->params[i], sizeof(func->params[i]), "%s", params[i]);
+        if (!py_copy_bounded(py, func->params[i], sizeof(func->params[i]),
+                             params[i], "function parameter name too long")) return 0;
     }
-    snprintf(func->body, sizeof(func->body), "%s", body);
+    if (!py_copy_bounded(py, func->body, sizeof(func->body),
+                         body, "function body too long")) return 0;
     return 1;
 }
 
@@ -1274,6 +1301,27 @@ static int read_int_arg(parser_t *p, py_value_t value, const char *name) {
     return (int)value.int_value;
 }
 
+static py_value_t py_integer_string(int64_t value, unsigned base, const char *prefix) {
+    static const char digits[] = "0123456789abcdef";
+    char reversed[65];
+    char output[70];
+    size_t count = 0;
+    size_t pos = 0;
+    uint64_t magnitude = value < 0
+                             ? (uint64_t)(-(value + 1)) + 1
+                             : (uint64_t)value;
+
+    do {
+        reversed[count++] = digits[magnitude % base];
+        magnitude /= base;
+    } while (magnitude != 0 && count < sizeof(reversed));
+    if (value < 0) output[pos++] = '-';
+    while (*prefix != '\0' && pos + 1 < sizeof(output)) output[pos++] = *prefix++;
+    while (count > 0 && pos + 1 < sizeof(output)) output[pos++] = reversed[--count];
+    output[pos] = '\0';
+    return py_string(output);
+}
+
 static void py_remove_var(py_t *py, const char *name) {
     size_t i;
     for (i = 0; i < py->var_count; ++i) {
@@ -1727,6 +1775,81 @@ static PY_NOINLINE py_value_t call_function_with_args(parser_t *p, const char *n
                 !py_list_append(p->py, &result, pair)) return py_none();
         }
         return result;
+    }
+    if (strcmp(name, "reversed") == 0) {
+        py_value_t result = py_list(p->py);
+        int count;
+        if (argc != 1 || (count = py_iterable_count(args[0])) < 0) {
+            py_error(p->py, "reversed() expects one iterable");
+            return py_none();
+        }
+        for (int i = count - 1; i >= 0; --i) {
+            if (!py_list_append(p->py, &result, py_iterable_item(p->py, args[0], i))) return py_none();
+        }
+        return result;
+    }
+    if (strcmp(name, "zip") == 0) {
+        py_value_t result = py_list(p->py);
+        int count = INT_MAX;
+        if (argc < 1) return result;
+        for (int arg = 0; arg < argc; ++arg) {
+            int item_count = py_iterable_count(args[arg]);
+            if (item_count < 0) {
+                py_error(p->py, "zip() arguments must be iterable");
+                return py_none();
+            }
+            if (item_count < count) count = item_count;
+        }
+        for (int i = 0; i < count; ++i) {
+            py_value_t tuple = py_tuple(p->py);
+            for (int arg = 0; arg < argc; ++arg) {
+                if (!py_sequence_append(p->py, &tuple, py_iterable_item(p->py, args[arg], i))) {
+                    return py_none();
+                }
+            }
+            if (!py_list_append(p->py, &result, tuple)) return py_none();
+        }
+        return result;
+    }
+    if (strcmp(name, "divmod") == 0) {
+        py_value_t result = py_tuple(p->py);
+        if (argc != 2 || !py_is_number(args[0]) || !py_is_number(args[1]) ||
+            py_number_as_double(args[1]) == 0.0) {
+            py_error(p->py, "divmod() expects two numbers with a nonzero divisor");
+            return py_none();
+        }
+        if (py_is_integer_value(args[0]) && py_is_integer_value(args[1])) {
+            int64_t a = args[0].int_value;
+            int64_t b = args[1].int_value;
+            if (a == INT64_MIN && b == -1) {
+                py_error(p->py, "integer overflow");
+                return py_none();
+            }
+            int64_t quotient = a / b;
+            int64_t remainder = a % b;
+            if (remainder != 0 && ((remainder < 0) != (b < 0))) {
+                quotient--;
+                remainder += b;
+            }
+            if (!py_sequence_append(p->py, &result, py_int(quotient)) ||
+                !py_sequence_append(p->py, &result, py_int(remainder))) return py_none();
+        } else {
+            double a = py_number_as_double(args[0]);
+            double b = py_number_as_double(args[1]);
+            double quotient = floor(a / b);
+            if (!py_sequence_append(p->py, &result, py_float(quotient)) ||
+                !py_sequence_append(p->py, &result, py_float(a - quotient * b))) return py_none();
+        }
+        return result;
+    }
+    if (strcmp(name, "bin") == 0 || strcmp(name, "oct") == 0 || strcmp(name, "hex") == 0) {
+        if (argc != 1 || !py_is_integer_value(args[0])) {
+            py_error(p->py, "bin()/oct()/hex() expect one integer");
+            return py_none();
+        }
+        if (strcmp(name, "bin") == 0) return py_integer_string(args[0].int_value, 2, "0b");
+        if (strcmp(name, "oct") == 0) return py_integer_string(args[0].int_value, 8, "0o");
+        return py_integer_string(args[0].int_value, 16, "0x");
     }
     if (strcmp(name, "sorted") == 0) {
         py_value_t result;
@@ -2542,13 +2665,15 @@ static py_value_t call_method_with_args(parser_t *p, py_value_t target,
 
 static int py_standard_module(const char *name) {
     return strcmp(name, "math") == 0 || strcmp(name, "random") == 0 ||
-           strcmp(name, "time") == 0;
+           strcmp(name, "time") == 0 || strcmp(name, "statistics") == 0;
 }
 
 static int py_known_module(const char *name) {
     return py_standard_module(name) || strcmp(name, "graphics") == 0 ||
            strcmp(name, "keys") == 0 || strcmp(name, "storage") == 0 ||
-           strcmp(name, "audio") == 0 || strcmp(name, "sensors") == 0;
+           strcmp(name, "audio") == 0 || strcmp(name, "sensors") == 0 ||
+           strcmp(name, "board") == 0 || strcmp(name, "digitalio") == 0 ||
+           strcmp(name, "analogio") == 0 || strcmp(name, "busio") == 0;
 }
 
 static uint64_t py_random_next(py_t *py) {
@@ -2588,8 +2713,12 @@ static int py_sleep_cancellable(py_t *py, double seconds) {
             return 0;
         }
 #ifdef ESP_PLATFORM
-        TickType_t ticks = pdMS_TO_TICKS((uint32_t)ceil(slice * 1000.0));
-        vTaskDelay(ticks > 0 ? ticks : 1);
+        if (slice < 0.001) {
+            esp_rom_delay_us((uint32_t)ceil(slice * 1000000.0));
+        } else {
+            TickType_t ticks = pdMS_TO_TICKS((uint32_t)ceil(slice * 1000.0));
+            vTaskDelay(ticks > 0 ? ticks : 1);
+        }
 #else
         struct timespec delay;
         delay.tv_sec = (time_t)slice;
@@ -2619,6 +2748,33 @@ static int py_module_attribute(parser_t *p, py_value_t target, const char *name,
         }
         return 1;
     }
+    if (strcmp(target.string_value, "board") == 0) {
+        if (((name[0] == 'D' && name[1] >= '0' && name[1] <= '9' && name[2] == '\0') ||
+             (name[0] == 'D' && name[1] == '1' && name[2] >= '0' && name[2] <= '1' && name[3] == '\0'))) {
+            int pin = name[1] - '0';
+            if (name[2] != '\0') pin = 10 + name[2] - '0';
+            *result = py_int(pin);
+            return 1;
+        }
+        if (name[0] == 'A' && name[1] >= '0' && name[1] <= '3' && name[2] == '\0') {
+            *result = py_int(name[1] - '0');
+            return 1;
+        }
+        py_error(p->py, "unknown OpenCalc board pin");
+        return 0;
+    }
+    if (strcmp(target.string_value, "digitalio") == 0) {
+        if (strcmp(name, "INPUT") == 0) *result = py_int(0);
+        else if (strcmp(name, "OUTPUT") == 0) *result = py_int(1);
+        else if (strcmp(name, "PULL_UP") == 0) *result = py_int(2);
+        else if (strcmp(name, "LOW") == 0) *result = py_int(0);
+        else if (strcmp(name, "HIGH") == 0) *result = py_int(1);
+        else {
+            py_error(p->py, "unknown digitalio constant");
+            return 0;
+        }
+        return 1;
+    }
     py_error(p->py, "module attributes are not available");
     return 0;
 }
@@ -2635,6 +2791,38 @@ static int py_call_standard_module(parser_t *p, const char *module, const char *
         if (strcmp(name, "isfinite") == 0 && numeric_args) { *result = py_bool(isfinite(a)); return 1; }
         if (strcmp(name, "isinf") == 0 && numeric_args) { *result = py_bool(isinf(a)); return 1; }
         if (strcmp(name, "isnan") == 0 && numeric_args) { *result = py_bool(isnan(a)); return 1; }
+        if (strcmp(name, "isclose") == 0 && argc >= 2 && argc <= 4 &&
+            py_is_number(args[0]) && py_is_number(args[1]) &&
+            (argc < 3 || py_is_number(args[2])) && (argc < 4 || py_is_number(args[3]))) {
+            double rel_tol = argc >= 3 ? py_number_as_double(args[2]) : 1e-9;
+            double abs_tol = argc >= 4 ? py_number_as_double(args[3]) : 0.0;
+            if (rel_tol < 0.0 || abs_tol < 0.0) { py_error(p->py, "tolerances must be non-negative"); return 0; }
+            double difference = fabs(a - b);
+            *result = py_bool(a == b || difference <= fmax(rel_tol * fmax(fabs(a), fabs(b)), abs_tol));
+            return 1;
+        }
+        if (strcmp(name, "prod") == 0 && (argc == 1 || argc == 2)) {
+            int count = py_iterable_count(args[0]);
+            py_value_t product = argc == 2 ? args[1] : py_int(1);
+            if (count < 0 || !py_is_number(product)) { py_error(p->py, "prod() expects numeric data"); return 0; }
+            for (int i = 0; i < count; ++i) {
+                py_value_t item = py_iterable_item(p->py, args[0], i);
+                if (!py_is_number(item)) { py_error(p->py, "prod() data must be numeric"); return 0; }
+                if (product.type == PY_VALUE_FLOAT || item.type == PY_VALUE_FLOAT) {
+                    product = py_float(py_number_as_double(product) * py_number_as_double(item));
+                    if (!isfinite(product.float_value)) { py_error(p->py, "prod() overflow"); return 0; }
+                } else {
+                    int64_t multiplied;
+                    if (__builtin_mul_overflow(product.int_value, item.int_value, &multiplied)) {
+                        py_error(p->py, "integer overflow");
+                        return 0;
+                    }
+                    product = py_int(multiplied);
+                }
+            }
+            *result = product;
+            return 1;
+        }
         if (strcmp(name, "atan2") == 0 && argc == 2 && py_is_number(args[0]) && py_is_number(args[1])) value = atan2(a, b);
         else if (strcmp(name, "pow") == 0 && argc == 2 && py_is_number(args[0]) && py_is_number(args[1])) value = pow(a, b);
         else if (strcmp(name, "hypot") == 0 && argc == 2 && py_is_number(args[0]) && py_is_number(args[1])) value = hypot(a, b);
@@ -2648,6 +2836,21 @@ static int py_call_standard_module(parser_t *p, const char *module, const char *
             while (y != 0) { uint64_t remainder = x % y; x = y; y = remainder; }
             if (x > INT64_MAX) { py_error(p->py, "gcd result is out of range"); return 0; }
             *result = py_int((int64_t)x);
+            return 1;
+        } else if (strcmp(name, "lcm") == 0 && argc == 2 &&
+                   py_is_integer_value(args[0]) && py_is_integer_value(args[1])) {
+            uint64_t x = args[0].int_value < 0 ? (uint64_t)(-(args[0].int_value + 1)) + 1 : (uint64_t)args[0].int_value;
+            uint64_t y = args[1].int_value < 0 ? (uint64_t)(-(args[1].int_value + 1)) + 1 : (uint64_t)args[1].int_value;
+            uint64_t gcd = x;
+            uint64_t remainder_source = y;
+            while (remainder_source != 0) {
+                uint64_t remainder = gcd % remainder_source;
+                gcd = remainder_source;
+                remainder_source = remainder;
+            }
+            if (x == 0 || y == 0) { *result = py_int(0); return 1; }
+            if (x / gcd > (uint64_t)INT64_MAX / y) { py_error(p->py, "lcm result is out of range"); return 0; }
+            *result = py_int((int64_t)((x / gcd) * y));
             return 1;
         } else if (strcmp(name, "factorial") == 0 && argc == 1 && py_is_integer_value(args[0]) &&
                    args[0].int_value >= 0 && args[0].int_value <= 20) {
@@ -2694,6 +2897,33 @@ static int py_call_standard_module(parser_t *p, const char *module, const char *
             return 1;
         }
         if (strcmp(name, "random") == 0 && argc == 0) { *result = py_float(py_random_unit(p->py)); return 1; }
+        if (strcmp(name, "getrandbits") == 0 && argc == 1 && py_is_integer_value(args[0])) {
+            int bits = read_int_arg(p, args[0], "getrandbits() expects 0..63 bits");
+            if (py_has_error(p->py)) return 0;
+            if (bits < 0 || bits > 63) { py_error(p->py, "getrandbits() expects 0..63 bits"); return 0; }
+            *result = py_int(bits == 0 ? 0 : (int64_t)(py_random_next(p->py) >> (64 - bits)));
+            return 1;
+        }
+        if (strcmp(name, "shuffle") == 0 && argc == 1 && args[0].type == PY_VALUE_LIST &&
+            args[0].object != NULL) {
+            for (size_t i = args[0].object->count; i > 1; --i) {
+                size_t j = (size_t)(py_random_next(p->py) % i);
+                py_value_t swap = args[0].object->items[i - 1];
+                args[0].object->items[i - 1] = args[0].object->items[j];
+                args[0].object->items[j] = swap;
+            }
+            *result = py_none();
+            return 1;
+        }
+        if ((strcmp(name, "gauss") == 0 || strcmp(name, "normalvariate") == 0) &&
+            argc == 2 && py_is_number(args[0]) && py_is_number(args[1])) {
+            double u1 = py_random_unit(p->py);
+            double u2 = py_random_unit(p->py);
+            if (u1 <= 0.0) u1 = 1.0 / 9007199254740992.0;
+            *result = py_float(py_number_as_double(args[0]) + py_number_as_double(args[1]) *
+                               sqrt(-2.0 * log(u1)) * cos(6.28318530717958647692 * u2));
+            return 1;
+        }
         if (strcmp(name, "uniform") == 0 && argc == 2 && py_is_number(args[0]) && py_is_number(args[1])) {
             double a = py_number_as_double(args[0]);
             double b = py_number_as_double(args[1]);
@@ -2745,7 +2975,86 @@ static int py_call_standard_module(parser_t *p, const char *module, const char *
             *result = py_none();
             return 1;
         }
+        if ((strcmp(name, "sleep_ms") == 0 || strcmp(name, "sleep_us") == 0) &&
+            argc == 1 && py_is_number(args[0])) {
+            double divisor = strcmp(name, "sleep_ms") == 0 ? 1000.0 : 1000000.0;
+            if (!py_sleep_cancellable(p->py, py_number_as_double(args[0]) / divisor)) return 0;
+            *result = py_none();
+            return 1;
+        }
+        if ((strcmp(name, "ticks_ms") == 0 || strcmp(name, "ticks_us") == 0) && argc == 0) {
+            double multiplier = strcmp(name, "ticks_ms") == 0 ? 1000.0 : 1000000.0;
+            *result = py_int((int64_t)(py_time_seconds(1) * multiplier));
+            return 1;
+        }
+        if (strcmp(name, "ticks_diff") == 0 && argc == 2 &&
+            py_is_integer_value(args[0]) && py_is_integer_value(args[1])) {
+            int64_t difference;
+            if (__builtin_sub_overflow(args[0].int_value, args[1].int_value, &difference)) {
+                py_error(p->py, "ticks_diff() overflow");
+                return 0;
+            }
+            *result = py_int(difference);
+            return 1;
+        }
         return -1;
+    }
+    if (strcmp(module, "statistics") == 0 && argc == 1) {
+        int count = py_iterable_count(args[0]);
+        if (count <= 0) {
+            py_error(p->py, count == 0 ? "statistics requires data" : "statistics expects an iterable");
+            return 0;
+        }
+        double *values = (double *)py_heap_calloc((size_t)count, sizeof(*values));
+        if (values == NULL) {
+            py_error(p->py, "out of memory");
+            return 0;
+        }
+        double sum = 0.0;
+        for (int i = 0; i < count; ++i) {
+            py_value_t item = py_iterable_item(p->py, args[0], i);
+            if (!py_is_number(item)) {
+                py_heap_free(values);
+                py_error(p->py, "statistics data must be numeric");
+                return 0;
+            }
+            values[i] = py_number_as_double(item);
+            sum += values[i];
+        }
+        if (strcmp(name, "mean") == 0 || strcmp(name, "fmean") == 0) {
+            *result = py_float(sum / count);
+        } else if (strcmp(name, "median") == 0) {
+            for (int i = 1; i < count; ++i) {
+                double value = values[i];
+                int j = i - 1;
+                while (j >= 0 && values[j] > value) { values[j + 1] = values[j]; --j; }
+                values[j + 1] = value;
+            }
+            *result = py_float((count & 1) ? values[count / 2]
+                                           : (values[count / 2 - 1] + values[count / 2]) / 2.0);
+        } else if (strcmp(name, "pvariance") == 0 || strcmp(name, "variance") == 0 ||
+                   strcmp(name, "pstdev") == 0 || strcmp(name, "stdev") == 0) {
+            int sample = strcmp(name, "variance") == 0 || strcmp(name, "stdev") == 0;
+            if (sample && count < 2) {
+                py_heap_free(values);
+                py_error(p->py, "sample statistics require two data points");
+                return 0;
+            }
+            double mean = sum / count;
+            double squared = 0.0;
+            for (int i = 0; i < count; ++i) {
+                double delta = values[i] - mean;
+                squared += delta * delta;
+            }
+            double variance = squared / (sample ? count - 1 : count);
+            *result = py_float((strcmp(name, "pstdev") == 0 || strcmp(name, "stdev") == 0)
+                                   ? sqrt(variance) : variance);
+        } else {
+            py_heap_free(values);
+            return -1;
+        }
+        py_heap_free(values);
+        return 1;
     }
     return -1;
 }
@@ -4321,7 +4630,12 @@ void py_init(py_t *py) {
     py_set_var(py, "math", py_module("math"));
     py_set_var(py, "random", py_module("random"));
     py_set_var(py, "time", py_module("time"));
+    py_set_var(py, "statistics", py_module("statistics"));
     py_set_var(py, "sensors", py_module("sensors"));
+    py_set_var(py, "board", py_module("board"));
+    py_set_var(py, "digitalio", py_module("digitalio"));
+    py_set_var(py, "analogio", py_module("analogio"));
+    py_set_var(py, "busio", py_module("busio"));
     py->statement_limit = 100000UL;
     py->call_depth_limit = PY_MAX_TRACE_DEPTH;
     py->random_state = UINT64_C(0x6f70656e63616c63);
