@@ -129,19 +129,19 @@ CAS, scripting, USB storage, power controls, and all five games are working on t
 current hardware. It is already useful, but it still needs more testing and polish
 before it is ready to be called a finished product.
 
-| Area | Where it stands |
+| Area | Current estimate |
 | --- | ---: |
-| Automated test groups | 12/12 passing |
-| Features completed | About 80% |
-| Everyday usability | About 75% |
-| Reliability confidence | About 60% |
-| Ready for release | About 40% |
+| Automated host test groups passing | 12/12 (100%) |
+| Planned software feature coverage | About 85% |
+| Everyday workflow usability | About 80% |
+| Software reliability confidence | About 70% |
+| Production-release readiness | About 45% |
 
-The biggest jobs left are longer CAS and script tests, checking that saved work
-survives interruptions, stress-testing very large matrices, and testing the V5
-audio and scientific I/O on real hardware. A fresh ESP-IDF build is also required
-before the next release. See the [app-by-app status](firmware/APP_STATUS.md) for
-more detail.
+These percentages are practical estimates, not test-coverage measurements. The
+biggest jobs left are longer CAS and script tests, checking that saved work
+survives interruptions, stress-testing very large matrices, and validating the
+V5 display, audio, and scientific I/O on real hardware. See the
+[app-by-app status](firmware/APP_STATUS.md) for more detail.
 
 ## Credits
 

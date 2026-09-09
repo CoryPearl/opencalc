@@ -10,8 +10,8 @@ exist in firmware.
 
 - Current stage: working hardware/software prototype, not a finished production
   release.
-- The September 4, 2026 Giac-enabled ESP-IDF build succeeds at 5,204,208 bytes,
-  leaving 1,087,248 bytes (17%) free in the 6 MB factory app partition. Large CAS
+- The September 9, 2026 Giac-enabled ESP-IDF build succeeds at 5,228,784 bytes,
+  leaving 1,062,672 bytes (17%) free in the 6 MB factory app partition. Large CAS
   and math-worker stacks are allocated from PSRAM.
 - Host regressions cover Tiny Python lifecycle/error recovery, the local
   polynomial CAS, embedded Eigenmath fallback, all four graph evaluator modes,

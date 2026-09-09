@@ -64,12 +64,12 @@ raster primitives. Existing domain modules own statistics, conics,
 inequalities, references, math, persistence, and each game; `opencalc_ui.c`
 remains the coordinator for page layouts and keypad routing.
 
-Recent local build status (September 4, 2026):
+Recent local build status (September 9, 2026):
 
 - The Giac-enabled ESP-IDF target build completes successfully.
-- App binary size: `0x4f68f0` bytes (5,204,208 bytes).
+- App binary size: `0x4fc8f0` bytes (5,228,784 bytes).
 - Factory app partition: `0x600000` bytes (6 MB).
-- Free app partition space: `0x109710` bytes (1,087,248 bytes, 17%).
+- Free app partition space: `0x103710` bytes (1,062,672 bytes, 17%).
 - Storage partition: `0x800000` bytes, generated from `storage_image/`.
 
 ## Build and Flash
