@@ -9,6 +9,8 @@ OpenCalc-authored software is licensed under **GPL-3.0-or-later**. Bundled compo
 
 The calculator runs **OpenCalc OS**, the project’s open-source ESP32-S3 operating environment. OpenCalc OS includes the calculator interface, math and graphing engines, built-in apps, scripting runtime, USB file storage, keypad handling, display drivers, game support, and power management.
 
+Website: [https://corypearl.github.io/opencalc/product-website/](https://corypearl.github.io/opencalc/product-website/)
+
 Blog: [https://corypearl.github.io/opencalc/blog.html](https://corypearl.github.io/opencalc/blog.html)
 
 <p align="center">
