@@ -1,3 +1,7 @@
+#ifndef ESP_PLATFORM
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 /*
 Cory Pearl
 05/22/26
@@ -21,10 +25,6 @@ Public API:
     py_deinit(&py);
 
 ------------------- Example Code -------------------
-
-#ifndef ESP_PLATFORM
-#define _POSIX_C_SOURCE 200809L
-#endif
 
 #include "tiny-python.h"
 #include <stdio.h>
