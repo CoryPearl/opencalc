@@ -47,6 +47,10 @@ int main(void) {
 
 */
 
+#ifndef ESP_PLATFORM
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include "tiny-python.h"
 
 #include <ctype.h>
