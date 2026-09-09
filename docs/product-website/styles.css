@@ -82,8 +82,6 @@ button, a { -webkit-tap-highlight-color: transparent; }
   text-transform: uppercase;
 }
 
-.brand img { width: 38px; height: 38px; object-fit: contain; }
-
 .site-nav {
   display: flex;
   align-items: center;
