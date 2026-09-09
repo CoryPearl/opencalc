@@ -296,6 +296,10 @@ PSRAM is a firmware requirement rather than an optional performance upgrade.
 
 Current hardware work uses KiCad for the V5 PCB files, FreeCAD for case design, Affinity for graphics/layout work, and ViewSTL or similar tooling for quick 3D model checks. Older EasyEDA experiments may still exist in the repo, but the current PCB README describes the V5 KiCad design.
 
+The V5 project is authored and verified with KiCad 9.0.7. Open
+`opencalc_pcb_V5/opencalc_pcb_V5.kicad_pro`; its custom footprints and 3D models
+use project-relative `${KIPRJMOD}` paths, so no local library remapping is needed.
+
 ## Bring-Up Checks
 
 - `VBUS` should measure about 5 V when USB-C is plugged in.

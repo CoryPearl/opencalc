@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="OpenCalc is an open-source ESP32-S3 graphing calculator with symbolic math, on-device scripting, games, and scientific I/O."
+    />
+    <meta name="theme-color" content="#101512" />
+    <title>OpenCalc | An open graphing calculator</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="OpenCalc home">
+        <img
+          src="../img/opencalc_logo_light.png"
+          alt=""
+          width="42"
+          height="42"
+        />
+        <span>OpenCalc</span>
+      </a>
+      <button
+        class="menu-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="site-nav"
+      >
+        <span>Menu</span><span aria-hidden="true">+</span>
+      </button>
+      <nav id="site-nav" class="site-nav" aria-label="Primary navigation">
+        <a href="#compare">Compare</a>
+        <a href="#features">Features</a>
+        <a href="#hardware">Hardware</a>
+        <a href="#build">Build</a>
+        <a href="https://github.com/CoryPearl/opencalc">GitHub</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="top">
+        <img
+          class="hero-machine"
+          src="../img/opencalc_exploded_rotation.gif"
+          alt="Exploded rotating render of the OpenCalc PCB, display, and enclosure"
+        />
+        <div class="hero-content">
+          <p class="eyebrow">Open hardware / GPL-3.0-or-later</p>
+          <br />
+          <h1>OpenCalc</h1>
+          <p class="hero-lede">
+            A graphing calculator built to be opened, programmed, and connected.
+          </p>
+          <p class="hero-detail">
+            Dual-core ESP32-S3. Embedded symbolic math. Tiny Python. A
+            16-channel sensor header. One USB-C cable.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#compare"
+              >See the difference</a
+            >
+            <a class="text-link light" href="#build"
+              >Build it <span aria-hidden="true">→</span></a
+            >
+          </div>
+        </div>
+        <div class="hero-spec" aria-label="Core specifications">
+          <span>240 MHz</span><span>320 × 240</span><span>CAS</span
+          ><span>12D + 4A I/O</span>
+        </div>
+      </section>
+
+      <section
+        class="compare-section section-pad"
+        id="compare"
+        aria-labelledby="compare-title"
+      >
+        <div class="section-label">01 / OpenCalc vs. TI-84 Evo</div>
+        <div class="compare-heading">
+          <h2 id="compare-title">
+            More open. More expandable. Less expensive to produce.
+          </h2>
+          <p>
+            The TI-84 Evo is the polished classroom benchmark. OpenCalc takes a
+            different position: full project access, a real embedded CAS,
+            exposed scientific I/O, and hardware you can rebuild.
+          </p>
+        </div>
+
+        <div class="comparison-wrap">
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th scope="col">Comparison</th>
+                <th scope="col">OpenCalc V5</th>
+                <th scope="col">TI-84 Evo</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Processor</th>
+                <td data-label="OpenCalc">Dual-core ESP32-S3, up to 240 MHz</td>
+                <td data-label="TI-84 Evo">156 MHz processor</td>
+              </tr>
+              <tr>
+                <th scope="row">Display</th>
+                <td data-label="OpenCalc">320 × 240 full panel</td>
+                <td data-label="TI-84 Evo">
+                  320 × 240 panel; 319 × 209 graph area
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Math engine</th>
+                <td data-label="OpenCalc">
+                  Embedded Giac/KhiCAS CAS plus numerical math
+                </td>
+                <td data-label="TI-84 Evo">
+                  Polynomial and system solvers; no general CAS
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Programming</th>
+                <td data-label="OpenCalc">
+                  Tiny Python with graphics, keys, files, audio, math, and
+                  sensor APIs
+                </td>
+                <td data-label="TI-84 Evo">Python and TI-Basic</td>
+              </tr>
+              <tr>
+                <th scope="row">Expansion</th>
+                <td data-label="OpenCalc">
+                  12 digital, 4 analog, and shared I2C on the rear header
+                </td>
+                <td data-label="TI-84 Evo">
+                  Vendor-supported classroom accessories
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Project access</th>
+                <td data-label="OpenCalc">
+                  GPL firmware, KiCad PCB, enclosure, tests, and build files
+                </td>
+                <td data-label="TI-84 Evo">
+                  Vendor-managed hardware and operating system
+                </td>
+              </tr>
+              <tr class="price-row">
+                <th scope="row">Price</th>
+                <td data-label="OpenCalc">
+                  <strong>$32–51 estimated unit cost</strong
+                  ><small>Production estimate, not a retail offer</small>
+                </td>
+                <td data-label="TI-84 Evo">
+                  <strong>$129.99 advertised</strong
+                  ><small
+                    >$129.99 regular price at Staples, checked Sep. 2026</small
+                  >
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Exam use</th>
+                <td data-label="OpenCalc">
+                  Not submitted or approved for standardized exams
+                </td>
+                <td data-label="TI-84 Evo">
+                  Approved for ACT, SAT, PSAT, IB, and AP exams
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="comparison-verdict">
+          <strong
+            >Choose the Evo for exam approval and institutional support.</strong
+          >
+          <span
+            >Choose OpenCalc when you want to understand the machine, change the
+            OS, run symbolic math, or connect an experiment directly to your
+            calculator.</span
+          >
+        </div>
+        <p class="source-note">
+          Clock speed alone is not a cross-architecture performance benchmark.
+          Evo specifications come from
+          <a
+            href="https://education.ti.com/en/products/calculators/graphing-calculators/ti-84-evo"
+            >Texas Instruments</a
+          >; price from
+          <a
+            href="https://www.staples.com/texas-instruments-ti-84-evo-graphing-calculator-white-84evo-fc-1l1-a/product_24683541"
+            >Staples</a
+          >.
+        </p>
+      </section>
+
+      <section
+        class="features-section section-pad"
+        id="features"
+        aria-labelledby="features-title"
+      >
+        <div class="section-label">02 / What makes it different</div>
+        <div class="feature-layout">
+          <figure class="screen-demo">
+            <img
+              src="../img/open_calc_ui_calculator_demo.gif"
+              alt="OpenCalc OS tour showing calculator, graphing, apps, scripting, and games"
+              width="640"
+              height="480"
+              loading="lazy"
+              decoding="async"
+            />
+            <figcaption>Actual 320 × 240 OpenCalc OS interface.</figcaption>
+          </figure>
+          <div class="feature-copy">
+            <h2 id="features-title">
+              The math is connected to the rest of the device.
+            </h2>
+            <p>
+              Enter a function once, then move between its graph, table, roots,
+              derivative, integral, tangent line, and shaded area.
+              <kbd>Alpha</kbd> + <kbd>Graph</kbd> opens the linked analysis
+              view.
+            </p>
+            <ul class="proof-list">
+              <li>
+                <strong>Symbolic and numerical</strong
+                ><span
+                  >Exact algebra, complex values, units such as
+                  <code>8 m / 2 s</code>, calculus, matrices, statistics, and
+                  solving.</span
+                >
+              </li>
+              <li>
+                <strong>Programming that reaches hardware</strong
+                ><span
+                  >Scripts can draw, read keys, save files, play game audio, and
+                  sample attached sensors.</span
+                >
+              </li>
+              <li>
+                <strong>Two cores with separate jobs</strong
+                ><span
+                  >The UI stays responsive while queued math and system work run
+                  on the other core.</span
+                >
+              </li>
+              <li>
+                <strong>One cable</strong
+                ><span
+                  >USB-C handles power, charging, files, firmware flashing, and
+                  the serial console.</span
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="hardware-section"
+        id="hardware"
+        aria-labelledby="hardware-title"
+      >
+        <div class="hardware-image-wrap">
+          <img
+            src="../img/opencalc_pcb_V5_full.png"
+            alt="Front and back render of the OpenCalc V5 PCB"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+        <div class="hardware-copy section-pad">
+          <div class="section-label">03 / A calculator that can measure</div>
+          <h2 id="hardware-title">
+            Read a sensor. Plot it. Keep the data in L1.
+          </h2>
+          <p>
+            The optional V5 scientific-I/O profile provides twelve 3.3 V digital
+            channels, four 16-bit analog inputs, and I2C. Tiny Python exposes
+            them directly:
+          </p>
+          <div class="code-block" data-copy-block>
+            <div class="code-title">
+              <span>sensor_log.py</span
+              ><button type="button" data-copy>Copy</button>
+            </div>
+            <pre><code>sensors.rate(128)
+sensors.list_clear(1)
+
+for sample in range(60):
+    value = sensors.analog_read(0)
+    sensors.list_append(1, value)
+
+print(sensors.list_count(1))</code></pre>
+          </div>
+          <p class="caution">
+            <strong>Prototype note:</strong> sensor inputs are 3.3 V only. The
+            V5 scientific-I/O and audio paths still need final-board validation.
+          </p>
+        </div>
+      </section>
+
+      <section
+        class="finish-section section-pad"
+        id="build"
+        aria-labelledby="build-title"
+      >
+        <div class="status-compact">
+          <div>
+            <div class="section-label">04 / Current status</div>
+            <h2>Real hardware. Honest limits.</h2>
+          </div>
+          <ul>
+            <li>
+              The calculator, display, keypad, USB, power system, persistence,
+              and five games run on the prototype.
+            </li>
+            <li>
+              The embedded CAS is not full desktop Xcas; Tiny Python is
+              intentionally smaller than CPython.
+            </li>
+            <li>
+              Long CAS/script cancellation, 99 × 99 matrices, and new V5
+              peripherals still need extended hardware soak tests.
+            </li>
+          </ul>
+        </div>
+
+        <div class="build-layout">
+          <div>
+            <div class="section-label">05 / Build it</div>
+            <h2 id="build-title">Clone. Build. Flash.</h2>
+            <p>
+              OpenCalc targets ESP-IDF 6.0.1 and the ESP32-S3. The repository
+              contains the firmware, V5 KiCad project, enclosure files, storage
+              image, and host tests.
+            </p>
+            <div class="build-links">
+              <a href="https://github.com/CoryPearl/opencalc/blob/main/guied.MD"
+                >Complete guide</a
+              >
+              <a
+                href="https://github.com/CoryPearl/opencalc/blob/main/firmware/APP_STATUS.md"
+                >App status</a
+              >
+              <a
+                href="https://github.com/CoryPearl/opencalc/blob/main/hardware/pcb/PCB_README.md"
+                >Hardware guide</a
+              >
+            </div>
+          </div>
+          <div class="code-block code-block-light" data-copy-block>
+            <div class="code-title">
+              <span>Terminal</span><button type="button" data-copy>Copy</button>
+            </div>
+            <pre><code>git clone https://github.com/CoryPearl/opencalc.git
+cd opencalc/firmware
+
+idf.py build
+idf.py -p PORT flash
+idf.py -p PORT monitor</code></pre>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div>
+        <img
+          src="../img/opencalc_logo_light.png"
+          alt="OpenCalc"
+          width="52"
+          height="52"
+        />
+        <p>Designed and built by Cory Pearl.</p>
+      </div>
+      <p>
+        OpenCalc-authored software is GPL-3.0-or-later. Third-party components
+        retain their own licenses.
+      </p>
+      <a href="#top">Back to top ↑</a>
+    </footer>
+  </body>
+</html>
