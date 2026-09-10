@@ -1091,12 +1091,13 @@ When the script finishes, press `Enter` or Back to return to the script list.
 Tiny Python supports integers, floats, booleans, strings, lists, tuples,
 dictionaries, `None`, basic f-strings, assignment, augmented assignment,
 functions, recursion, `if`/`elif`/`else`, `while`, iterable `for`, `range`,
-`break`, `continue`, `pass`, and normal imports for `math`, `random`, and
-`time`.
+`break`, `continue`, `pass`, and normal imports for `math`, `random`, `time`,
+`statistics`, and the OpenCalc device modules.
 
 Common builtins include `len`, `int`, `float`, `str`, `bool`, `abs`, `min`,
-`max`, `pow`, `sum`, `round`, `range`, `enumerate`, `sorted`, `list`, `tuple`,
-`any`, `all`, `ord`, `chr`, `type`, and `input`.
+`max`, `pow`, `sum`, `round`, `range`, `enumerate`, `reversed`, `zip`,
+`divmod`, `bin`, `oct`, `hex`, `sorted`, `list`, `tuple`, `any`, `all`, `ord`,
+`chr`, `type`, and `input`.
 
 Lists support indexing, assignment, stepped slicing, concatenation,
 repetition, `append`, `extend`, `insert`, `pop`, `remove`, `clear`, `reverse`,
@@ -1146,7 +1147,29 @@ repeated hardware run/input/error/cancel/exit soak testing.
 <a id="python-modules"></a>
 ## 26. Python Modules
 
-Six modules are preloaded; do not write `import`.
+Core and device modules are preloaded for old scripts. Normal `import` syntax
+is supported and recommended.
+
+### Standard Modules
+
+`math`, `random`, `time`, and `statistics` cover common calculator scripting.
+The compact subsets include products and integer-number helpers, seeded random
+selection/shuffling/normal values, interruptible timing and tick counters, and
+basic descriptive statistics.
+
+### CircuitPython-Style I/O
+
+```python
+import board, digitalio, analogio, busio
+
+digitalio.mode(board.D0, digitalio.OUTPUT)
+digitalio.write(board.D0, digitalio.HIGH)
+print(analogio.read(board.A0))
+print(busio.present(0x76))
+```
+
+These procedural names access OpenCalc's protected expansion service. They do
+not implement CircuitPython's class constructors or external driver ecosystem.
 
 ### Graphics
 
@@ -1174,9 +1197,12 @@ Button numbers are 1 through 50 in row-major matrix order.
 
 ```python
 storage.write("result.txt", "42")
+storage.append("result.txt", "\nmore")
 print(storage.exists("result.txt"))
 print(storage.read("result.txt"))
-storage.remove("result.txt")
+print(storage.size("result.txt"))
+storage.rename("result.txt", "saved.txt")
+storage.remove("saved.txt")
 ```
 
 Storage is restricted to simple file names in `/data/user/`. Absolute paths and

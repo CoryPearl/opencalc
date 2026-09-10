@@ -16,7 +16,7 @@ Blog: [https://corypearl.github.io/opencalc/blog.html](https://corypearl.github.
 <p align="center">
   <a href="hardware/pcb/opencalc_pcb_V5/img/opencalc_case_spin.gif"><img src="hardware/pcb/opencalc_pcb_V5/img/opencalc_case_spin.gif" alt="OpenCalc rotating case render" height="250"></a>
 <a href="hardware/pcb/opencalc_pcb_V5/img/opencalc_pcb_V5_full.png"><img src="hardware/pcb/opencalc_pcb_V5/img/opencalc_pcb_V5_full.png" alt="OpenCalc V5 PCB" height="250"></a>
-<a href="firmware/open_calc_ui_calculator_demo.gif"><img src="firmware/open_calc_ui_calculator_demo.gif" alt="OpenCalc OS demo" height="250"></a>
+<a href="firmware/img/open_calc_ui_calculator_demo.gif"><img src="firmware/img/open_calc_ui_calculator_demo.gif" alt="OpenCalc OS demo" height="250"></a>
 
 </p>
 <p align="center"><small>Click an image to enlarge. The UI tour visits all 12 apps and the game menu.</small></p>
@@ -36,8 +36,8 @@ Blog: [https://corypearl.github.io/opencalc/blog.html](https://corypearl.github.
 - **Reference Center:** press `Alpha` + `Zoom` for an interactive periodic table
   and browsable math, physics, and engineering formulas and explanations.
 - **Programmable on the device:** edit, run, upload, and debug Tiny Python programs with
-  `math`, `random`, `time`, cancellable forever loops, calculator math,
-  graphics, keys, storage, audio, and hardware APIs.
+  math, statistics, cancellable forever loops, CAS access, graphics, storage,
+  audio, and CircuitPython-style sensor APIs.
 - **[Built for science and electronics](guied.MD#scientific-data-logging):** use Tiny Python,
   12 bidirectional digital pins, four 16-bit analog inputs, and shared I2C to
   control experiments, plot live sensor data, and analyze recordings in Stats.
@@ -121,6 +121,7 @@ serial monitoring, storage, and charging.
 - [App Status](firmware/APP_STATUS.md): implementation status for every OpenCalc OS app and game.
 - [PCB README](hardware/pcb/PCB_README.md): current V5 PCB parts, pin map, power path, display, keypad, battery, audio, and bring-up checks.
 - [Tiny Python README](firmware/main/components/tiny-python-readme.md): scripting runtime details.
+- [Tiny Python capability audit](firmware/TINY_PYTHON_AUDIT.md): supported Python and hardware APIs, limits, and the CircuitPython compatibility boundary.
 
 ## Current Status
 
