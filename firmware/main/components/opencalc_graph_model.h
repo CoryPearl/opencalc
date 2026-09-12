@@ -8,6 +8,8 @@
 #define OPENCALC_GRAPH_POLAR_COUNT 6
 #define OPENCALC_GRAPH_SEQUENCE_COUNT 3
 #define OPENCALC_GRAPH_EXPRESSION_MAX 96
+#define OPENCALC_GRAPH_MODE_COUNT 4
+#define OPENCALC_GRAPH_SERIES_MAX OPENCALC_GRAPH_FUNCTION_COUNT
 
 typedef struct {
     char expressions[OPENCALC_GRAPH_FUNCTION_COUNT][OPENCALC_GRAPH_EXPRESSION_MAX];
@@ -23,8 +25,10 @@ typedef struct {
     int selection;
     double x_min, x_max, y_min, y_max, x_tick, y_tick;
     int window_selection, calc_selection, format_selection, style_series;
-    uint8_t styles[OPENCALC_GRAPH_FUNCTION_COUNT];
+    uint8_t styles[OPENCALC_GRAPH_MODE_COUNT][OPENCALC_GRAPH_SERIES_MAX];
+    uint8_t colors[OPENCALC_GRAPH_MODE_COUNT][OPENCALC_GRAPH_SERIES_MAX];
     bool zoom_mode, split, background_enabled, background_loaded;
+    uint8_t background_mode;
     double table_x_start, table_step;
     int table_function_start, table_rows, table_precision, table_setup_selection;
     bool grid, trace;

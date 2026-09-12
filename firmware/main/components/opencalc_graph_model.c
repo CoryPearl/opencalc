@@ -25,6 +25,11 @@ void opencalc_graph_model_reset(void)
     s_graph.table_rows = 9;
     s_graph.table_precision = 2;
     s_graph.grid = true;
+    for (int mode = 0; mode < OPENCALC_GRAPH_MODE_COUNT; mode++) {
+        for (int series = 0; series < OPENCALC_GRAPH_SERIES_MAX; series++) {
+            s_graph.colors[mode][series] = (uint8_t)series;
+        }
+    }
 }
 
 opencalc_graph_model_t *opencalc_graph_model(void) { return &s_graph; }

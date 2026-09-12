@@ -85,3 +85,9 @@ void W_Checksum(sha1_digest_t digest)
     SHA1_Final(digest, &sha1_context);
 }
 
+void W_ChecksumShutdown(void)
+{
+    free(open_wadfiles);
+    open_wadfiles = NULL;
+    num_open_wadfiles = 0;
+}

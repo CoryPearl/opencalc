@@ -589,6 +589,29 @@ static int GetLowTic(void)
 static int frameon;
 static int frameskip[4];
 static int oldnettics;
+static int oldentertics;
+
+void D_ResetGameLoop(void)
+{
+    memset(ticdata, 0, sizeof(ticdata));
+    memset(local_playeringame, 0, sizeof(local_playeringame));
+    memset(frameskip, 0, sizeof(frameskip));
+    maketic = 0;
+    recvtic = 0;
+    gametic = 0;
+    singletics = false;
+    localplayer = 0;
+    skiptics = 0;
+    ticdup = 0;
+    offsetms = 0;
+    new_sync = true;
+    loop_interface = NULL;
+    player_class = 0;
+    lasttime = 0;
+    frameon = 0;
+    oldnettics = 0;
+    oldentertics = 0;
+}
 
 static void OldNetSync(void)
 {
@@ -710,7 +733,6 @@ void TryRunTics (void)
     int	i;
     int	lowtic;
     int	entertic;
-    static int oldentertics;
     int realtics;
     int	availabletics;
     int	counts;

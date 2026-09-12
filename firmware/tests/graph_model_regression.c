@@ -17,6 +17,12 @@ int main(void)
     assert(strcmp(model->sequence_expressions[0], "n") == 0);
     assert(fabs(model->x_min + 10.0) < 1e-12 && fabs(model->x_max - 10.0) < 1e-12);
     assert(model->table_rows == 9 && model->table_precision == 2 && model->grid);
+    for (int mode = 0; mode < OPENCALC_GRAPH_MODE_COUNT; mode++) {
+        for (int series = 0; series < OPENCALC_GRAPH_SERIES_MAX; series++) {
+            assert(model->styles[mode][series] == 0);
+            assert(model->colors[mode][series] == series);
+        }
+    }
     puts("PASS graph model defaults");
     return 0;
 }

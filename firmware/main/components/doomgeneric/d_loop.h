@@ -63,6 +63,7 @@ void TryRunTics (void);
 
 // Called at start of game loop to initialize timers
 void D_StartGameLoop(void);
+void D_ResetGameLoop(void);
 
 // Initialize networking code and connect to server.
 
@@ -78,4 +79,3 @@ extern boolean singletics;
 extern int gametic, ticdup;
 
 #endif
-

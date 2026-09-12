@@ -89,8 +89,7 @@ void I_WaitVBL(int count)
 
 void I_InitTimer(void)
 {
-    // initialize timer
+    basetime = I_GetTicks();
 
     //SDL_Init(SDL_INIT_TIMER);
 }
-

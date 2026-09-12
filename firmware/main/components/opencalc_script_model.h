@@ -2,7 +2,7 @@
 
 #include <stddef.h>
 
-#define OPENCALC_SCRIPT_EDITOR_CAPACITY 2048
+#define OPENCALC_SCRIPT_EDITOR_CAPACITY 32768
 
 typedef struct {
     char text[OPENCALC_SCRIPT_EDITOR_CAPACITY];

@@ -63,6 +63,7 @@ boolean I_GetMemoryValue(unsigned int offset, void *value, int size);
 // is due to an error (I_Error)
 
 void I_AtExit(atexit_func_t func, boolean run_if_error);
+void I_ResetExitFunctions(void);
 
 // Add all system-specific config file variable bindings.
 
@@ -81,4 +82,3 @@ void I_PrintBanner(char *text);
 void I_PrintDivider(void);
 
 #endif
-

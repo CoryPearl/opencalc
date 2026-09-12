@@ -65,6 +65,47 @@ unsigned int numlumps = 0;
 
 static lumpinfo_t **lumphash;
 
+void W_Shutdown(void)
+{
+    unsigned int i;
+
+    if (lumphash != NULL)
+    {
+        Z_Free(lumphash);
+        lumphash = NULL;
+    }
+
+    // Multiple lumps from one WAD share a single file object.
+    for (i = 0; i < numlumps; ++i)
+    {
+        unsigned int previous;
+        boolean first_reference = true;
+
+        if (lumpinfo[i].wad_file == NULL)
+        {
+            continue;
+        }
+
+        for (previous = 0; previous < i; ++previous)
+        {
+            if (lumpinfo[previous].wad_file == lumpinfo[i].wad_file)
+            {
+                first_reference = false;
+                break;
+            }
+        }
+
+        if (first_reference)
+        {
+            W_CloseFile(lumpinfo[i].wad_file);
+        }
+    }
+
+    free(lumpinfo);
+    lumpinfo = NULL;
+    numlumps = 0;
+}
+
 // Hash function used for lump names.
 
 unsigned int W_LumpNameHash(const char *s)
@@ -609,4 +650,3 @@ void W_CheckCorrectIWAD(GameMission_t mission)
         }
     }
 }
-

@@ -67,6 +67,7 @@ void*	W_CacheLumpNum (int lump, int tag);
 void*	W_CacheLumpName (char* name, int tag);
 
 void    W_GenerateHashTable(void);
+void    W_Shutdown(void);
 
 extern unsigned int W_LumpNameHash(const char *s);
 

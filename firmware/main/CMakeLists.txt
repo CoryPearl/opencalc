@@ -10,13 +10,20 @@ set(OPENCALC_SOURCES
         "components/opencalc_breakout.c"
         "components/opencalc_calc.c"
         "components/opencalc_cas.c"
+        "components/opencalc_cas_experience.c"
         "components/opencalc_conics.c"
         "components/opencalc_doom.c"
         "components/opencalc_eigenmath.c"
+        "components/opencalc_graph_analysis.c"
+        "components/opencalc_graph_controller.c"
+        "components/opencalc_graph_symbolic.c"
+        "components/opencalc_graph_background.c"
         "components/opencalc_graph_model.c"
+        "components/opencalc_graph_series.c"
         "components/opencalc_inequality.c"
         "components/opencalc_mario.cpp"
         "components/opencalc_math.c"
+        "components/opencalc_math_layout.c"
         "components/opencalc_persist.c"
         "components/opencalc_power.c"
         "components/opencalc_reference.c"
@@ -25,6 +32,7 @@ set(OPENCALC_SOURCES
         "components/opencalc_script_model.c"
         "components/opencalc_snake.c"
         "components/opencalc_stats.c"
+        "components/opencalc_symbols.c"
         "components/opencalc_tetris.c"
         "components/opencalc_units.c"
         "components/opencalc_ui.c"
@@ -159,8 +167,15 @@ idf_component_register(
     REQUIRES ${OPENCALC_PRIVATE_REQUIRES}
 )
 
-target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-error=format-truncation)
-target_compile_definitions(${COMPONENT_LIB} PRIVATE PY_MAX_TOKENS=128)
+target_compile_definitions(${COMPONENT_LIB} PRIVATE
+    PY_MAX_PROGRAM=65536
+    PY_MAX_TOKENS=8192
+    PY_MAX_LINE=512
+    PY_MAX_FUNCS=48
+    PY_MAX_VARS=96
+    PY_MAX_LOCALS=48
+    PY_MAX_FUNC_BODY=2048
+)
 set_source_files_properties("components/eigenmath/eigenmath.c" PROPERTIES
     COMPILE_DEFINITIONS "OPENCALC_EIGENMATH_EMBEDDED=1"
 )
@@ -168,14 +183,51 @@ if(OPENCALC_GIAC_ENABLED)
     # The vendored Giac headers predate GCC 15/C++20. Keep compatibility
     # diagnostics local to the adapter that includes them.
     set_source_files_properties("components/opencalc_giac.cpp" PROPERTIES
+        COMPILE_DEFINITIONS "HAVE_CONFIG_H;GIAC_KHICAS;NO_GUI;GIAC_GENERIC;EMBEDDED;UMAP;DOUBLEVAL;NO_BSD;BOARD_HAS_PSRAM;NO_CLOCK"
         COMPILE_OPTIONS "-Wno-unknown-pragmas;-Wno-deprecated-enum-enum-conversion;-Wno-template-id-cdtor;-Wno-deprecated-declarations;-Wno-register;-Wno-reorder"
     )
 endif()
 target_compile_definitions(${COMPONENT_LIB} PRIVATE DOOMGENERIC_RESX=320 DOOMGENERIC_RESY=200)
 target_compile_definitions(${COMPONENT_LIB} PRIVATE COMPOSITE_VIDEO=1 OPENCALC_NONBLOCKING_DOOM_TICS=1)
-file(GLOB OPENCALC_DOOM_VENDOR_SOURCES "components/doomgeneric/*.c")
-set_source_files_properties(${OPENCALC_DOOM_VENDOR_SOURCES} PROPERTIES
-    COMPILE_OPTIONS "-Wno-error;-Wno-dangling-pointer;-Wno-format;-Wno-format-truncation;-Wno-implicit-fallthrough;-Wno-missing-field-initializers;-Wno-type-limits;-Wno-unused-but-set-parameter;-Wno-unused-but-set-variable;-Wno-unused-const-variable;-Wno-unused-variable"
+set_source_files_properties("components/doomgeneric/am_map.c" PROPERTIES
+    COMPILE_OPTIONS "-Wno-missing-field-initializers"
+)
+set_source_files_properties("components/doomgeneric/d_main.c" PROPERTIES
+    COMPILE_OPTIONS "-Wno-unterminated-string-initialization"
+)
+set_source_files_properties(
+    "components/doomgeneric/g_game.c"
+    "components/doomgeneric/p_ceilng.c"
+    "components/doomgeneric/p_floor.c"
+    PROPERTIES
+    COMPILE_OPTIONS "-Wno-implicit-fallthrough"
+)
+set_source_files_properties("components/doomgeneric/i_input.c" PROPERTIES
+    COMPILE_OPTIONS "-Wno-type-limits;-Wno-unused-const-variable"
+)
+set_source_files_properties("components/doomgeneric/i_sound.c" PROPERTIES
+    COMPILE_OPTIONS "-Wno-unused-variable"
+)
+set_source_files_properties("components/doomgeneric/i_video.c" PROPERTIES
+    COMPILE_OPTIONS "-Wno-format;-Wno-unused-but-set-variable;-Wno-unused-const-variable"
+)
+set_source_files_properties("components/doomgeneric/m_menu.c" PROPERTIES
+    COMPILE_OPTIONS "-Wno-format-truncation;-Wno-unused-but-set-parameter"
+)
+set_source_files_properties(
+    "components/doomgeneric/p_setup.c"
+    "components/doomgeneric/wi_stuff.c"
+    PROPERTIES
+    COMPILE_OPTIONS "-Wno-format-truncation"
+)
+set_source_files_properties("components/doomgeneric/r_segs.c" PROPERTIES
+    COMPILE_OPTIONS "-Wno-absolute-value"
+)
+set_source_files_properties("components/doomgeneric/r_things.c" PROPERTIES
+    COMPILE_OPTIONS "-Wno-dangling-pointer"
+)
+set_source_files_properties("components/doomgeneric/statdump.c" PROPERTIES
+    COMPILE_OPTIONS "-Wno-unused-const-variable"
 )
 set(OPENCALC_MARIO_VENDOR_SOURCES
     "components/mario/bus.cpp"
@@ -187,8 +239,8 @@ set(OPENCALC_MARIO_VENDOR_SOURCES
     "components/mario/mappers/mapper000.cpp"
 )
 set_source_files_properties(${OPENCALC_MARIO_VENDOR_SOURCES} PROPERTIES
-    COMPILE_OPTIONS "-Wno-error;-Wno-unused-parameter;-Wno-sign-compare"
+    COMPILE_OPTIONS "-Wno-unused-parameter;-Wno-sign-compare"
 )
 set_source_files_properties("components/eigenmath/eigenmath.c" PROPERTIES
-    COMPILE_OPTIONS "-Wno-error;-Wno-unused-parameter;-Wno-sign-compare"
+    COMPILE_OPTIONS "-Wno-unused-parameter;-Wno-sign-compare"
 )

@@ -77,6 +77,7 @@ struct atexit_listentry_s
 };
 
 static atexit_listentry_t *exit_funcs = NULL;
+static boolean already_quitting = false;
 
 void I_AtExit(atexit_func_t func, boolean run_on_error)
 {
@@ -90,6 +91,18 @@ void I_AtExit(atexit_func_t func, boolean run_on_error)
     entry->run_on_error = run_on_error;
     entry->next = exit_funcs;
     exit_funcs = entry;
+}
+
+void I_ResetExitFunctions(void)
+{
+    while (exit_funcs != NULL)
+    {
+        atexit_listentry_t *entry = exit_funcs;
+        exit_funcs = entry->next;
+        free(entry);
+    }
+
+    already_quitting = false;
 }
 
 // Tactile feedback function, probably used for the Logitech Cyberman
@@ -367,8 +380,6 @@ static int ZenityErrorBox(char *message)
 //
 // I_Error
 //
-
-static boolean already_quitting = false;
 
 void I_Error (char *error, ...)
 {

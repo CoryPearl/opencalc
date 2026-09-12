@@ -1,6 +1,8 @@
 #include "opencalc_calc.h"
+#include "opencalc_symbols.h"
 
 #include "opencalc_cas.h"
+#include "opencalc_config.h"
 #include "opencalc_math.h"
 #include "opencalc_units.h"
 
@@ -15,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 static EXT_RAM_BSS_ATTR char s_history_expression[OPENCALC_CALC_HISTORY_MAX][OPENCALC_CALC_EXPR_MAX];
 static EXT_RAM_BSS_ATTR char s_history_result[OPENCALC_CALC_HISTORY_MAX][OPENCALC_CALC_RESULT_MAX];
@@ -157,6 +160,168 @@ static void format_fraction(double value, char *out, size_t out_size)
     else snprintf(out, out_size, "%lld/%lld", numerator, denominator);
 }
 
+static bool symbol_can_store_user(const char *name)
+{
+    opencalc_symbol_t existing;
+    if (opencalc_symbol_get(name, &existing)) return (existing.flags & OPENCALC_SYMBOL_USER) != 0;
+    if (opencalc_symbol_count(0) >= OPENCALC_SYMBOL_MAX) return false;
+    if (strlen(name) > 1) {
+        size_t custom_count = 0;
+        opencalc_symbol_t current;
+        for (size_t i = 0; opencalc_symbol_at(i, OPENCALC_SYMBOL_USER, &current); i++) {
+            if (strlen(current.name) > 1) custom_count++;
+        }
+        if (custom_count >= OPENCALC_CUSTOM_VARIABLE_MAX) return false;
+    }
+    return true;
+}
+
+static bool store_symbol_value(const char *name, opencalc_symbol_type_t forced_type,
+                               const char *text)
+{
+    if (name == NULL || text == NULL || !opencalc_math_variable_name_valid(name) ||
+        strlen(text) >= OPENCALC_SYMBOL_TEXT_MAX || !symbol_can_store_user(name)) return false;
+
+    opencalc_symbol_t symbol = {
+        .type = forced_type,
+        .flags = OPENCALC_SYMBOL_USER | OPENCALC_SYMBOL_GIAC_SYNC,
+    };
+    snprintf(symbol.name, sizeof(symbol.name), "%s", name);
+    snprintf(symbol.text, sizeof(symbol.text), "%s", text);
+
+    const char *cursor = text;
+    while (isspace((unsigned char)*cursor)) cursor++;
+    if (forced_type == OPENCALC_SYMBOL_EXPRESSION) {
+        if ((cursor[0] == '[' && cursor[1] == '[') ||
+            (cursor[0] == '{' && cursor[1] == '{')) {
+            symbol.type = OPENCALC_SYMBOL_MATRIX;
+        } else if (cursor[0] == '[' || cursor[0] == '{') {
+            symbol.type = OPENCALC_SYMBOL_LIST;
+        } else if (cursor[0] == '\'' || cursor[0] == '"') {
+            symbol.type = OPENCALC_SYMBOL_STRING;
+        } else {
+            char *number_end = NULL;
+            (void)strtod(cursor, &number_end);
+            while (number_end != NULL && isspace((unsigned char)*number_end)) number_end++;
+            if (number_end != cursor && number_end != NULL && *number_end == '\0') {
+                symbol.type = OPENCALC_SYMBOL_NUMBER;
+            }
+        }
+    }
+
+    if (symbol.type != OPENCALC_SYMBOL_LIST && symbol.type != OPENCALC_SYMBOL_MATRIX &&
+        symbol.type != OPENCALC_SYMBOL_STRING && symbol.type != OPENCALC_SYMBOL_UNIT) {
+        double real = 0.0, imag = 0.0;
+        if (opencalc_math_eval_complex_expression(text, &real, &imag)) {
+            symbol.numeric_valid = true;
+            symbol.real = real;
+            symbol.imag = imag;
+            if (fabs(imag) > 1e-12) symbol.type = OPENCALC_SYMBOL_COMPLEX;
+        }
+    }
+    if (symbol.type == OPENCALC_SYMBOL_LIST || symbol.type == OPENCALC_SYMBOL_MATRIX) {
+        return opencalc_symbol_set_text(symbol.name, symbol.type, symbol.flags, symbol.text);
+    }
+    return opencalc_symbol_set(&symbol);
+}
+
+static bool evaluate_shared_cas(const opencalc_calc_eval_request_t *request,
+                                const char *expression, char *output, size_t output_size,
+                                opencalc_giac_status_t *status,
+                                opencalc_cas_result_t *structured)
+{
+#if OPENCALC_ENABLE_GIAC_CAS && defined(ESP_PLATFORM)
+    opencalc_cas_options_t defaults;
+    opencalc_cas_options_default(&defaults);
+    const opencalc_cas_options_t *cas_options = request->cas_options != NULL
+        ? request->cas_options : &defaults;
+    char prepared[OPENCALC_CALC_EXPR_MAX + OPENCALC_CAS_ASSUMPTIONS_MAX + 96];
+    if (!opencalc_cas_prepare_expression(expression, cas_options,
+                                         prepared, sizeof(prepared))) {
+        *status = OPENCALC_GIAC_ERROR;
+        return false;
+    }
+    opencalc_giac_options_t giac_options = {
+        .degrees = request->degrees,
+        .domain = cas_options->domain,
+    };
+    snprintf(giac_options.assumptions, sizeof(giac_options.assumptions), "%s",
+             cas_options->assumptions);
+    *status = opencalc_giac_eval_timed_structured(
+        prepared, &giac_options, output, output_size, structured,
+        request->timeout_ms, request->should_cancel, request->cancel_context);
+    if (*status == OPENCALC_GIAC_OK) return true;
+    if (*status == OPENCALC_GIAC_TIMEOUT || *status == OPENCALC_GIAC_CANCELLED) return false;
+#endif
+    (void)structured;
+    return opencalc_cas_eval_timed(expression, output, output_size,
+                                   request->timeout_ms, request->should_cancel,
+                                   request->cancel_context, status);
+}
+
+static bool evaluate_assignment_cas(const opencalc_calc_eval_request_t *request,
+                                    const char *expression, char *output, size_t output_size,
+                                    opencalc_giac_status_t *status)
+{
+#if OPENCALC_ENABLE_GIAC_CAS && defined(ESP_PLATFORM)
+    *status = opencalc_giac_eval_timed(expression, request->degrees, output, output_size,
+                                      request->timeout_ms, request->should_cancel,
+                                      request->cancel_context);
+    return *status == OPENCALC_GIAC_OK;
+#else
+    (void)request;
+    (void)expression;
+    (void)output;
+    (void)output_size;
+    *status = OPENCALC_GIAC_UNAVAILABLE;
+    return false;
+#endif
+}
+
+static void strip_assignment_echo(const char *name, char *output)
+{
+    if (name == NULL || output == NULL) return;
+    char *cursor = output;
+    while (isspace((unsigned char)*cursor)) cursor++;
+    size_t name_length = strlen(name);
+    if (strncasecmp(cursor, name, name_length) != 0) return;
+    cursor += name_length;
+    while (isspace((unsigned char)*cursor)) cursor++;
+    if (*cursor == ':') cursor++;
+    if (*cursor != '=') return;
+    cursor++;
+    while (isspace((unsigned char)*cursor)) cursor++;
+    memmove(output, cursor, strlen(cursor) + 1);
+}
+
+static bool function_assignment(const char *expression, char *name, size_t name_size,
+                                const char **value)
+{
+    if (expression == NULL || name == NULL || name_size == 0 || value == NULL) return false;
+    const char *p = expression;
+    while (isspace((unsigned char)*p)) p++;
+    size_t length = 0;
+    while (isalnum((unsigned char)*p) || *p == '_') {
+        if (length + 1 >= name_size) return false;
+        name[length++] = *p++;
+    }
+    name[length] = '\0';
+    while (isspace((unsigned char)*p)) p++;
+    if (*p++ != '(') return false;
+    while (isspace((unsigned char)*p)) p++;
+    if (tolower((unsigned char)*p++) != 'x') return false;
+    while (isspace((unsigned char)*p)) p++;
+    if (*p++ != ')') return false;
+    while (isspace((unsigned char)*p)) p++;
+    if (*p == ':' && p[1] == '=') p += 2;
+    else if (*p == '=') p++;
+    else return false;
+    while (isspace((unsigned char)*p)) p++;
+    if (*p == '\0' || !opencalc_math_variable_name_valid(name)) return false;
+    *value = p;
+    return true;
+}
+
 void opencalc_calc_evaluate(const opencalc_calc_eval_request_t *request,
                             opencalc_calc_eval_result_t *result)
 {
@@ -172,40 +337,91 @@ void opencalc_calc_evaluate(const opencalc_calc_eval_request_t *request,
     char substituted[sizeof(expanded)];
     expand_ans(request->expression, request->ans, expanded, sizeof(expanded));
 
-    char assignment[OPENCALC_VARIABLE_NAME_MAX];
-    if (opencalc_math_assignment_name(expanded, assignment, sizeof(assignment))) {
-        double real = 0.0, imag = 0.0;
-        if (opencalc_math_eval_complex_expression(expanded, &real, &imag)) {
-            format_complex(real, imag, request->complex_mode, request->display_format, request->degrees,
-                           result->output, sizeof(result->output));
-            result->ok = result->update_ans = true;
+    char function_name[OPENCALC_VARIABLE_NAME_MAX];
+    const char *function_value = NULL;
+    if (function_assignment(expanded, function_name, sizeof(function_name), &function_value)) {
+        if (!symbol_can_store_user(function_name)) {
+            snprintf(result->output, sizeof(result->output), "variable storage full");
+            return;
+        }
+        if (evaluate_shared_cas(request, function_value, result->output,
+                                sizeof(result->output), &result->giac_status, NULL) &&
+            store_symbol_value(function_name, OPENCALC_SYMBOL_FUNCTION, result->output)) {
+            result->ok = result->update_ans = result->symbol_changed = true;
+        } else if (result->giac_status == OPENCALC_GIAC_CANCELLED ||
+                   result->giac_status == OPENCALC_GIAC_TIMEOUT) {
+            snprintf(result->output, sizeof(result->output), "%s",
+                     result->giac_status == OPENCALC_GIAC_CANCELLED ? "cancelled" : "CAS timed out");
         } else {
-            snprintf(result->output, sizeof(result->output), "invalid assignment");
+            snprintf(result->output, sizeof(result->output), "invalid function");
         }
         return;
     }
 
-    opencalc_units_status_t units = opencalc_units_eval(
-        expanded, result->output, sizeof(result->output));
-    if (units != OPENCALC_UNITS_NOT_APPLICABLE) {
-        result->ok = result->update_ans = units == OPENCALC_UNITS_OK;
+    char assignment[OPENCALC_VARIABLE_NAME_MAX];
+    if (opencalc_math_assignment_name(expanded, assignment, sizeof(assignment))) {
+        if (!symbol_can_store_user(assignment)) {
+            snprintf(result->output, sizeof(result->output), "variable storage full");
+            return;
+        }
+        const char *value = opencalc_math_assignment_value(expanded);
+        opencalc_units_status_t unit_status = opencalc_units_eval(
+            value, result->output, sizeof(result->output));
+        if (unit_status == OPENCALC_UNITS_OK) {
+            result->ok = result->update_ans = store_symbol_value(
+                assignment, OPENCALC_SYMBOL_UNIT, result->output);
+            result->symbol_changed = result->ok;
+            if (!result->ok) snprintf(result->output, sizeof(result->output), "variable storage full");
+            return;
+        }
+        if (unit_status == OPENCALC_UNITS_ERROR) return;
+
+        char command[OPENCALC_CALC_EXPR_MAX + OPENCALC_VARIABLE_NAME_MAX + 8];
+        int written = snprintf(command, sizeof(command), "%s:=(%s)", assignment, value);
+        if (written > 0 && (size_t)written < sizeof(command) &&
+            evaluate_assignment_cas(request, command, result->output, sizeof(result->output),
+                                    &result->giac_status)) {
+            strip_assignment_echo(assignment, result->output);
+            if (store_symbol_value(assignment, OPENCALC_SYMBOL_EXPRESSION, result->output)) {
+                apply_display_format(result->output, sizeof(result->output), request->display_format);
+                result->ok = result->update_ans = result->symbol_changed = true;
+            } else {
+                snprintf(result->output, sizeof(result->output), "variable storage full");
+            }
+            return;
+        }
+        if (result->giac_status == OPENCALC_GIAC_CANCELLED ||
+            result->giac_status == OPENCALC_GIAC_TIMEOUT) {
+            snprintf(result->output, sizeof(result->output), "%s",
+                     result->giac_status == OPENCALC_GIAC_CANCELLED ? "cancelled" : "CAS timed out");
+            return;
+        }
+        double real = 0.0, imag = 0.0;
+        if (opencalc_math_eval_complex_expression(expanded, &real, &imag) &&
+            opencalc_symbol_set_number(assignment, real, imag,
+                OPENCALC_SYMBOL_USER | OPENCALC_SYMBOL_GIAC_SYNC, NULL)) {
+            format_complex(real, imag, request->complex_mode, request->display_format, request->degrees,
+                           result->output, sizeof(result->output));
+            result->ok = result->update_ans = true;
+            result->symbol_changed = true;
+        } else snprintf(result->output, sizeof(result->output), "invalid assignment");
         return;
     }
+
     if (!opencalc_math_substitute_variables(expanded, substituted, sizeof(substituted))) {
         snprintf(result->output, sizeof(result->output), "expression too long");
         return;
     }
-    if (request->expand_catalog != NULL &&
-        !request->expand_catalog(substituted, expanded, sizeof(expanded), request->catalog_context)) {
-        snprintf(result->output, sizeof(result->output), "stored value is too large");
+    opencalc_units_status_t units = opencalc_units_eval(
+        substituted, result->output, sizeof(result->output));
+    if (units != OPENCALC_UNITS_NOT_APPLICABLE) {
+        result->ok = result->update_ans = units == OPENCALC_UNITS_OK;
         return;
     }
-    if (request->expand_catalog == NULL) snprintf(expanded, sizeof(expanded), "%s", substituted);
-
-    if (opencalc_cas_eval_timed(expanded, result->output, sizeof(result->output),
-                                request->timeout_ms, request->should_cancel,
-                                request->cancel_context, &result->giac_status)) {
+    if (evaluate_shared_cas(request, expanded, result->output, sizeof(result->output),
+                            &result->giac_status, &result->structured)) {
         apply_display_format(result->output, sizeof(result->output), request->display_format);
+        opencalc_cas_analyze_result(result->output, &result->structured);
         size_t length = strlen(result->output);
         result->ok = true;
         result->update_ans = length < 3 || strcmp(result->output + length - 3, "...") != 0;
@@ -217,6 +433,13 @@ void opencalc_calc_evaluate(const opencalc_calc_eval_request_t *request,
                  result->giac_status == OPENCALC_GIAC_CANCELLED ? "cancelled" : "CAS timed out");
         return;
     }
+
+    if (request->expand_catalog != NULL &&
+        !request->expand_catalog(substituted, expanded, sizeof(expanded), request->catalog_context)) {
+        snprintf(result->output, sizeof(result->output), "stored value is too large");
+        return;
+    }
+    if (request->expand_catalog == NULL) snprintf(expanded, sizeof(expanded), "%s", substituted);
 
     if (take_wrapped(request->expression, "deriv", inner, sizeof(inner))) {
         if (!opencalc_math_derivative_expression(inner, result->output, sizeof(result->output)))
@@ -236,6 +459,7 @@ void opencalc_calc_evaluate(const opencalc_calc_eval_request_t *request,
             format_complex(real, imag, request->complex_mode, request->display_format, request->degrees,
                            result->output, sizeof(result->output));
             result->ok = result->update_ans = true;
+            opencalc_cas_analyze_result(result->output, &result->structured);
             return;
         }
     } else {
@@ -250,6 +474,7 @@ void opencalc_calc_evaluate(const opencalc_calc_eval_request_t *request,
                             result->output, sizeof(result->output));
             }
             result->ok = result->update_ans = true;
+            opencalc_cas_analyze_result(result->output, &result->structured);
             return;
         }
     }

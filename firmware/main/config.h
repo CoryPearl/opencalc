@@ -112,6 +112,7 @@
 #define OPENCALC_CAS_TIMEOUT_MS 10000UL // Keep the UI responsive if Giac stalls or exhausts memory
 #define OPENCALC_CAS_CANCEL_POLL_MS 20UL
 #define OPENCALC_CAS_RECOVERY_GRACE_MS 1500UL // Allow Giac's cooperative abort checks to unwind and recycle its context
+#define OPENCALC_CAS_REBOOT_ON_STUCK 1 // Preserve worksheets, then reboot if Giac never reaches a safe cancellation point
 #define OPENCALC_SCRIPT_TASK_STACK 32768 // Reserved early; parser temporaries are split to keep safe input/recursion margin
 #define OPENCALC_SCRIPT_TASK_STACK_MIN 32768 // FATFS forbids using a PSRAM-backed task stack here
 #define OPENCALC_SCRIPT_STATEMENT_LIMIT 250000UL
@@ -147,6 +148,10 @@
 
 #if OPENCALC_CAS_TIMEOUT_MS < 250 || OPENCALC_CAS_CANCEL_POLL_MS < 1 || OPENCALC_CAS_CANCEL_POLL_MS > OPENCALC_CAS_TIMEOUT_MS || OPENCALC_CAS_RECOVERY_GRACE_MS < OPENCALC_CAS_CANCEL_POLL_MS
 #error "OpenCalc CAS timeout settings are invalid"
+#endif
+
+#if OPENCALC_CAS_REBOOT_ON_STUCK != 0 && OPENCALC_CAS_REBOOT_ON_STUCK != 1
+#error "OPENCALC_CAS_REBOOT_ON_STUCK must be 0 or 1"
 #endif
 
 #if OPENCALC_MATH_WORKER_TASK_STACK < 16384

@@ -6,13 +6,21 @@
 #endif
 
 #include "m_argv.h"
+#include "d_main.h"
+#include "d_loop.h"
+#include "i_system.h"
+#include "i_video.h"
+#include "s_sound.h"
+#include "v_video.h"
+#include "w_checksum.h"
+#include "w_wad.h"
+#include "z_zone.h"
 
 #include "doomgeneric.h"
 
 pixel_t* DG_ScreenBuffer = NULL;
 
 void M_FindResponseFile(void);
-void D_DoomMain (void);
 
 
 int doomgeneric_Create(int argc, char **argv)
@@ -48,4 +56,22 @@ int doomgeneric_Create(int argc, char **argv)
 
 	D_DoomMain ();
     return 1;
+}
+
+void doomgeneric_Destroy(void)
+{
+    S_Shutdown();
+    I_ShutdownGraphics();
+    V_UseBuffer(NULL);
+    W_Shutdown();
+    W_ChecksumShutdown();
+    I_ResetExitFunctions();
+    Z_Shutdown();
+    D_ResetGameLoop();
+    D_ResetMainState();
+
+    // OpenCalc owns the shared UI canvas supplied as Doom's framebuffer.
+    DG_ScreenBuffer = NULL;
+    myargc = 0;
+    myargv = NULL;
 }

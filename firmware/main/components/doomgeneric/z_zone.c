@@ -21,6 +21,8 @@
 #include "i_system.h"
 #include "doomtype.h"
 
+#include <stdlib.h>
+
 
 //
 // ZONE MEMORY ALLOCATION
@@ -58,8 +60,6 @@ typedef struct
     memblock_t*	rover;
     
 } memzone_t;
-
-
 
 memzone_t*	mainzone;
 
@@ -117,6 +117,17 @@ void Z_Init (void)
     block->tag = PU_FREE;
     
     block->size = mainzone->size - sizeof(memzone_t);
+}
+
+void Z_Shutdown(void)
+{
+    if (mainzone == NULL)
+    {
+        return;
+    }
+
+    free(mainzone);
+    mainzone = NULL;
 }
 
 
@@ -485,4 +496,3 @@ unsigned int Z_ZoneSize(void)
 {
     return mainzone->size;
 }
-

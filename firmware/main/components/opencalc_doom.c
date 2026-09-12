@@ -281,6 +281,20 @@ bool opencalc_doom_start(void)
     return true;
 }
 
+void opencalc_doom_stop(void)
+{
+    if (!s_doom_started)
+    {
+        return;
+    }
+
+    ESP_LOGI(TAG, "Stopping Doom and releasing its PSRAM arena");
+    doom_clear_input_state();
+    doomgeneric_Destroy();
+    s_doom_started = false;
+    doom_log_resources("after Doom shutdown");
+}
+
 void opencalc_doom_tick(void)
 {
     if (s_doom_started) {

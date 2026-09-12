@@ -13,8 +13,10 @@ void opencalc_persist_init(void)
 {
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        err = nvs_flash_init();
+        ESP_LOGE(TAG,
+                 "NVS needs explicit recovery (%s); preserving settings instead of erasing partition",
+                 esp_err_to_name(err));
+        return;
     }
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "NVS disabled: %s", esp_err_to_name(err));
@@ -86,6 +88,27 @@ bool opencalc_persist_set_string(const char *key, const char *value)
     return true;
 }
 
+bool opencalc_persist_get_blob(const char *key, void *value, size_t *value_size)
+{
+    if (!s_ready || key == NULL || value == NULL || value_size == NULL || *value_size == 0) {
+        return false;
+    }
+    esp_err_t err = nvs_get_blob(s_nvs, key, value, value_size);
+    return err == ESP_OK;
+}
+
+bool opencalc_persist_set_blob(const char *key, const void *value, size_t value_size)
+{
+    if (!s_ready || key == NULL || value == NULL || value_size == 0) return false;
+    esp_err_t err = nvs_set_blob(s_nvs, key, value, value_size);
+    if (err == ESP_OK) err = nvs_commit(s_nvs);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "NVS blob write %s failed: %s", key, esp_err_to_name(err));
+        return false;
+    }
+    return true;
+}
+
 bool opencalc_persist_erase(const char *key)
 {
     if (!s_ready || key == NULL) return false;
@@ -98,6 +121,13 @@ bool opencalc_persist_erase(const char *key)
 void opencalc_persist_factory_reset(void)
 {
     if (!s_ready) {
+        ESP_LOGW(TAG, "Explicit factory reset is rebuilding the unreadable NVS partition");
+        esp_err_t recovery = nvs_flash_erase();
+        if (recovery == ESP_OK) {
+            opencalc_persist_init();
+        } else {
+            ESP_LOGE(TAG, "NVS recovery erase failed: %s", esp_err_to_name(recovery));
+        }
         return;
     }
 

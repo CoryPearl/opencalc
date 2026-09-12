@@ -14,17 +14,26 @@ support comes from a large external driver ecosystem.
 
 ## Current Language Surface
 
-- Numbers, booleans, strings, `None`, lists, tuples, and dictionaries
+- Numbers, booleans, strings, `None`, lists, tuples, dictionaries, sets,
+  `bytes`, and mutable `bytearray` values
 - Assignment, augmented assignment, indexing, slicing, and collection methods
-- Functions, recursion, return values, `if`/`elif`/`else`, `while`, and `for`
-- `break`, `continue`, `pass`, imports with aliases, and basic f-strings
+- First-class function values with per-call locals, nested lexical lookup,
+  working `global` and `nonlocal`, mutable bounded closures, recursion, return
+  values, defaults, keyword arguments, `*args`, and `**kwargs`
+- Short-circuit, operand-returning `and`/`or`, `if`/`elif`/`else`, `while`,
+  `for`, nested list/dictionary/set comprehensions, `try`/`except`/`else`/
+  `finally`, a built-in exception hierarchy, `raise`,
+  `break`, `continue`, `pass`, imports, and basic f-strings
+- `import` and `from ... import ...` for built-ins and isolated sibling `.py`
+  modules, with aliases, bounded depth, and a per-run module cache
 - Common Python builtins including `range`, `enumerate`, `reversed`, `zip`,
   `sorted`, `divmod`, and integer base conversion
-- An 8 KB source limit, 384 tokens per compiled script, 48 total variable slots
-  including preloaded names, 16 functions, bounded recursion, and bounded
-  object/container allocation
+- A 32 KB source limit, up to 8,192 dynamically allocated tokens per parser,
+  96 module-variable slots including preloaded names, 48 local slots per active
+  call, 48 functions, bounded recursion, and bounded object/container allocation
 - Cancellable forever loops, interruptible input/sleep, tracebacks,
   breakpoints, variable inspection, and profiling
+- Mark-and-sweep collection for unreachable containers, including cycles
 
 ## Modules
 
@@ -35,9 +44,9 @@ support comes from a large external driver ecosystem.
 | `time` | Wall/monotonic clocks, ticks helpers, and cancellable sleeps |
 | `statistics` | Mean, median, population/sample variance and standard deviation |
 | `board` | Named expansion channels `D0-D11` and `A0-A3` |
-| `digitalio` | Procedural mode/read/write access and constants |
-| `analogio` | Procedural voltage/raw/differential reads and sample-rate control |
-| `busio` | Protected register-based I2C probing, reads, and writes |
+| `digitalio` | Procedural calls plus `DigitalInOut` objects with input/output/read/write methods |
+| `analogio` | Procedural calls plus `AnalogIn` objects with raw/voltage methods |
+| `busio` | Protected register-based I2C calls plus a fixed-bus `I2C` object |
 | `graphics`, `keys`, `audio` | Bounded display commands, keypad state, volume, and tones |
 | `storage` | Sandboxed read/write/append/size/rename/remove under `/data/user` |
 | `sensors` | Trigger waits, captures, direct `L1-L6` logging, digital/analog/I2C access |
@@ -54,11 +63,25 @@ support comes from a large external driver ecosystem.
 
 ## Deliberate Compatibility Boundary
 
-Tiny Python does not implement exceptions, classes, lambdas, comprehensions,
-generators, context managers, async code, user-package discovery, Python
-bytecode, arbitrary-precision integers, complete Unicode, `bytes`, `bytearray`,
-`set`, or a tracing garbage collector. Its `board`, `digitalio`, `analogio`, and
-`busio` modules are procedural OpenCalc APIs, not CircuitPython's object model.
+Tiny Python does not implement user-defined classes, lambdas, generators,
+general context-manager protocols, async code, package directories, Python
+bytecode, arbitrary-precision integers, complex values, complete Unicode, or
+generator expressions. Exception handling catches runtime errors; lexer/parser
+errors occur before execution and therefore cannot be caught. Custom exception
+classes, chained exceptions, and first-class traceback objects remain absent.
+
+Scope behavior is Python-like for normal calls: assignments are local,
+`global` targets the script or module table, and `nonlocal` updates a captured
+binding. Function values can be returned, aliased, and called later; separate
+factory calls retain separate closure snapshots. Closure environments and the
+function table remain bounded, so this is not CPython's unbounded cell model.
+Keyword-only and positional-only declarations and keyword arguments to
+built-in/native calls are not implemented.
+
+`DigitalInOut`, `AnalogIn`, and fixed-bus `I2C` wrappers provide object-shaped
+access, `value` properties, and bounded `with` cleanup while preserving channel
+validation and I2C protections. They are not the complete CircuitPython object
+model or external driver ABI.
 
 The V5 hardware profile also has no script UART, SPI header, networking stack,
 USB HID/MIDI API, PWM API, or compatibility with CircuitPython's external

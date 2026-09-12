@@ -10,11 +10,11 @@ extern "C" {
 #endif
 
 #ifndef PY_MAX_VARS
-#define PY_MAX_VARS 48
+#define PY_MAX_VARS 96
 #endif
 
 #ifndef PY_MAX_NAME
-#define PY_MAX_NAME 16
+#define PY_MAX_NAME 32
 #endif
 
 #ifndef PY_MAX_STRING
@@ -30,19 +30,31 @@ extern "C" {
 #endif
 
 #ifndef PY_MAX_FUNCS
-#define PY_MAX_FUNCS 16
+#define PY_MAX_FUNCS 48
 #endif
 
 #ifndef PY_MAX_PARAMS
 #define PY_MAX_PARAMS 8
 #endif
 
+#ifndef PY_MAX_CALL_ARGS
+#define PY_MAX_CALL_ARGS 16
+#endif
+
+#ifndef PY_MAX_LOCALS
+#define PY_MAX_LOCALS 48
+#endif
+
+#ifndef PY_MAX_GLOBAL_DECLS
+#define PY_MAX_GLOBAL_DECLS 8
+#endif
+
 #ifndef PY_MAX_FUNC_BODY
-#define PY_MAX_FUNC_BODY 512
+#define PY_MAX_FUNC_BODY 2048
 #endif
 
 #ifndef PY_MAX_PROGRAM
-#define PY_MAX_PROGRAM 8192
+#define PY_MAX_PROGRAM 65536
 #endif
 
 #ifndef PY_MAX_TRACE_DEPTH
@@ -61,6 +73,22 @@ extern "C" {
 #define PY_MAX_TOTAL_CONTAINER_ITEMS 4096
 #endif
 
+#ifndef PY_MAX_CLOSURE_VARS
+#define PY_MAX_CLOSURE_VARS 8
+#endif
+
+#ifndef PY_MAX_IMPORTED_MODULES
+#define PY_MAX_IMPORTED_MODULES 8
+#endif
+
+#ifndef PY_MAX_GC_ROOTS
+#define PY_MAX_GC_ROOTS 8
+#endif
+
+#ifndef PY_MAX_IMPORT_PATH
+#define PY_MAX_IMPORT_PATH 128
+#endif
+
 /* Pass this as the statement limit to allow a script to run until cancelled. */
 #define PY_EXECUTION_UNLIMITED ULONG_MAX
 
@@ -73,7 +101,13 @@ typedef enum {
     PY_VALUE_LIST,
     PY_VALUE_TUPLE,
     PY_VALUE_DICT,
-    PY_VALUE_MODULE
+    PY_VALUE_SET,
+    PY_VALUE_BYTES,
+    PY_VALUE_BYTEARRAY,
+    PY_VALUE_MODULE,
+    PY_VALUE_CALLABLE,
+    PY_VALUE_EXCEPTION,
+    PY_VALUE_NATIVE
 } py_value_type_t;
 
 typedef struct py_object py_object_t;
@@ -93,12 +127,20 @@ typedef struct {
 
 typedef struct {
     char name[PY_MAX_NAME];
+    char module[PY_MAX_NAME];
     char params[PY_MAX_PARAMS][PY_MAX_NAME];
+    py_value_t defaults[PY_MAX_PARAMS];
+    uint8_t has_default[PY_MAX_PARAMS];
     size_t param_count;
+    char vararg[PY_MAX_NAME];
+    char kwarg[PY_MAX_NAME];
+    py_var_t closure[PY_MAX_CLOSURE_VARS];
+    size_t closure_count;
     char body[PY_MAX_FUNC_BODY];
 } py_func_t;
 
 typedef struct py_runtime py_t;
+typedef struct py_frame py_frame_t;
 
 typedef enum {
     PY_DEBUG_STATEMENT = 0,
@@ -155,10 +197,24 @@ struct py_runtime {
     py_object_t *objects;
     size_t object_count;
     size_t container_item_capacity;
+    py_value_t gc_roots[PY_MAX_GC_ROOTS];
+    size_t gc_root_count;
+    py_frame_t *current_frame;
+    char exception_type[PY_MAX_NAME];
+    char last_exception_type[PY_MAX_NAME];
+    char last_exception_message[PY_MAX_ERROR];
+    char import_root[PY_MAX_IMPORT_PATH];
+    char imported_modules[PY_MAX_IMPORTED_MODULES][PY_MAX_NAME];
+    size_t imported_module_count;
+    size_t import_depth;
+    unsigned long function_serial;
+    char current_module[PY_MAX_NAME];
 };
 
 void py_init(py_t *py); // Initializes the interpreter state. You must call this once before running code. It clears variables and errors.
-void py_deinit(py_t *py); // Frees heap-backed lists, tuples, and dictionaries owned by the interpreter.
+void py_deinit(py_t *py); // Frees heap-backed containers and exception objects owned by the interpreter.
+size_t py_collect_garbage(py_t *py); // Reclaims unreachable container objects and returns the number released.
+size_t py_object_count(const py_t *py); // Returns the current number of managed objects.
 void py_set_output_callback(py_t *py, void (*callback)(const char *text, void *user_data), void *user_data); // Streams print output immediately when callback is not NULL.
 void py_set_input_callback(py_t *py, int (*callback)(char *buffer, size_t buffer_size, void *user_data), void *user_data); // Provides text for input(). Callback returns 1 on success, 0 on failure.
 void py_use_stdio(py_t *py); // Convenience helper: routes print() to stdout and input() to stdin.

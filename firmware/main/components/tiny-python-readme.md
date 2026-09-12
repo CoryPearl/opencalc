@@ -2,11 +2,12 @@
 
 A tiny Python-like interpreter written in C for ESP32 and other small embedded targets.
 
-This is not CPython. It is a compact interpreter for running simple scripts on devices where a full Python runtime is too large. Most interpreter buffers are fixed-size, while lists, tuples, and dictionaries use heap storage so they can grow dynamically. The API can run one line, a source string, or a file from SPIFFS/LittleFS/SD.
+This is not CPython. It is a compact interpreter for running simple scripts on devices where a full Python runtime is too large. Most interpreter buffers are fixed-size, while container objects use garbage-collected heap storage. The API can run one line, a source string, or a file from SPIFFS/LittleFS/SD.
 
 ## Features
 
-- Integers, floats, booleans, strings, lists, tuples, dictionaries, and `None`
+- Integers, floats, booleans, strings, lists, tuples, dictionaries, sets,
+  `bytes`, `bytearray`, and `None`
 - Basic f-strings like `f"hello {name}"`
 - Variables and augmented assignment
 - Tuple-style assignment like `a, b = 1, 0`
@@ -19,11 +20,16 @@ This is not CPython. It is a compact interpreter for running simple scripts on d
   concatenation, repetition, and conversion to/from lists
 - Dictionaries with literals, iteration over keys, key lookup/assignment, and
   `get`, `keys`, `values`, and `items`
-- Simple functions with parameters, return values, and recursion
+- Functions with local call frames, nested lexical lookup, defaults, keyword
+  arguments, `*args`, `**kwargs`, return values, and recursion
+- First-class function values and bounded mutable closures with `nonlocal`
+- `try`/`except`/`else`/`finally`, a built-in exception hierarchy, and `raise`
+- Nested list, dictionary, and set comprehensions with filters
 - `if`, `elif`, and `else`
 - `while`
 - `for ... in range(...)` plus iteration over lists, tuples, strings, and dictionaries
-- Python-style imports and aliases for built-in and OpenCalc modules
+- Python-style imports, `from ... import ...`, aliases, and isolated sibling
+  user `.py` modules loaded from the running script directory
 - Membership tests with `in` and `not in`
 - Comments with `#`
 - Single-line statements and nested indented blocks
@@ -31,14 +37,14 @@ This is not CPython. It is a compact interpreter for running simple scripts on d
   `pow`, `sum`, `round`, `range`, `enumerate`, `reversed`, `zip`, `divmod`,
   `bin`, `oct`, `hex`, `sorted`, `list`, `tuple`, `any`, `all`, and `input`
 - Python-style negative floor division/modulo, negative powers, string ordering,
-  and operand-returning `and`/`or`
+  and short-circuit, operand-returning `and`/`or`
 - GPIO builtins: `pinMode`, `digitalWrite`, `digitalRead`, with `INPUT`,
   `OUTPUT`, and `INPUT_PULLUP` modes supplied by the OpenCalc host
 - OpenCalc `sensors` module for MCP23017 digital I/O, ADS1115 analog sampling,
   trigger waits, shared I2C sensors, and persistent calculator-list logging
 - Additional builtins: `ord`, `chr`, `type`
 - Bitwise operators and shifts
-- `break`, `continue`, and no-op `global`
+- `break`, `continue`, and working function-level `global`
 - File execution with `py_run_file(...)`
 - One-line stdio setup with `py_use_stdio(...)`
 - Optional real-time output streaming callback
@@ -51,6 +57,7 @@ This is not CPython. It is a compact interpreter for running simple scripts on d
   platform dependencies to the interpreter
 - Cancellable long-running loops: an embedding host may select
   `PY_EXECUTION_UNLIMITED` while retaining cooperative stop checks
+- Mark-and-sweep garbage collection for unreachable containers and cycles
 
 ## Standard Modules
 
@@ -85,19 +92,21 @@ variance, and population/sample standard deviation.
 ## CircuitPython Compatibility Audit
 
 Tiny Python keeps OpenCalc's existing compact syntax and execution model. It is
-not CircuitPython, MicroPython, or CPython. It provides familiar imports and
-procedural hardware APIs, but it does not currently provide:
+not CircuitPython, MicroPython, or CPython. It still does not provide:
 
-- exceptions (`try`, `except`, `raise`) or exception objects
-- classes, object instances, decorators, lambdas, comprehensions, generators,
-  context managers, or async/await
-- `from ... import ...`, Python package discovery, or importing user `.py`
-  modules from storage
-- arbitrary-precision integers, full Unicode, `bytes`, `bytearray`, `set`, or
-  a tracing garbage collector
-- CircuitPython's class-based `DigitalInOut`, `AnalogIn`, or bus objects,
-  `displayio`, networking, USB HID/MIDI, or external driver-library compatibility
+- user-defined classes, decorators, lambdas, generators, or async/await
+- package directories, reload, or general module search paths
+- arbitrary-precision integers, complex values, full Unicode, or `memoryview`
+- CircuitPython `displayio`, networking, USB HID/MIDI, or external
+  driver-library compatibility
 - CPython bytecode, C-extension modules, or complete standard-library parity
+
+It provides local function scope, first-class bounded closures, `global`,
+`nonlocal`, short-circuit operators, defaults, keyword arguments,
+`*args`/`**kwargs`, runtime exceptions, isolated sibling-file imports, nested
+list/dictionary/set comprehensions, byte literals and containers, sets, and
+method/property-based hardware objects. Keyword-only and positional-only
+parameters and keyword arguments to built-in/native calls remain unsupported.
 
 OpenCalc exposes bounded `graphics`, `keys`, `storage`, `audio`, and `sensors`
 modules plus procedural `board`, `digitalio`, `analogio`, and `busio` aliases.
@@ -108,6 +117,26 @@ logging into calculator lists, bounded trigger/capture operations, and an
 on-device debugger/profiler. See
 [`TINY_PYTHON_AUDIT.md`](../../TINY_PYTHON_AUDIT.md) for the detailed support
 matrix and remaining gaps.
+
+User modules are sibling files in the same script directory. For example,
+`import probes` loads `probes.py`; its isolated variables and functions are
+available as `probes.name`. `from probes import read as sample` is also
+supported. Imports are cached and cycle/depth bounded. Package directories,
+reload, and a general search path are not supported.
+
+```python
+try:
+    samples = [read(i) for i in range(4) if enabled(i)]
+    if len(samples) == 0:
+        raise ValueError("no samples")
+except ValueError as error:
+    print(error)
+finally:
+    print("capture complete")
+```
+
+`try` catches errors raised while statements execute. Source is tokenized before
+execution, so indentation and syntax errors cannot be caught by the script.
 
 On OpenCalc OS, `sensors` is a preloaded host module. It exposes the optional
 MCP23017 `D0-D11` header, ADS1115 `A0-A3` acquisition, bounded analog/digital
@@ -198,7 +227,19 @@ print(analogio.read(board.A0))
 print(busio.present(0x76))
 ```
 
-These are compatibility aliases, not CircuitPython object constructors.
+Object-shaped access is also available:
+
+```python
+led = digitalio.DigitalInOut(board.D0)
+led.switch_to_output(True)
+sensor = analogio.AnalogIn(board.A0)
+i2c = busio.I2C()
+print(led.value, sensor.voltage(), i2c.present(0x76))
+```
+
+`DigitalInOut.value` can be read or assigned, `AnalogIn.value` is readable, and
+hardware objects may be used in bounded `with ... as ...` blocks. The wrappers
+remain behind OpenCalc's protected expansion service.
 
 Sensor API reference:
 
@@ -591,6 +632,7 @@ Statements:
 - `digitalRead(pin)`
 - `def name(param, ...): statement`
 - `def name(param, ...): indented block`
+- `def name(value=0, *args, **kwargs): indented block`
 - `if expression: statement`
 - `if expression: statement elif expression: statement else: statement`
 - Nested `if` / `elif` / `else` blocks
@@ -806,44 +848,51 @@ On failure, all run functions return `0`; see the Error Reporting section for `p
 These limits can be overridden before including `tiny-python.h` or through compiler defines:
 
 ```c
-#define PY_MAX_VARS 32
-#define PY_MAX_NAME 16
+#define PY_MAX_VARS 96
+#define PY_MAX_NAME 32
 #define PY_MAX_STRING 256
 #define PY_MAX_ERROR 96
-#define PY_MAX_FUNCS 16
+#define PY_MAX_FUNCS 48
 #define PY_MAX_PARAMS 8
-#define PY_MAX_FUNC_BODY 512
-#define PY_MAX_PROGRAM 2048
+#define PY_MAX_FUNC_BODY 2048
+#define PY_MAX_PROGRAM 65536
 ```
 
 Additional implementation limits in `tiny-python.c`:
 
 ```c
-#define PY_MAX_TOKENS 512
-#define PY_MAX_LINE 160
+#define PY_MAX_TOKENS 8192
+#define PY_MAX_LINE 512
 ```
 
-OpenCalc OS may override these with compiler defines from its ESP-IDF build.
+OpenCalc OS uses a 32 KB editor and a 64 KB `PY_MAX_PROGRAM` workspace because
+normalizing indentation into the parser's internal form can expand the source.
+It may override these limits with compiler defines from its ESP-IDF build.
 
 ## Limitations
 
 - This is an embedded Python-like interpreter, not CPython.
-- Containers are heap-backed. Call `py_deinit(...)` when you are done with an interpreter instance.
+- Containers are heap-backed and garbage-collected. Call `py_deinit(...)` when
+  you are done with an interpreter instance to release all remaining roots.
 - Lists and dictionaries support item assignment. Tuples and strings are immutable.
 - Slice reading supports steps, including `items[::2]` and `items[::-1]`. Slice assignment is not implemented.
-- Large scripts can hit fixed parser buffers such as `PY_MAX_PROGRAM`, `PY_MAX_FUNC_BODY`, and `PY_MAX_TOKENS`.
+- Large scripts remain bounded by `PY_MAX_PROGRAM`, `PY_MAX_FUNC_BODY`, and
+  `PY_MAX_TOKENS`. Token arrays grow on demand instead of being fully reserved
+  for every active parser.
 - Strings, input lines, and printed representations are bounded by `PY_MAX_STRING` / `PY_MAX_LINE`.
 - Use `py_use_stdio(...)` or `py_set_output_callback(...)` for streaming output. Otherwise output must fit in the caller-provided buffer.
 - Loop execution has a guard to stop accidental infinite loops.
-- Function calls currently require positional arguments with an exact parameter
-  count; default, keyword, variadic, and keyword-only arguments are not implemented.
-- Function variables use the compact global-table model. Parameters are restored
-  after calls, but this is not CPython's complete local/nonlocal/global scope model.
-- `and` and `or` return operands like Python, but both operands are evaluated.
-- Unicode, arbitrary-size integers, garbage collection, bytecode, and the CPython
-  standard library are not provided.
-- Not implemented yet: comprehensions, classes, imports/modules, exceptions,
-  generators, decorators, lambdas, `with`, and async syntax.
+- User functions support positional/default/keyword arguments, `*args`, and
+  `**kwargs`. Keyword-only and positional-only declarations, and keyword
+  arguments to built-in/module calls, are not implemented.
+- Function assignments use local call frames. Function values and mutable
+  `nonlocal` closure snapshots work, but closure count and function instances
+  remain bounded.
+- `and` and `or` short-circuit and return operands like Python.
+- Complete Unicode, arbitrary-size integers, complex values, bytecode, and the
+  CPython standard library are not provided.
+- Not implemented yet: user classes, package directories/reload, generators,
+  decorators, lambdas, general context managers, and async syntax.
 
 ## License
 

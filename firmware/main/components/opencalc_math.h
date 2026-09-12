@@ -39,6 +39,7 @@ size_t opencalc_math_variable_count(void);
 bool opencalc_math_variable_at(size_t index, opencalc_variable_t *variable);
 void opencalc_math_variables_reset(void);
 bool opencalc_math_assignment_name(const char *expr, char *name, size_t name_size);
+const char *opencalc_math_assignment_value(const char *expr);
 bool opencalc_math_substitute_variables(const char *expr, char *out, size_t out_size);
 bool opencalc_math_numeric_derivative(const char *expr, char variable, double at, double *real, double *imag);
 bool opencalc_math_numeric_integral(const char *expr, char variable, double a, double b, double *real, double *imag);

@@ -24,20 +24,24 @@ Blog: [https://corypearl.github.io/opencalc/blog.html](https://corypearl.github.
 ## Highlights
 
 - **A real graphing calculator:** textbook-style input, exact and numerical
-  math, complex numbers, calculus, history, persistent variables, and
+  math, complex numbers, calculus, history, typed persistent variables, and
   unit-aware expressions such as `8 m / 2 s`.
 - **Integrated CAS and graphing:** Giac/KhiCAS symbolic math linked to Cartesian,
   parametric, polar, and sequence graphs, tables, roots, derivatives, tangents,
   integrals, and points of interest. `Alpha` + `Graph` opens exact symbolic
   analysis for the selected graph, including its derivative, integral, roots,
-  asymptotes, tangent line, and integral shading.
+  asymptotes, tangent line, and integral shading. CAS results have selectable
+  solution branches, exact/decimal views, domain controls, assumptions, and a
+  searchable command catalog.
+  All graph modes support per-series colors/styles, mode-aware trace and tables,
+  scalable image backgrounds, and direct or recurrent sequences.
 - **A complete math toolkit:** Statistics, Lists, Matrices, Solver, Finance,
   Conics, Inequalities, and a searchable science and engineering reference.
 - **Reference Center:** press `Alpha` + `Zoom` for an interactive periodic table
   and browsable math, physics, and engineering formulas and explanations.
 - **Programmable on the device:** edit, run, upload, and debug Tiny Python programs with
-  math, statistics, cancellable forever loops, CAS access, graphics, storage,
-  audio, and CircuitPython-style sensor APIs.
+  math, statistics, exceptions, local modules, cancellable forever loops, CAS
+  access, graphics, storage, audio, and protected CircuitPython-style sensor objects.
 - **[Built for science and electronics](guied.MD#scientific-data-logging):** use Tiny Python,
   12 bidirectional digital pins, four 16-bit analog inputs, and shared I2C to
   control experiments, plot live sensor data, and analyze recordings in Stats.
@@ -117,6 +121,7 @@ serial monitoring, storage, and charging.
 ## Documentation
 
 - [Complete OpenCalc OS Guide](guied.MD): in-depth controls, app workflows, games, scripting, settings, build instructions, validation, and troubleshooting.
+- [Tiny Python Start Guide](TINY_PYTHON_START_GUIDE.md): create, run, and debug scripts; use imports, math, files, graphics, audio, keys, and scientific I/O.
 - [Firmware README](firmware/FIRMWARE_README.md): build settings, flashing, storage image, controls, apps, games, and firmware status.
 - [App Status](firmware/APP_STATUS.md): implementation status for every OpenCalc OS app and game.
 - [PCB README](hardware/pcb/PCB_README.md): current V5 PCB parts, pin map, power path, display, keypad, battery, audio, and bring-up checks.
@@ -125,23 +130,25 @@ serial monitoring, storage, and charging.
 
 ## Current Status
 
-OpenCalc OS has grown into a capable working prototype. The calculator, graphing,
-CAS, scripting, USB storage, power controls, and all five games are working on the
-current hardware. It is already useful, but it still needs more testing and polish
-before it is ready to be called a finished product.
+OpenCalc OS is a capable working prototype. Every built-in app has its main
+workflow in place, and the calculator, graphing, CAS, scripting, USB storage,
+power controls, and all five games are usable. The remaining work is mostly
+deeper edge-case handling, long-session reliability, and validation of the new
+V5-only hardware features.
 
 | Area | Current estimate |
 | --- | ---: |
-| Automated host test groups passing | 12/12 (100%) |
-| Planned software feature coverage | About 85% |
-| Everyday workflow usability | About 80% |
-| Software reliability confidence | About 70% |
-| Production-release readiness | About 45% |
+| Primary app workflows implemented | 12/12 (100%) |
+| Automated host test groups passing | 19/19 (100%) |
+| Planned software feature coverage | About 87% |
+| Everyday workflow usability | About 83% |
+| Software reliability confidence | About 75% |
+| Production-release readiness | About 50% |
 
 These percentages are practical estimates, not test-coverage measurements. The
-biggest jobs left are longer CAS and script tests, checking that saved work
-survives interruptions, stress-testing very large matrices, and validating the
-V5 display, audio, and scientific I/O on real hardware. See the
+biggest jobs left are closing Tiny Python's compatibility gaps, handling very
+large CAS results and unusual math edge cases, stress-testing large matrices and
+long sessions, and validating V5 audio and scientific I/O on real hardware. See the
 [app-by-app status](firmware/APP_STATUS.md) for more detail.
 
 ## Credits

@@ -20,6 +20,35 @@ typedef struct {
     size_t length;
 } output_fixture_t;
 
+typedef struct {
+    int mode;
+    int value;
+} gpio_fixture_t;
+
+static int test_gpio_mode(int pin, int mode, void *user_data)
+{
+    gpio_fixture_t *fixture = (gpio_fixture_t *)user_data;
+    if (pin < 0 || pin > 11 || fixture == NULL) return 0;
+    fixture->mode = mode;
+    return 1;
+}
+
+static int test_gpio_write(int pin, int value, void *user_data)
+{
+    gpio_fixture_t *fixture = (gpio_fixture_t *)user_data;
+    if (pin < 0 || pin > 11 || fixture == NULL) return 0;
+    fixture->value = value != 0;
+    return 1;
+}
+
+static int test_gpio_read(int pin, int *value, void *user_data)
+{
+    gpio_fixture_t *fixture = (gpio_fixture_t *)user_data;
+    if (pin < 0 || pin > 11 || fixture == NULL || value == NULL) return 0;
+    *value = fixture->value;
+    return 1;
+}
+
 static int test_debug(py_t *py, py_debug_event_t event, size_t line,
                       const char *function, void *user_data)
 {
@@ -80,6 +109,13 @@ static int test_native(py_t *py, const char *module, const char *function,
         arg_count == 1 && args[0].type == PY_VALUE_INT) {
         result->type = PY_VALUE_FLOAT;
         result->float_value = 2.5;
+        return 1;
+    }
+    if (strcmp(module, "analogio") == 0 && strcmp(function, "raw") == 0 &&
+        arg_count == 1 && args[0].type == PY_VALUE_INT) {
+        result->type = PY_VALUE_INT;
+        result->int_value = 1234;
+        result->float_value = 1234.0;
         return 1;
     }
     if (strcmp(module, "busio") == 0 && strcmp(function, "present") == 0 &&
@@ -239,33 +275,98 @@ static int run_file_case(void)
 
 static int run_large_source_case(void)
 {
-    char *source = calloc(1, 6000);
+    const size_t source_capacity = 24000;
+    char *source = calloc(1, source_capacity);
     py_t py;
     char output[32];
     size_t used = 0;
     if (source == NULL) return 1;
 
-    for (int i = 0; i < 20; ++i) {
-        used += (size_t)snprintf(source + used, 6000 - used,
-                                "# Padding verifies files larger than the old two kilobyte source limit without hiding parser complexity. %03d........................................\n",
-                                i);
+    used += (size_t)snprintf(source + used, source_capacity - used, "x = 0\n");
+    for (int i = 0; i < 1000; ++i) {
+        used += (size_t)snprintf(source + used, source_capacity - used, "x = x + 1\n");
     }
-    used += (size_t)snprintf(source + used, 6000 - used, "x = 0\n");
-    for (int i = 0; i < 30; ++i) {
-        used += (size_t)snprintf(source + used, 6000 - used, "x = x + 1\n");
+    snprintf(source + used, source_capacity - used, "print(x)\n");
+
+    if (strlen(source) <= 8192) {
+        fprintf(stderr, "FAIL large_source: fixture did not exceed old 8 KB limit\n");
+        free(source);
+        return 1;
     }
-    snprintf(source + used, 6000 - used, "print(x)\n");
 
     py_init(&py);
     int ok = py_run_source(&py, source, output, sizeof(output));
     free(source);
-    if (!ok || strcmp(output, "30\n") != 0) {
+    if (!ok || strcmp(output, "1000\n") != 0) {
         fprintf(stderr, "FAIL large_source: %s output <%s>\n", py.error, output);
         py_deinit(&py);
         return 1;
     }
     py_deinit(&py);
     printf("PASS large_source\n");
+    return 0;
+}
+
+static int run_user_module_case(void)
+{
+    const char *main_path = "/tmp/opencalc_tiny_import_main.py";
+    const char *module_path = "/tmp/helpermod.py";
+    FILE *module = fopen(module_path, "w");
+    FILE *main_file = NULL;
+    py_t py;
+    char output[128];
+    if (module == NULL) return 1;
+    fputs("FACTOR = 3\ndef scale(value):\n    return value * FACTOR\n", module);
+    fclose(module);
+    main_file = fopen(main_path, "w");
+    if (main_file == NULL) { remove(module_path); return 1; }
+    fputs("FACTOR = 100\n"
+          "import helpermod as helper\n"
+          "from helpermod import scale as triple, FACTOR as HELPER_FACTOR\n"
+          "callable_copy = triple\n"
+          "print(helper.scale(7), helper.FACTOR, callable_copy(5), FACTOR, HELPER_FACTOR)\n",
+          main_file);
+    fclose(main_file);
+    py_init(&py);
+    int ok = py_run_file(&py, main_path, output, sizeof(output));
+    remove(main_path);
+    remove(module_path);
+    if (!ok || strcmp(output, "21 3 15 100 3\n") != 0) {
+        fprintf(stderr, "FAIL user_file_import: %s output <%s>\n", py.error, output);
+        py_deinit(&py);
+        return 1;
+    }
+    py_deinit(&py);
+    printf("PASS user_file_import\n");
+    return 0;
+}
+
+static int run_hardware_objects_case(void)
+{
+    py_t py;
+    char output[128];
+    gpio_fixture_t gpio = {0};
+    py_init(&py);
+    py_set_gpio_callbacks(&py, test_gpio_mode, test_gpio_write, test_gpio_read, &gpio);
+    py_set_native_callback(&py, test_native, NULL);
+    int ok = py_run_source(&py,
+        "import board, digitalio, analogio, busio\n"
+        "led = digitalio.DigitalInOut(board.D2)\n"
+        "led.switch_to_output(False)\n"
+        "led.value = True\n"
+        "sensor = analogio.AnalogIn(board.A1)\n"
+        "wire = busio.I2C()\n"
+        "with busio.I2C() as managed:\n"
+        "    locked = managed.try_lock()\n"
+        "print(led.value, sensor.value, sensor.voltage(), wire.present(72), locked)\n",
+        output, sizeof(output));
+    if (!ok || strcmp(output, "True 1234 2.5 True True\n") != 0 || gpio.mode != 1 || gpio.value != 1) {
+        fprintf(stderr, "FAIL hardware_objects: %s output <%s>\n", py.error, output);
+        py_deinit(&py);
+        return 1;
+    }
+    py_deinit(&py);
+    printf("PASS hardware_objects\n");
     return 0;
 }
 
@@ -341,6 +442,49 @@ static int run_same_runtime_case(void)
     return 0;
 }
 
+static int run_garbage_collection_case(void)
+{
+    py_t py;
+    char output[256];
+
+    py_init(&py);
+    py_set_execution_limits(&py, 20000, 8);
+    if (!py_run_source(&py,
+                       "kept = [[1, 2], [3, 4]]\n"
+                       "i = 0\n"
+                       "while i < 1500:\n"
+                       "    temporary = [i, [i + 1]]\n"
+                       "    i = i + 1\n"
+                       "cycle = []\n"
+                       "cycle.append(cycle)\n"
+                       "cycle = None\n"
+                       "print(kept[1][0], i)\n",
+                       output, sizeof(output)) || strcmp(output, "3 1500\n") != 0) {
+        fprintf(stderr, "FAIL garbage_collection: %s output <%s> objects=%zu\n",
+                py.error, output, py_object_count(&py));
+        py_deinit(&py);
+        return 1;
+    }
+    size_t before = py_object_count(&py);
+    size_t reclaimed = py_collect_garbage(&py);
+    if (before >= 16 || py_object_count(&py) > before) {
+        fprintf(stderr, "FAIL garbage_collection accounting: before=%zu reclaimed=%zu after=%zu\n",
+                before, reclaimed, py_object_count(&py));
+        py_deinit(&py);
+        return 1;
+    }
+    if (!py_run_source(&py, "print(kept[0][1])\n", output, sizeof(output)) ||
+        strcmp(output, "2\n") != 0) {
+        fprintf(stderr, "FAIL garbage_collection retained roots: %s output <%s>\n",
+                py.error, output);
+        py_deinit(&py);
+        return 1;
+    }
+    py_deinit(&py);
+    printf("PASS garbage_collection\n");
+    return 0;
+}
+
 static int run_error_recovery_case(void)
 {
     py_t py;
@@ -354,7 +498,7 @@ static int run_error_recovery_case(void)
     }
     for (int iteration = 0; iteration < 20; ++iteration) {
         if (py_run_source(&py,
-                          "def this_function_name_is_too_long():\n"
+                          "def this_function_name_is_definitely_far_too_long():\n"
                           "    return 1\n",
                           output, sizeof(output)) || py.func_count != 0) {
             fprintf(stderr, "FAIL error_recovery: rejected function consumed a slot\n");
@@ -522,6 +666,129 @@ int main(void)
                        "print(fact(5))\n",
                        "120\n", NULL, 0);
 
+    failed |= run_case("function_local_and_global_scope",
+                       "value = 10\n"
+                       "calls = 0\n"
+                       "def local_change(value):\n"
+                       "    value = value + 5\n"
+                       "    hidden = 99\n"
+                       "    return value\n"
+                       "def count_call():\n"
+                       "    global calls\n"
+                       "    calls = calls + 1\n"
+                       "    return calls\n"
+                       "print(local_change(2), value)\n"
+                       "print(count_call(), count_call(), calls)\n",
+                       "7 10\n1 2 2\n", NULL, 0);
+
+    failed |= run_case("nested_lexical_lookup",
+                       "def outer(a):\n"
+                       "    def inner(b):\n"
+                       "        return a + b\n"
+                       "    return inner(3)\n"
+                       "print(outer(4))\n",
+                       "7\n", NULL, 0);
+
+    failed |= run_case("short_circuit_boolean_ops",
+                       "calls = 0\n"
+                       "def touch():\n"
+                       "    global calls\n"
+                       "    calls = calls + 1\n"
+                       "    return True\n"
+                       "print(False and touch(), True or touch(), calls)\n"
+                       "print(False and missing_function(), True or (1 / 0))\n",
+                       "False True 0\nFalse True\n", NULL, 0);
+
+    failed |= run_case("rich_function_arguments",
+                       "def describe(a, b=2, *rest, **named):\n"
+                       "    return a + b + len(rest) + named['extra']\n"
+                       "print(describe(1, extra=4))\n"
+                       "print(describe(*(1, 3, 8), **{'extra': 5}))\n",
+                       "7\n10\n", NULL, 0);
+
+    failed |= run_case("exceptions",
+                       "caught = False\n"
+                       "cleaned = False\n"
+                       "try:\n"
+                       "    raise ValueError('bad value')\n"
+                       "except ValueError as error:\n"
+                       "    caught = True\n"
+                       "finally:\n"
+                       "    cleaned = True\n"
+                       "try:\n"
+                       "    broken = 1 / 0\n"
+                       "except ZeroDivisionError:\n"
+                       "    math_caught = True\n"
+                       "print(caught, cleaned, math_caught, type(error))\n",
+                       "True True True ValueError\n", NULL, 0);
+
+    failed |= run_case("exception_hierarchy_and_else",
+                       "normal = False\n"
+                       "caught = False\n"
+                       "try:\n"
+                       "    normal = True\n"
+                       "except Exception:\n"
+                       "    normal = False\n"
+                       "else:\n"
+                       "    completed = True\n"
+                       "try:\n"
+                       "    raise IndexError('bad index')\n"
+                       "except LookupError:\n"
+                       "    caught = True\n"
+                       "try:\n"
+                       "    bad_math = 1 / 0\n"
+                       "except ArithmeticError:\n"
+                       "    arithmetic = True\n"
+                       "try:\n"
+                       "    missing = [1][4]\n"
+                       "except LookupError:\n"
+                       "    lookup = True\n"
+                       "print(normal, completed, caught, arithmetic, lookup)\n",
+                       "True True True True True\n", NULL, 0);
+
+    failed |= run_case("from_standard_import",
+                       "from math import sqrt, pi as circle_pi\n"
+                       "root = sqrt\n"
+                       "print(root(81), round(circle_pi, 3))\n",
+                       "9 3.142\n", NULL, 0);
+
+    failed |= run_case("comprehensions_and_types",
+                       "squares = [x * x for x in range(7) if x % 2 == 0]\n"
+                       "pairs = [x * 10 + y for x in range(3) if x > 0 for y in range(2)]\n"
+                       "mapping = {x: x * x for x in range(4) if x > 0}\n"
+                       "grid = {x * 10 + y: x + y for x in range(2) for y in range(2)}\n"
+                       "remainders = {x % 3 for x in range(7)}\n"
+                       "unique = {3, 1, 3}\n"
+                       "raw = b'AB'\n"
+                       "buffer = bytearray(raw)\n"
+                       "buffer[1] = 67\n"
+                       "print(squares, pairs, mapping[3], grid[11], len(remainders), len(unique), raw, buffer, type(unique))\n",
+                       "[0, 4, 16, 36] [10, 11, 20, 21] 9 2 3 2 bytes([65, 66]) bytearray([65, 67]) set\n", NULL, 0);
+
+    failed |= run_case("persistent_closure_snapshot",
+                       "def configure(scale):\n"
+                       "    offset = 2\n"
+                       "    def transform(value):\n"
+                       "        return value * scale + offset\n"
+                       "    return transform\n"
+                       "configured = configure(4)\n"
+                       "print(configured(5))\n",
+                       "22\n", NULL, 0);
+
+    failed |= run_case("first_class_mutable_closures",
+                       "def make_counter(start):\n"
+                       "    count = start\n"
+                       "    def increment(step=1):\n"
+                       "        nonlocal count\n"
+                       "        count = count + step\n"
+                       "        return count\n"
+                       "    return increment\n"
+                       "first = make_counter(1)\n"
+                       "second = make_counter(10)\n"
+                       "alias = first\n"
+                       "print(first(), alias(2), second(), first())\n",
+                       "2 4 11 5\n", NULL, 0);
+
     failed |= run_case("collections",
                        "items = [1, 2]\n"
                        "items.append(3)\n"
@@ -607,11 +874,22 @@ int main(void)
     failed |= run_error_case("unavailable_import",
                              "import socket\n",
                              "module is not available");
+    failed |= run_error_case("function_local_does_not_leak",
+                             "def create_local():\n"
+                             "    hidden = 42\n"
+                             "create_local()\n"
+                             "print(hidden)\n",
+                             "undefined variable");
+    failed |= run_error_case("missing_required_argument",
+                             "def pair(a, b=2):\n"
+                             "    return a + b\n"
+                             "pair()\n",
+                             "missing required function argument");
     failed |= run_error_case("long_variable_name",
-                             "this_variable_name_is_too_long = 1\n",
+                             "this_variable_name_is_definitely_far_too_long = 1\n",
                              "variable name too long");
     failed |= run_error_case("long_function_name",
-                             "def this_function_name_is_too_long():\n"
+                             "def this_function_name_is_definitely_far_too_long():\n"
                              "    return 1\n",
                              "function name too long");
 
@@ -640,10 +918,13 @@ int main(void)
                              "container too large");
 
     failed |= run_file_case();
+    failed |= run_user_module_case();
+    failed |= run_hardware_objects_case();
     failed |= run_large_source_case();
     failed |= run_streaming_input_case();
     failed |= run_repeated_lifecycle_case();
     failed |= run_same_runtime_case();
+    failed |= run_garbage_collection_case();
     failed |= run_error_recovery_case();
     failed |= run_development_api_case();
     failed |= run_forever_loop_cancel_case();

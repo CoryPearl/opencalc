@@ -125,7 +125,12 @@ void I_InitGraphics (void)
 
 void I_ShutdownGraphics (void)
 {
-	Z_Free (I_VideoBuffer);
+	if (I_VideoBuffer != NULL)
+    {
+        Z_Free(I_VideoBuffer);
+        I_VideoBuffer = NULL;
+    }
+    screenvisible = false;
 }
 
 void I_StartFrame (void)

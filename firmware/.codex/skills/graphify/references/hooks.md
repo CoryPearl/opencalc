@@ -1,6 +1,6 @@
-# graphify reference: commit hook and native CLAUDE.md integration
+# graphify reference: commit hook and Codex integration
 
-Load this when the user asked to install the post-commit hook or wire graphify into a project's CLAUDE.md.
+Load this when the user asks to install the post-commit hook or wire graphify into a project's Codex instructions.
 
 ## For git commit hook
 
@@ -18,16 +18,14 @@ If a post-commit hook already exists, graphify appends to it rather than replaci
 
 ---
 
-## For native CLAUDE.md integration
+## For Codex integration
 
-Run once per project to make graphify always-on in Claude Code sessions:
-
-```bash
-graphify claude install
-```
-
-This writes a `## graphify` section to the local `CLAUDE.md` that instructs Claude to check the graph before answering codebase questions and rebuild it after code changes. No manual `/graphify` needed in future sessions.
+Install or refresh the Graphify skill for Codex:
 
 ```bash
-graphify claude uninstall  # remove the section
+graphify install --platform codex
 ```
+
+Keep project-specific instructions in `.codex/README.md` and the portable skill in
+`.codex/skills/graphify/SKILL.md`. The skill instructs the agent to check the graph
+before answering codebase questions and rebuild it after code changes.

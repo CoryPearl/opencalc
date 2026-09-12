@@ -1,4 +1,5 @@
 #include "opencalc_calc.h"
+#include "opencalc_symbols.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -52,9 +53,27 @@ static void expect_display(const char *expression, int display_format, const cha
 
 int main(void)
 {
+    opencalc_symbols_init();
     expect_eval("2+2", "0", "4");
     expect_eval("Ans+3", "4", "7");
     expect_eval("frac(0.125)", "0", "1/8");
+    expect_eval("A=5", "0", "5");
+    opencalc_symbol_t stored;
+    if (!opencalc_symbol_get("A", &stored) || !stored.numeric_valid || stored.real != 5.0 ||
+        !(stored.flags & OPENCALC_SYMBOL_USER)) {
+        fprintf(stderr, "FAIL shared calculator symbol assignment\n");
+        failures++;
+    } else {
+        printf("PASS shared calculator symbol assignment\n");
+    }
+    expect_eval("f(x)=x^2+1", "0", "x^2 + 1");
+    if (!opencalc_symbol_get("f", &stored) || stored.type != OPENCALC_SYMBOL_FUNCTION ||
+        strcmp(stored.text, "x^2 + 1") != 0) {
+        fprintf(stderr, "FAIL shared calculator function assignment\n");
+        failures++;
+    } else {
+        printf("PASS shared calculator function assignment\n");
+    }
     expect_display("12345", 1, "1.234500000e+04");
     expect_display("12345", 2, "12.345 e+3");
 

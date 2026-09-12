@@ -10,8 +10,8 @@ exist in firmware.
 
 - Current stage: working hardware/software prototype, not a finished production
   release.
-- The September 9, 2026 Giac-enabled ESP-IDF build succeeds at 5,228,784 bytes,
-  leaving 1,062,672 bytes (17%) free in the 6 MB factory app partition. Large CAS
+- The September 11, 2026 Giac-enabled ESP-IDF build succeeds at 5,308,080 bytes,
+  leaving 983,376 bytes (16%) free in the 6 MB factory app partition. Large CAS
   and math-worker stacks are allocated from PSRAM.
 - Host regressions cover Tiny Python lifecycle/error recovery, the local
   polynomial CAS, embedded Eigenmath fallback, all four graph evaluator modes,
@@ -69,6 +69,9 @@ Implemented:
   trig, inverse trig, sec/csc/cot, logs, random, probability basics, numeric
   derivatives, definite integrals, simple symbolic derivatives, and simple
   symbolic indefinite integrals.
+- MathPrint recursively lays out general and nested fractions, square/nth roots,
+  superscripts, matrices, piecewise expressions, limits, and integrals, with
+  source-aware cursor placement and compact fitting for the input strip.
 - Complex-number input/display for `i`, `a+bi`, and polar `re^ti` modes,
   including common CPX functions such as `conj`, `real`, `imag`, `abs`, and
   `angle`.
@@ -104,6 +107,12 @@ Implemented:
   including supported functions nested inside larger expressions.
 - `CAS` and `ADV` Math-menu tabs expose the primary and advanced symbolic
   commands directly on the calculator.
+- The CAS adapter returns bounded structure metadata for scalar, list, matrix,
+  and solution-set results. Calculator and Solver use it for scrollable branch
+  selection, exact-to-decimal follow-up, and selected-result handoff.
+- A prefix-filtered command catalog and request controls cover Auto, Real,
+  Complex, Integer, and bounded Interval solve modes, request-local assumptions,
+  and explicit context reset.
 - Fast local polynomial CAS through degree 10 for nested products, powers,
   expansion, factoring, solving, differentiation, and integration.
 - Unit-aware scalar arithmetic for common SI and US customary units, including
@@ -112,8 +121,8 @@ Implemented:
 - Calculator evaluation runs asynchronously through the PSRAM-backed math
   worker. Each request has an ID, `Back` cancels the active request, stale
   completions are discarded, and Giac waits time out instead of freezing the UI.
-- Expressions support 768 bytes and answers/history support 1024 bytes. Answers
-  too wide for a history row open in a scrollable full-result screen.
+- Expressions support 768 bytes and answers/history support 1024 bytes. Long
+  answers and multi-branch results open in a structured result browser.
 
 Needs work:
 
@@ -124,7 +133,8 @@ Needs work:
   plotting, some platform facilities, and UI access to every Giac command are
   outside this integration.
 - Giac currently formats at most 1024 bytes per result; larger desktop-scale
-  symbolic output is still truncated at the engine boundary.
+  symbolic output is still truncated at the engine boundary. Transformation
+  traces expose actual request and result stages, not general textbook proofs.
 - Real-mode math intentionally rejects complex-valued variables instead of
   dropping the imaginary part.
 - Unit values currently normalize to SI base units. Affine temperatures such
@@ -138,23 +148,33 @@ Implemented:
 - 10 Cartesian `Y=` slots.
 - Parametric graph definitions `X1T/Y1T` through `X6T/Y6T`.
 - Polar graph definitions `r1` through `r6`.
-- Sequence graph definitions `u1` through `u3`.
+- Sequence graph definitions `u1` through `u3`, including recurrence definitions
+  such as `rec(u(n-1)+u(n-2),0,1)` with explicit `u(0)` and `u(1)` values.
 - Default `Y1=x`.
 - Window controls for x/y max and x/y tick spacing.
 - Trace, line cycling, zeros, y-intercepts, extrema, intersections, grid toggle,
   zoom in/out, table handoff, and inequality/conic overlays.
 - Full-height and split graph/table views.
-- Per-series line, thick, dotted, and point rendering styles.
-- Optional uncompressed 24-bit or 32-bit `320x240` BMP background loaded from
-  `/data/graph.bmp`; graph format controls are under `2nd` + `Zoom`.
+- Independent per-mode, per-series colors plus line, thick, dotted, and point styles.
+- Optional uncompressed 24-bit or 32-bit BMP background loaded from
+  `/data/graph.bmp`, with stretch, fit, and fill scaling for images up to 4096
+  pixels per side; graph format controls are under `2nd` + `Zoom`.
 - Graph Calc value/derivative/integral/zero/extrema/intersection analysis runs
   for Cartesian, parametric, polar, and sequence modes. Parametric and polar
   derivatives report `dy/dx`; parametric integration computes `integral y dx`,
   polar integration computes enclosed area, and sequence calculus uses forward
   differences and discrete sums. Cartesian intersections are refined;
-  non-Cartesian intersections use sampled plotted-point matching.
+  parametric/polar intersections use sampled segment crossings, and sequence
+  intersections are checked at integer indices.
 - Trace can cycle among enabled series, and the active series is identified in
-  the trace readout rather than by a full-width selection bar.
+  the trace readout rather than by a full-width selection bar. The readout shows
+  slope for Cartesian/parametric/polar curves and forward difference for sequences.
+- Midpoint continuity checks reject false curve segments, roots, and intersections
+  across undefined points and large discontinuities.
+- Adaptive refinement catches tangent roots and closely spaced Cartesian
+  intersections; parametric and polar crossings are refined from their sampled
+  segments. Recurrence analysis calculates visible-range zeros, sums, forward
+  differences, and numeric end behavior instead of showing placeholders.
 - `Alpha` + `Graph` opens linked symbolic analysis for the active series. It
   reports exact CAS derivatives, integrals, roots, and asymptotic/end behavior;
   Cartesian tangent lines and integral shading can be toggled interactively and
@@ -207,6 +227,13 @@ Implemented:
 - Lists, tuples, strings, and dictionaries are iterable; list/dictionary/string
   methods and Python-style negative division, modulo, and powers cover common
   calculator scripts.
+- User functions have isolated local call frames, active-enclosing lexical
+  lookup, working `global`, short-circuit `and`/`or`, defaults, keyword
+  arguments, `*args`/`**kwargs`, and captured-value closure snapshots. The
+  runtime also supports catchable runtime exceptions, filtered list
+  comprehensions, sets/byte containers, sibling-file imports, and protected
+  DigitalInOut/AnalogIn/I2C objects. The editor and runtime both accept 32 KB,
+  with an 8,192-token parser ceiling backed by on-demand PSRAM allocation.
 - Script evaluation runs on a dedicated 32 KB internal-RAM worker task reserved early so FATFS
   calls remain safe during flash-cache operations. Parser/program storage and
   dynamic containers use PSRAM. The UI task alone owns LCD drawing and keypad
@@ -214,9 +241,10 @@ Implemented:
 
 Needs work:
 
-- Tiny Python is intentionally small and does not provide CPython's imports,
-  exceptions, classes, comprehensions, generators, full scope model, standard
-  library, or garbage collector.
+- Tiny Python is intentionally small and does not provide package directories,
+  user classes, generators, mutable closure cells/`nonlocal`, the full standard
+  library, or a tracing garbage collector. Syntax errors are detected before
+  execution and cannot be caught by `try`.
 - Script editor remains compact: it has source editing and line breakpoints, but
   not desktop features such as project-wide search or conditional breakpoints.
 - The asynchronous worker architecture needs repeated on-device run, input,

@@ -9,6 +9,7 @@
 #include <dirent.h>
 #include "esp_heap_caps.h"
 #include "esp_log.h"
+#include "esp_system.h"
 #include "esp_timer.h"
 #include <ctype.h>
 #include <complex.h>
@@ -30,19 +31,26 @@
 #include "opencalc_breakout.h"
 #include "opencalc_calc.h"
 #include "opencalc_cas.h"
+#include "opencalc_cas_experience.h"
 #include "opencalc_conics.h"
 #include "opencalc_config.h"
 #include "opencalc_doom.h"
 #include "opencalc_audio.h"
 #include "opencalc_giac.h"
+#include "opencalc_graph_analysis.h"
+#include "opencalc_graph_controller.h"
+#include "opencalc_graph_background.h"
 #include "opencalc_graph_model.h"
+#include "opencalc_graph_series.h"
 #include "opencalc_inequality.h"
 #include "opencalc_mario.h"
 #include "opencalc_math.h"
+#include "opencalc_math_layout.h"
 #include "opencalc_persist.h"
 #include "opencalc_power.h"
 #include "opencalc_snake.h"
 #include "opencalc_stats.h"
+#include "opencalc_symbols.h"
 #include "opencalc_units.h"
 #include "opencalc_tetris.h"
 #include "opencalc_ui.h"
@@ -59,6 +67,16 @@
 
 static bool s_light_mode = false;
 
+static void copy_bounded(char *destination, size_t destination_size, const char *source)
+{
+    if (destination == NULL || destination_size == 0) return;
+    if (source == NULL) source = "";
+    size_t length = 0;
+    while (length + 1 < destination_size && source[length] != '\0') length++;
+    memcpy(destination, source, length);
+    destination[length] = '\0';
+}
+
 #define UI_W OPENCALC_UI_WIDTH
 #define UI_H OPENCALC_UI_HEIGHT
 #define GRAPH_TOP 0
@@ -71,9 +89,9 @@ static bool s_light_mode = false;
 #define UI_HOME_GRID_Y 48
 #define UI_HOME_GRID_STEP_Y 50
 #define SCRIPT_MAX 12
-#define SCRIPT_EDITOR_MAX 2048
-_Static_assert(SCRIPT_EDITOR_MAX == OPENCALC_SCRIPT_EDITOR_CAPACITY,
-               "script editor capacity mismatch");
+#define SCRIPT_EDITOR_MAX OPENCALC_SCRIPT_EDITOR_CAPACITY
+_Static_assert(SCRIPT_EDITOR_MAX <= PY_MAX_PROGRAM,
+               "Tiny Python workspace must hold an editor-sized script");
 #define SCRIPT_EDITOR_VISIBLE_LINES 13
 #define SCRIPT_EDITOR_VISIBLE_COLS 48
 #define SCRIPT_BREAKPOINT_MAX 256
@@ -90,6 +108,8 @@ _Static_assert(SCRIPT_EDITOR_MAX == OPENCALC_SCRIPT_EDITOR_CAPACITY,
 #define worksheet_crc32_update opencalc_workspace_crc32_update
 #define worksheet_write_payload opencalc_workspace_write_payload
 #define worksheet_read_payload opencalc_workspace_read_payload
+#define worksheet_flush_sync opencalc_workspace_flush_sync
+#define worksheet_truncate_sync opencalc_workspace_truncate_sync
 
 _Static_assert(LIST_COUNT == OPENCALC_WORKSHEET_LIST_COUNT, "worksheet list count mismatch");
 _Static_assert(LIST_MAX_VALUES == OPENCALC_WORKSHEET_LIST_CAPACITY, "worksheet list capacity mismatch");
@@ -102,9 +122,9 @@ _Static_assert(MATRIX_MAX_N == OPENCALC_WORKSHEET_MATRIX_MAX_N, "worksheet matri
 #define GRAPH_PARAM_COUNT 6
 #define GRAPH_POLAR_COUNT 6
 #define GRAPH_SEQ_COUNT 3
-#define GRAPH_POI_LIMIT 16
+#define GRAPH_POI_LIMIT OPENCALC_GRAPH_POI_LIMIT
 #define GRAPH_COLOR_COUNT 15
-#define GRAPH_FORMAT_COUNT 6
+#define GRAPH_FORMAT_COUNT 8
 _Static_assert(GRAPH_FUNC_COUNT == OPENCALC_GRAPH_FUNCTION_COUNT, "graph function count mismatch");
 _Static_assert(GRAPH_PARAM_COUNT == OPENCALC_GRAPH_PARAM_COUNT, "graph param count mismatch");
 _Static_assert(GRAPH_POLAR_COUNT == OPENCALC_GRAPH_POLAR_COUNT, "graph polar count mismatch");
@@ -170,6 +190,8 @@ typedef enum {
     PAGE_CALCULATOR,
     PAGE_CALC_RESULT,
     PAGE_MATH_MENU,
+    PAGE_CAS_CATALOG,
+    PAGE_CAS_OPTIONS,
     PAGE_GRAPH,
     PAGE_Y_EQUALS,
     PAGE_TABLE,
@@ -298,13 +320,12 @@ typedef struct {
     const char *detail;
 } app_tool_t;
 
-typedef enum {
-    GRAPH_POI_ZERO,
-    GRAPH_POI_Y_INTERCEPT,
-    GRAPH_POI_MIN,
-    GRAPH_POI_LOCAL_MAX,
-    GRAPH_POI_INTERSECTION,
-} graph_poi_type_t;
+typedef opencalc_graph_poi_type_t graph_poi_type_t;
+#define GRAPH_POI_ZERO OPENCALC_GRAPH_POI_ZERO
+#define GRAPH_POI_Y_INTERCEPT OPENCALC_GRAPH_POI_Y_INTERCEPT
+#define GRAPH_POI_MIN OPENCALC_GRAPH_POI_MIN
+#define GRAPH_POI_LOCAL_MAX OPENCALC_GRAPH_POI_LOCAL_MAX
+#define GRAPH_POI_INTERSECTION OPENCALC_GRAPH_POI_INTERSECTION
 
 typedef enum {
     GRAPH_STYLE_LINE = 0,
@@ -347,14 +368,7 @@ typedef struct {
     char text[48];
 } script_graphics_command_t;
 
-typedef struct {
-    double input;
-    double x;
-    double y;
-    int fn;
-    int other_fn;
-    graph_poi_type_t type;
-} graph_poi_t;
+typedef opencalc_graph_poi_t graph_poi_t;
 
 typedef enum {
     UI_WORK_CALC_EVAL = 0,
@@ -375,6 +389,7 @@ typedef struct {
             int complex_mode;
             int display_format;
             int print_mode;
+            opencalc_cas_options_t cas_options;
         } calc;
         struct {
             char e1[96];
@@ -389,38 +404,10 @@ typedef struct {
         struct {
             char expression[256];
             char title[32];
+            opencalc_cas_options_t cas_options;
         } symbolic;
-        struct {
-            int graphing_mode;
-            int series;
-            uint32_t fingerprint;
-            char primary[96];
-            char secondary[96];
-        } graph_symbolic;
-        struct {
-            int selection;
-            int graphing_mode;
-            char exprs[10][96];
-            bool enabled[10];
-            char param_x[GRAPH_PARAM_COUNT][96];
-            char param_y[GRAPH_PARAM_COUNT][96];
-            bool param_enabled[GRAPH_PARAM_COUNT];
-            char polar_exprs[GRAPH_POLAR_COUNT][96];
-            bool polar_enabled[GRAPH_POLAR_COUNT];
-            char seq_exprs[GRAPH_SEQ_COUNT][96];
-            bool seq_enabled[GRAPH_SEQ_COUNT];
-            double xmin;
-            double xmax;
-            double ymin;
-            double ymax;
-            double tmin;
-            double tmax;
-            double nmin;
-            double nmax;
-            bool trace;
-            double trace_x;
-            int trace_fn;
-        } graph;
+        opencalc_graph_symbolic_request_t graph_symbolic;
+        opencalc_graph_analysis_request_t graph;
     };
 } ui_work_job_t;
 
@@ -433,6 +420,7 @@ typedef struct {
             char expr[CALC_EXPR_MAX];
             char output[CALC_RESULT_MAX];
             bool update_ans;
+            bool symbol_changed;
         } calc;
         struct {
             double root;
@@ -446,21 +434,8 @@ typedef struct {
             char output[768];
             char title[32];
         } symbolic;
-        struct {
-            char status[72];
-            bool trace;
-            double trace_x;
-            int trace_fn;
-        } graph;
-        struct {
-            int graphing_mode;
-            int series;
-            uint32_t fingerprint;
-            char derivative[160];
-            char integral[160];
-            char roots[160];
-            char asymptotes[160];
-        } graph_symbolic;
+        opencalc_graph_analysis_result_t graph;
+        opencalc_graph_symbolic_result_t graph_symbolic;
     };
 } ui_work_result_t;
 
@@ -516,6 +491,7 @@ static const math_menu_item_t MATH_MENU[][10] = {
         {NULL, NULL},
     },
     {
+        {"CAS catalog", NULL},
         {"simplify", "simplify("},
         {"roots", "roots("},
         {"derivative", "deriv("},
@@ -525,7 +501,6 @@ static const math_menu_item_t MATH_MENU[][10] = {
         {"product", "product("},
         {"Taylor", "taylor("},
         {"numerator", "numerator("},
-        {"denominator", "denominator("},
     },
     {
         {"limit", "limit("},
@@ -534,7 +509,7 @@ static const math_menu_item_t MATH_MENU[][10] = {
         {"complex polar", "polar("},
         {"gamma", "gamma("},
         {"erf", "erf("},
-        {"erfc", "erfc("},
+        {"denominator", "denominator("},
         {"eigenvectors", "eigenvec("},
         {"matrix rank", "rank("},
         {"transpose", "transpose("},
@@ -919,16 +894,25 @@ static size_t s_calc_cursor = 0;
 static char s_calc_output[CALC_RESULT_MAX] = "0";
 static char s_calc_ans[CALC_RESULT_MAX] = "0";
 static int s_calc_result_scroll = 0;
+static char s_calc_result_expression[CALC_EXPR_MAX] = "";
+static opencalc_cas_result_t s_calc_structured_result;
+static int s_calc_result_selected = 0;
+static bool s_calc_result_trace = false;
+static opencalc_cas_options_t s_cas_options;
+static int s_cas_catalog_selection = 0;
+static int s_cas_catalog_scroll = 0;
+static int s_cas_options_selection = 0;
 static variable_action_t s_variable_action = VARIABLE_ACTION_INSERT;
 static variable_category_t s_variable_category = VARIABLE_CATEGORY_USER;
 static page_id_t s_variable_return_page = PAGE_CALCULATOR;
 static int s_variable_selection = 0;
 static int s_variable_scroll = 0;
 static char s_variable_store_expression[CALC_EXPR_MAX] = "";
+static bool s_variable_store_expression_valid = true;
 static char s_variable_name[OPENCALC_VARIABLE_NAME_MAX] = "";
 static char s_variable_rename_from[OPENCALC_VARIABLE_NAME_MAX] = "";
 static char s_variable_status[64] = "";
-static EXT_RAM_BSS_ATTR char s_variable_persist_buffer[4096];
+static EXT_RAM_BSS_ATTR uint8_t s_variable_persist_buffer[16384];
 #define s_lists (*opencalc_worksheet_lists())
 #define s_list_counts (*opencalc_worksheet_list_counts())
 static int s_list_index = 0;
@@ -965,12 +949,14 @@ static const uint32_t s_graph_colors[GRAPH_COLOR_COUNT] = {
 #define s_graph_calc_selection (GRAPH_MODEL->calc_selection)
 #define s_graph_format_selection (GRAPH_MODEL->format_selection)
 #define s_graph_style_series (GRAPH_MODEL->style_series)
-#define s_graph_styles (GRAPH_MODEL->styles)
+#define s_graph_styles (GRAPH_MODEL->styles[s_graphing_mode])
+#define s_graph_color_indexes (GRAPH_MODEL->colors[s_graphing_mode])
 static char s_graph_status[72] = "";
 #define s_graph_zoom_mode (GRAPH_MODEL->zoom_mode)
 #define s_graph_split (GRAPH_MODEL->split)
 #define s_graph_background_enabled (GRAPH_MODEL->background_enabled)
 #define s_graph_background_loaded (GRAPH_MODEL->background_loaded)
+#define s_graph_background_mode (GRAPH_MODEL->background_mode)
 #define s_table_x_start (GRAPH_MODEL->table_x_start)
 #define s_table_step (GRAPH_MODEL->table_step)
 #define s_table_func_start (GRAPH_MODEL->table_function_start)
@@ -1106,6 +1092,8 @@ static bool s_solver_matrix_editing = false;
 static EXT_RAM_BSS_ATTR char s_solver_symbolic_result[768];
 static char s_solver_symbolic_title[32] = "Symbolic Result";
 static int s_solver_symbolic_scroll = 0;
+static opencalc_cas_result_t s_solver_structured_result;
+static int s_solver_symbolic_selected = 0;
 static int s_solver_saved_selection = 0;
 static EXT_RAM_BSS_ATTR char s_solver_saved_e1[SOLVER_SAVED_MAX][96];
 static EXT_RAM_BSS_ATTR char s_solver_saved_e2[SOLVER_SAVED_MAX][96];
@@ -1317,7 +1305,7 @@ static bool variable_page_handle_key(int row, int col);
 static void variables_open(variable_action_t action);
 static void variables_load_all(void);
 static void variables_save_all(void);
-static void variable_format_value(double real, double imag, char *out, size_t out_size);
+static void symbols_refresh_catalog(void);
 static bool variable_browser_item(variable_category_t category, int index, variable_browser_item_t *item);
 static int variable_category_count(variable_category_t category);
 static bool calc_matrix_literal(int matrix, char *out, size_t out_size);
@@ -1960,7 +1948,7 @@ static void ui_draw_calc_cursor_tiny(int x, int y)
     }
 }
 
-static void ui_draw_calc_expression(int x, int y, const char *text, size_t cursor)
+static void __attribute__((unused)) ui_draw_calc_expression_legacy(int x, int y, const char *text, size_t cursor)
 {
     if (text == NULL || text[0] == '\0') {
         ui_draw_calc_cursor_large(x, y, ' ', false);
@@ -2191,7 +2179,7 @@ static bool display_simple_fraction(const char *text, size_t *slash)
     return true;
 }
 
-static int ui_math_text(int x, int y, const char *text, uint32_t color, bool draw)
+static int ui_math_text_legacy(int x, int y, const char *text, uint32_t color, bool draw)
 {
     if (text == NULL) {
         return 0;
@@ -2312,6 +2300,102 @@ static int ui_math_text(int x, int y, const char *text, uint32_t color, bool dra
         i++;
     }
     return cx - x;
+}
+
+static int math_layout_measure(const char *text, size_t length, bool compact, void *context)
+{
+    (void)context;
+    return compact ? ui_tiny_text_width(text, length) : ui_calc_text_width(text, length);
+}
+
+static void math_layout_text(int x, int y, const char *text, size_t length,
+                             bool compact, uint32_t color, void *context)
+{
+    (void)context;
+    char chunk[64];
+    while (length > 0) {
+        size_t count = length < sizeof(chunk) - 1 ? length : sizeof(chunk) - 1;
+        memcpy(chunk, text, count);
+        chunk[count] = '\0';
+        if (compact) ui_tiny_text(x, y, chunk, color);
+        else ui_calc_text(x, y, chunk, color);
+        x += compact ? ui_tiny_text_width(chunk, count) : ui_calc_text_width(chunk, count);
+        text += count;
+        length -= count;
+    }
+}
+
+static void math_layout_line(int x0, int y0, int x1, int y1,
+                             uint32_t color, void *context)
+{
+    (void)context;
+    ui_line(x0, y0, x1, y1, color);
+}
+
+static void math_layout_cursor(int x, int y, int height, bool compact, void *context)
+{
+    (void)context;
+    if (s_cursor_blink_visible) ui_rect(x, y, compact ? 2 : 3, height, THEME_ACCENT);
+}
+
+static const opencalc_math_layout_callbacks_t MATH_LAYOUT_CALLBACKS = {
+    .measure = math_layout_measure,
+    .text = math_layout_text,
+    .line = math_layout_line,
+    .cursor = math_layout_cursor,
+    .context = NULL,
+};
+
+static void ui_draw_calc_expression(int x, int y, const char *text, size_t cursor)
+{
+    if (text == NULL || text[0] == '\0') {
+        ui_draw_calc_cursor_large(x, y, ' ', false);
+        return;
+    }
+    size_t length = strlen(text);
+    if (cursor > length) cursor = length;
+    if (s_print_mode == 1) {
+        int cx = x;
+        for (size_t i = 0; i < length; i++) {
+            char one[2] = {text[i], '\0'};
+            if (cursor == i) ui_draw_calc_cursor_large(cx, y, text[i], true);
+            else ui_calc_text(cx, y, one, THEME_TEXT);
+            cx += ui_calc_text_width(one, 1);
+        }
+        if (cursor == length) ui_draw_calc_cursor_large(cx, y, ' ', false);
+        return;
+    }
+    opencalc_math_layout_result_t measured = opencalc_math_layout(
+        text, cursor, 0, 0, false, THEME_TEXT, false, &MATH_LAYOUT_CALLBACKS);
+    bool compact = measured.width > UI_W - x - 4 || measured.ascent + measured.descent > 35;
+    if (compact) {
+        measured = opencalc_math_layout(text, cursor, 0, 0, true, THEME_TEXT,
+                                        false, &MATH_LAYOUT_CALLBACKS);
+    }
+    int top = 204;
+    int bottom = UI_H - 1;
+    int height = measured.ascent + measured.descent;
+    int baseline = top + measured.ascent + (bottom - top - height) / 2;
+    if (baseline - measured.ascent < top) baseline = top + measured.ascent;
+    if (baseline + measured.descent > bottom) baseline = bottom - measured.descent;
+    int draw_x = x;
+    int available_width = UI_W - x - 4;
+    if (measured.width > available_width && measured.cursor_valid) {
+        int cursor_screen_x = x + measured.cursor_x;
+        if (cursor_screen_x > UI_W - 8) draw_x -= cursor_screen_x - (UI_W - 8);
+        if (draw_x > x) draw_x = x;
+    }
+    (void)opencalc_math_layout(text, cursor, draw_x, baseline, compact, THEME_TEXT,
+                               true, &MATH_LAYOUT_CALLBACKS);
+}
+
+static int ui_math_text(int x, int y, const char *text, uint32_t color, bool draw)
+{
+    if (text == NULL) return 0;
+    if (s_print_mode == 1) return ui_math_text_legacy(x, y, text, color, draw);
+    opencalc_math_layout_result_t result = opencalc_math_layout(
+        text, SIZE_MAX, x, y + 12, false, color, draw, &MATH_LAYOUT_CALLBACKS);
+    return result.width;
 }
 
 static void ui_text_center(int y, const char *text, uint32_t color, int scale)
@@ -2470,7 +2554,54 @@ static uint32_t graph_entry_color(int entry)
     if (s_graphing_mode == 1) {
         index = entry / 2;
     }
-    return s_graph_colors[index % GRAPH_COLOR_COUNT];
+    return s_graph_colors[s_graph_color_indexes[index % GRAPH_FUNC_COUNT] % GRAPH_COLOR_COUNT];
+}
+
+static uint32_t graph_series_color(int series)
+{
+    if (series < 0) series = 0;
+    return s_graph_colors[s_graph_color_indexes[series % GRAPH_FUNC_COUNT] % GRAPH_COLOR_COUNT];
+}
+
+static const char *graph_color_name(uint8_t color)
+{
+    static const char *const names[GRAPH_COLOR_COUNT] = {
+        "blue", "red", "green", "gold", "violet", "cyan", "orange", "pink",
+        "lime", "navy", "maroon", "teal", "gray", "white", "yellow"
+    };
+    return names[color % GRAPH_COLOR_COUNT];
+}
+
+typedef struct {
+    uint32_t version;
+    uint8_t styles[OPENCALC_GRAPH_MODE_COUNT][OPENCALC_GRAPH_SERIES_MAX];
+    uint8_t colors[OPENCALC_GRAPH_MODE_COUNT][OPENCALC_GRAPH_SERIES_MAX];
+    uint8_t background_mode;
+} graph_appearance_t;
+
+static void graph_appearance_save(void)
+{
+    graph_appearance_t appearance = {.version = 1, .background_mode = s_graph_background_mode};
+    memcpy(appearance.styles, GRAPH_MODEL->styles, sizeof(appearance.styles));
+    memcpy(appearance.colors, GRAPH_MODEL->colors, sizeof(appearance.colors));
+    (void)opencalc_persist_set_blob("graph_appear", &appearance, sizeof(appearance));
+}
+
+static void graph_appearance_load(void)
+{
+    graph_appearance_t appearance;
+    size_t size = sizeof(appearance);
+    if (!opencalc_persist_get_blob("graph_appear", &appearance, &size) ||
+        size != sizeof(appearance) || appearance.version != 1) return;
+    for (int mode = 0; mode < OPENCALC_GRAPH_MODE_COUNT; mode++) {
+        for (int series = 0; series < OPENCALC_GRAPH_SERIES_MAX; series++) {
+            if (appearance.styles[mode][series] >= GRAPH_STYLE_COUNT) appearance.styles[mode][series] = 0;
+            if (appearance.colors[mode][series] >= GRAPH_COLOR_COUNT) appearance.colors[mode][series] = series % GRAPH_COLOR_COUNT;
+        }
+    }
+    memcpy(GRAPH_MODEL->styles, appearance.styles, sizeof(appearance.styles));
+    memcpy(GRAPH_MODEL->colors, appearance.colors, sizeof(appearance.colors));
+    s_graph_background_mode = appearance.background_mode < 3 ? appearance.background_mode : 0;
 }
 
 static char *graph_entry_buffer(int entry, size_t *size)
@@ -2554,18 +2685,19 @@ static void graph_entry_label(int entry, char *out, size_t out_size)
     if (out == NULL || out_size == 0) {
         return;
     }
+    unsigned index = entry >= 0 && entry < GRAPH_FUNC_COUNT ? (unsigned)entry : 0u;
     switch (s_graphing_mode) {
     case 1:
-        snprintf(out, out_size, "%c%dT", entry % 2 == 0 ? 'X' : 'Y', entry / 2 + 1);
+        snprintf(out, out_size, "%c%uT", index % 2 == 0 ? 'X' : 'Y', index / 2 + 1);
         break;
     case 2:
-        snprintf(out, out_size, "r%d", entry + 1);
+        snprintf(out, out_size, "r%u", index + 1);
         break;
     case 3:
-        snprintf(out, out_size, "u%d", entry + 1);
+        snprintf(out, out_size, "u%u", index + 1);
         break;
     default:
-        snprintf(out, out_size, "Y%d", entry + 1);
+        snprintf(out, out_size, "Y%u", index + 1);
         break;
     }
 }
@@ -2643,79 +2775,37 @@ static void graph_series_label(int series, char *out, size_t out_size)
     int entry = s_graphing_mode == 1 ? series * 2 : series;
     graph_entry_label(entry, out, out_size);
     if (s_graphing_mode == 1 && out_size > 1) {
-        snprintf(out, out_size, "P%d", series + 1);
+        unsigned index = series >= 0 && series < GRAPH_PARAM_COUNT ? (unsigned)series : 0u;
+        snprintf(out, out_size, "P%u", index + 1);
     }
-}
-
-static uint32_t read_le32(const uint8_t *p)
-{
-    return (uint32_t)p[0] | ((uint32_t)p[1] << 8) |
-        ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
-}
-
-static uint16_t read_le16(const uint8_t *p)
-{
-    return (uint16_t)((uint16_t)p[0] | ((uint16_t)p[1] << 8));
 }
 
 static bool graph_background_load(void)
 {
-    uint8_t header[54];
-    uint8_t row[UI_W * 4];
     if (!usb_msc_mount_app()) {
         snprintf(s_graph_status, sizeof(s_graph_status), "storage busy - eject USB drive");
         return false;
     }
     s_usb_storage_enabled = false;
-    FILE *file = fopen(GRAPH_BACKGROUND_PATH, "rb");
-    if (file == NULL) {
-        snprintf(s_graph_status, sizeof(s_graph_status), "missing %s", GRAPH_BACKGROUND_PATH);
-        return false;
-    }
-
-    bool ok = fread(header, 1, sizeof(header), file) == sizeof(header) &&
-        header[0] == 'B' && header[1] == 'M';
-    uint32_t pixel_offset = ok ? read_le32(header + 10) : 0;
-    int32_t width = ok ? (int32_t)read_le32(header + 18) : 0;
-    int32_t height = ok ? (int32_t)read_le32(header + 22) : 0;
-    uint16_t planes = ok ? read_le16(header + 26) : 0;
-    uint16_t bits = ok ? read_le16(header + 28) : 0;
-    uint32_t compression = ok ? read_le32(header + 30) : 1;
-    int32_t abs_height = height < 0 ? -height : height;
-    ok = ok && width == UI_W && abs_height == UI_H && planes == 1 &&
-        (bits == 24 || bits == 32) && compression == 0;
-    size_t row_bytes = ok ? (((size_t)width * bits + 31u) / 32u) * 4u : 0;
-    if (!ok || row_bytes > sizeof(row) || fseek(file, (long)pixel_offset, SEEK_SET) != 0) {
-        fclose(file);
-        snprintf(s_graph_status, sizeof(s_graph_status), "graph.bmp must be 320x240 RGB");
-        return false;
-    }
-
-    for (int source_row = 0; source_row < UI_H && ok; source_row++) {
-        if (fread(row, 1, row_bytes, file) != row_bytes) {
-            ok = false;
-            break;
-        }
-        int y = height > 0 ? UI_H - 1 - source_row : source_row;
-        int bytes_per_pixel = bits / 8;
-        for (int x = 0; x < UI_W; x++) {
-            const uint8_t *pixel = row + x * bytes_per_pixel;
-            s_graph_background[y * UI_W + x] =
-                ((uint32_t)pixel[2] << 16) | ((uint32_t)pixel[1] << 8) | pixel[0];
-        }
-    }
-    fclose(file);
-    if (!ok) {
-        snprintf(s_graph_status, sizeof(s_graph_status), "graph.bmp read failed");
-        return false;
-    }
-    snprintf(s_graph_status, sizeof(s_graph_status), "background loaded");
-    return true;
+    return opencalc_graph_background_load_bmp(
+        GRAPH_BACKGROUND_PATH, s_graph_background, UI_W, UI_H, THEME_BG,
+        (opencalc_graph_background_mode_t)s_graph_background_mode,
+        s_graph_status, sizeof(s_graph_status));
 }
 
 static double graph_angle_to_radians_for_plot(double angle)
 {
     return s_angle_mode == 0 ? angle * 3.14159265358979323846 / 180.0 : angle;
+}
+
+static bool graph_eval_sequence_text(const char *text, double input, double *value)
+{
+    if (!isfinite(input) || input < 0.0 || input > 4096.0) return false;
+    int n = (int)floor(input + 0.5);
+    if (fabs(input - n) > 1e-7) return false;
+    opencalc_graph_sequence_t sequence;
+    return opencalc_graph_sequence_parse(text, &sequence) &&
+        opencalc_graph_sequence_eval(&sequence, n, graph_eval_expression_var, value);
 }
 
 static const char *graph_poi_label(graph_poi_type_t type)
@@ -2734,628 +2824,6 @@ static bool graph_eval_fn_at(int fn, double x, double *y)
 {
     return fn >= 0 && fn < 10 && s_graph_enabled[fn] && s_graph_exprs[fn][0] != '\0' &&
         graph_eval_expression(s_graph_exprs[fn], x, y);
-}
-
-static bool work_graph_eval_fn_at(const ui_work_job_t *job, int fn, double x, double *y)
-{
-    return job != NULL && fn >= 0 && fn < 10 && job->graph.enabled[fn] &&
-        job->graph.exprs[fn][0] != '\0' && graph_eval_expression(job->graph.exprs[fn], x, y);
-}
-
-static int work_graph_series_count(const ui_work_job_t *job)
-{
-    if (job == NULL) {
-        return 0;
-    }
-    switch (job->graph.graphing_mode) {
-    case 1: return GRAPH_PARAM_COUNT;
-    case 2: return GRAPH_POLAR_COUNT;
-    case 3: return GRAPH_SEQ_COUNT;
-    default: return GRAPH_FUNC_COUNT;
-    }
-}
-
-static bool work_graph_series_enabled(const ui_work_job_t *job, int fn)
-{
-    if (job == NULL || fn < 0) {
-        return false;
-    }
-    switch (job->graph.graphing_mode) {
-    case 1:
-        return fn < GRAPH_PARAM_COUNT && job->graph.param_enabled[fn] &&
-            job->graph.param_x[fn][0] != '\0' && job->graph.param_y[fn][0] != '\0';
-    case 2:
-        return fn < GRAPH_POLAR_COUNT && job->graph.polar_enabled[fn] &&
-            job->graph.polar_exprs[fn][0] != '\0';
-    case 3:
-        return fn < GRAPH_SEQ_COUNT && job->graph.seq_enabled[fn] &&
-            job->graph.seq_exprs[fn][0] != '\0';
-    default:
-        return fn < GRAPH_FUNC_COUNT && job->graph.enabled[fn] &&
-            job->graph.exprs[fn][0] != '\0';
-    }
-}
-
-static bool work_graph_eval_series_at(const ui_work_job_t *job, int fn, double input,
-                                      double *x, double *y, double *metric)
-{
-    if (!work_graph_series_enabled(job, fn) || x == NULL || y == NULL || metric == NULL) {
-        return false;
-    }
-
-    switch (job->graph.graphing_mode) {
-    case 1:
-        if (!graph_eval_expression_var(job->graph.param_x[fn], 't', input, x) ||
-            !graph_eval_expression_var(job->graph.param_y[fn], 't', input, y)) {
-            return false;
-        }
-        *metric = *y;
-        return isfinite(*x) && isfinite(*y);
-    case 2: {
-        double r = 0.0;
-        if (!graph_eval_expression_var(job->graph.polar_exprs[fn], 't', input, &r)) {
-            return false;
-        }
-        double rad = job->degrees ? input * 3.14159265358979323846 / 180.0 : input;
-        *x = r * cos(rad);
-        *y = r * sin(rad);
-        *metric = r;
-        return isfinite(*x) && isfinite(*y) && isfinite(r);
-    }
-    case 3:
-        if (!graph_eval_expression_var(job->graph.seq_exprs[fn], 'n', input, y)) {
-            return false;
-        }
-        *x = input;
-        *metric = *y;
-        return isfinite(*y);
-    default:
-        if (!graph_eval_expression(job->graph.exprs[fn], input, y)) {
-            return false;
-        }
-        *x = input;
-        *metric = *y;
-        return isfinite(*y);
-    }
-}
-
-static void work_graph_input_range(const ui_work_job_t *job, double *min_input, double *max_input)
-{
-    if (job == NULL || min_input == NULL || max_input == NULL) {
-        return;
-    }
-    switch (job->graph.graphing_mode) {
-    case 1:
-    case 2:
-        *min_input = job->graph.tmin;
-        *max_input = job->graph.tmax;
-        break;
-    case 3:
-        *min_input = job->graph.nmin;
-        *max_input = job->graph.nmax;
-        break;
-    default:
-        *min_input = job->graph.xmin;
-        *max_input = job->graph.xmax;
-        break;
-    }
-}
-
-static const char *work_graph_series_prefix(const ui_work_job_t *job)
-{
-    switch (job != NULL ? job->graph.graphing_mode : 0) {
-    case 1: return "P";
-    case 2: return "r";
-    case 3: return "u";
-    default: return "Y";
-    }
-}
-
-static bool work_graph_refine_zero(const ui_work_job_t *job, int fn, double lo, double hi, double *x, double *y)
-{
-    double f_lo = 0.0;
-    double f_hi = 0.0;
-    if (!work_graph_eval_fn_at(job, fn, lo, &f_lo) || !work_graph_eval_fn_at(job, fn, hi, &f_hi)) {
-        return false;
-    }
-
-    if (fabs(f_lo) <= 1e-12) {
-        *x = fabs(lo) <= 1e-9 ? 0.0 : lo;
-        *y = 0.0;
-        return true;
-    }
-    if (fabs(f_hi) <= 1e-12) {
-        *x = fabs(hi) <= 1e-9 ? 0.0 : hi;
-        *y = 0.0;
-        return true;
-    }
-
-    for (int i = 0; i < 28; i++) {
-        double mid = (lo + hi) * 0.5;
-        double f_mid = 0.0;
-        if (!work_graph_eval_fn_at(job, fn, mid, &f_mid)) {
-            return false;
-        }
-        if (fabs(f_mid) <= 1e-12) {
-            *x = fabs(mid) <= 1e-9 ? 0.0 : mid;
-            *y = 0.0;
-            return true;
-        }
-        if ((f_lo <= 0.0 && f_mid >= 0.0) || (f_lo >= 0.0 && f_mid <= 0.0)) {
-            hi = mid;
-            f_hi = f_mid;
-        } else {
-            lo = mid;
-            f_lo = f_mid;
-        }
-        (void)f_hi;
-    }
-
-    *x = (lo + hi) * 0.5;
-    if (!work_graph_eval_fn_at(job, fn, *x, y)) {
-        return false;
-    }
-    if (fabs(*x) <= 1e-9) *x = 0.0;
-    if (fabs(*y) <= 1e-9) *y = 0.0;
-    return true;
-}
-
-static bool work_graph_refine_intersection(const ui_work_job_t *job, int fn_a, int fn_b, double lo, double hi, double *x, double *y)
-{
-    double a = 0.0;
-    double b = 0.0;
-    double c = 0.0;
-    double d = 0.0;
-    if (!work_graph_eval_fn_at(job, fn_a, lo, &a) || !work_graph_eval_fn_at(job, fn_b, lo, &b) ||
-        !work_graph_eval_fn_at(job, fn_a, hi, &c) || !work_graph_eval_fn_at(job, fn_b, hi, &d)) {
-        return false;
-    }
-
-    double f_lo = a - b;
-    for (int i = 0; i < 28; i++) {
-        double mid = (lo + hi) * 0.5;
-        double y_a = 0.0;
-        double y_b = 0.0;
-        if (!work_graph_eval_fn_at(job, fn_a, mid, &y_a) || !work_graph_eval_fn_at(job, fn_b, mid, &y_b)) {
-            return false;
-        }
-        double f_mid = y_a - y_b;
-        if ((f_lo <= 0.0 && f_mid >= 0.0) || (f_lo >= 0.0 && f_mid <= 0.0)) {
-            hi = mid;
-        } else {
-            lo = mid;
-            f_lo = f_mid;
-        }
-    }
-
-    *x = (lo + hi) * 0.5;
-    return work_graph_eval_fn_at(job, fn_a, *x, y);
-}
-
-static void work_graph_add_poi_at(graph_poi_t *pois, int *count, graph_poi_type_t type, int fn, int other_fn,
-                                  double input, double x, double y);
-
-static void work_graph_add_poi(graph_poi_t *pois, int *count, graph_poi_type_t type, int fn, int other_fn, double x, double y)
-{
-    work_graph_add_poi_at(pois, count, type, fn, other_fn, x, x, y);
-}
-
-static void work_graph_add_poi_at(graph_poi_t *pois, int *count, graph_poi_type_t type, int fn, int other_fn,
-                                  double input, double x, double y)
-{
-    if (*count >= GRAPH_POI_LIMIT || !isfinite(x) || !isfinite(y)) {
-        return;
-    }
-    for (int i = 0; i < *count; i++) {
-        if (pois[i].type == type && pois[i].fn == fn && pois[i].other_fn == other_fn &&
-            fabs(pois[i].x - x) < 0.05 && fabs(pois[i].y - y) < 0.05) {
-            return;
-        }
-    }
-    pois[*count] = (graph_poi_t){.input = input, .x = x, .y = y, .fn = fn, .other_fn = other_fn, .type = type};
-    (*count)++;
-}
-
-static int work_graph_collect_pois(const ui_work_job_t *job, graph_poi_t *pois, int max_count)
-{
-    int count = 0;
-    int enabled[10];
-    int enabled_count = 0;
-    double min_input = 0.0;
-    double max_input = 0.0;
-    work_graph_input_range(job, &min_input, &max_input);
-    double step = (max_input - min_input) / 96.0;
-    if (step <= 0.0) {
-        return 0;
-    }
-
-    for (int fn = 0; fn < work_graph_series_count(job); fn++) {
-        if (!work_graph_series_enabled(job, fn)) {
-            continue;
-        }
-        enabled[enabled_count++] = fn;
-
-        double px0 = 0.0;
-        double py0 = 0.0;
-        double m0 = 0.0;
-        if (job->graph.graphing_mode == 0 && min_input <= 0.0 && max_input >= 0.0 &&
-            work_graph_eval_series_at(job, fn, 0.0, &px0, &py0, &m0)) {
-            work_graph_add_poi_at(pois, &count, GRAPH_POI_Y_INTERCEPT, fn, -1, 0.0, px0, py0);
-        }
-
-        double input_prev2 = min_input;
-        double x_prev2 = 0.0;
-        double y_prev2 = 0.0;
-        double metric_prev2 = 0.0;
-        double input_prev = min_input + step;
-        double x_prev = 0.0;
-        double y_prev = 0.0;
-        double metric_prev = 0.0;
-        bool have_prev2 = work_graph_eval_series_at(job, fn, input_prev2, &x_prev2, &y_prev2, &metric_prev2);
-        bool have_prev = work_graph_eval_series_at(job, fn, input_prev, &x_prev, &y_prev, &metric_prev);
-        for (int i = 2; i <= 96 && count < max_count; i++) {
-            double input = min_input + step * (double)i;
-            double x = 0.0;
-            double y = 0.0;
-            double metric = 0.0;
-            bool have = work_graph_eval_series_at(job, fn, input, &x, &y, &metric);
-
-            bool crosses_x_axis = have_prev && have &&
-                ((y_prev <= 0.0 && y >= 0.0) || (y_prev >= 0.0 && y <= 0.0));
-            bool exact_sequence_zero = job->graph.graphing_mode == 3 && have && fabs(y) <= 1e-10;
-            if ((job->graph.graphing_mode != 3 && crosses_x_axis) || exact_sequence_zero) {
-                if (job->graph.graphing_mode == 0) {
-                    double zx = 0.0;
-                    double zy = 0.0;
-                    if (work_graph_refine_zero(job, fn, input_prev, input, &zx, &zy)) {
-                        work_graph_add_poi(pois, &count, GRAPH_POI_ZERO, fn, -1, zx, zy);
-                    }
-                } else {
-                    work_graph_add_poi_at(pois, &count, GRAPH_POI_ZERO, fn, -1, input, x, y);
-                }
-            }
-
-            if (job->graph.graphing_mode != 0 && have_prev && have &&
-                ((x_prev <= 0.0 && x >= 0.0) || (x_prev >= 0.0 && x <= 0.0))) {
-                double use_input = fabs(x_prev) <= fabs(x) ? input_prev : input;
-                double use_x = fabs(x_prev) <= fabs(x) ? x_prev : x;
-                double use_y = fabs(x_prev) <= fabs(x) ? y_prev : y;
-                work_graph_add_poi_at(pois, &count, GRAPH_POI_Y_INTERCEPT, fn, -1,
-                                      use_input, use_x, use_y);
-            }
-
-            if (have_prev2 && have_prev && have) {
-                if (y_prev < y_prev2 && y_prev < y) {
-                    work_graph_add_poi_at(pois, &count, GRAPH_POI_MIN, fn, -1, input_prev, x_prev, y_prev);
-                } else if (y_prev > y_prev2 && y_prev > y) {
-                    work_graph_add_poi_at(pois, &count, GRAPH_POI_LOCAL_MAX, fn, -1, input_prev, x_prev, y_prev);
-                }
-            }
-
-            input_prev2 = input_prev;
-            x_prev2 = x_prev;
-            y_prev2 = y_prev;
-            metric_prev2 = metric_prev;
-            have_prev2 = have_prev;
-            input_prev = input;
-            x_prev = x;
-            y_prev = y;
-            metric_prev = metric;
-            have_prev = have;
-        }
-    }
-
-    if (job->graph.graphing_mode != 0) {
-        for (int a = 0; a < enabled_count; a++) {
-            for (int b = a + 1; b < enabled_count; b++) {
-                int fn_a = enabled[a];
-                int fn_b = enabled[b];
-                double ax = 0.0, ay = 0.0, am = 0.0;
-                bool have_a = false;
-                for (int i = 0; i <= 96 && count < max_count; i++) {
-                    double input_a = min_input + step * (double)i;
-                    have_a = work_graph_eval_series_at(job, fn_a, input_a, &ax, &ay, &am);
-                    if (!have_a) {
-                        continue;
-                    }
-                    for (int j = 0; j <= 96; j++) {
-                        double input_b = min_input + step * (double)j;
-                        double bx = 0.0, by = 0.0, bm = 0.0;
-                        if (!work_graph_eval_series_at(job, fn_b, input_b, &bx, &by, &bm)) {
-                            continue;
-                        }
-                        double tol_x = fabs(job->graph.xmax - job->graph.xmin) / 80.0;
-                        double tol_y = fabs(job->graph.ymax - job->graph.ymin) / 80.0;
-                        if (tol_x <= 0.0) tol_x = 0.1;
-                        if (tol_y <= 0.0) tol_y = 0.1;
-                        if (fabs(ax - bx) <= tol_x && fabs(ay - by) <= tol_y) {
-                            work_graph_add_poi(pois, &count, GRAPH_POI_INTERSECTION, fn_a, fn_b,
-                                               (ax + bx) * 0.5, (ay + by) * 0.5);
-                            pois[count - 1].input = input_a;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        return count;
-    }
-
-    for (int a = 0; a < enabled_count; a++) {
-        for (int b = a + 1; b < enabled_count; b++) {
-            int fn_a = enabled[a];
-            int fn_b = enabled[b];
-            double prev_x = job->graph.xmin;
-            double ya = 0.0;
-            double yb = 0.0;
-            bool have_prev = work_graph_eval_fn_at(job, fn_a, prev_x, &ya) &&
-                work_graph_eval_fn_at(job, fn_b, prev_x, &yb);
-            double prev_diff = ya - yb;
-            for (int i = 1; i <= 96 && count < max_count; i++) {
-                double x = job->graph.xmin + step * (double)i;
-                bool have = work_graph_eval_fn_at(job, fn_a, x, &ya) &&
-                    work_graph_eval_fn_at(job, fn_b, x, &yb);
-                double diff = ya - yb;
-                if (have_prev && have &&
-                    ((prev_diff <= 0.0 && diff >= 0.0) || (prev_diff >= 0.0 && diff <= 0.0))) {
-                    double ix = 0.0;
-                    double iy = 0.0;
-                    if (work_graph_refine_intersection(job, fn_a, fn_b, prev_x, x, &ix, &iy)) {
-                        work_graph_add_poi(pois, &count, GRAPH_POI_INTERSECTION, fn_a, fn_b, ix, iy);
-                    }
-                }
-                prev_x = x;
-                prev_diff = diff;
-                have_prev = have;
-            }
-        }
-    }
-
-    return count;
-}
-
-static bool work_graph_first_enabled_fn(const ui_work_job_t *job, int *fn)
-{
-    for (int i = 0; i < work_graph_series_count(job); i++) {
-        if (work_graph_series_enabled(job, i)) {
-            *fn = i;
-            return true;
-        }
-    }
-    return false;
-}
-
-static bool work_graph_ensure_trace(const ui_work_job_t *job, bool *trace, double *trace_x, int *trace_fn)
-{
-    if (*trace) {
-        return true;
-    }
-    int fn = 0;
-    if (!work_graph_first_enabled_fn(job, &fn)) {
-        return false;
-    }
-    *trace = true;
-    *trace_fn = fn;
-    double min_input = 0.0;
-    double max_input = 0.0;
-    work_graph_input_range(job, &min_input, &max_input);
-    *trace_x = (min_input + max_input) * 0.5;
-    return true;
-}
-
-static bool work_graph_jump_to_poi(const ui_work_job_t *job, graph_poi_type_t type, ui_work_result_t *result)
-{
-    graph_poi_t pois[GRAPH_POI_LIMIT];
-    int count = work_graph_collect_pois(job, pois, GRAPH_POI_LIMIT);
-    double target = job->graph.trace ? job->graph.trace_x : (job->graph.xmin + job->graph.xmax) * 0.5;
-    int best = -1;
-    double best_dist = 0.0;
-
-    for (int i = 0; i < count; i++) {
-        if (pois[i].type != type) {
-            continue;
-        }
-        double dist = fabs(pois[i].input - target);
-        if (best < 0 || dist < best_dist) {
-            best = i;
-            best_dist = dist;
-        }
-    }
-    if (best < 0) {
-        return false;
-    }
-
-    double display_x = fabs(pois[best].x) <= 1e-9 ? 0.0 : pois[best].x;
-    double display_y = fabs(pois[best].y) <= 1e-9 ? 0.0 : pois[best].y;
-    result->graph.trace = true;
-    result->graph.trace_x = pois[best].input;
-    result->graph.trace_fn = pois[best].fn;
-    snprintf(result->graph.status, sizeof(result->graph.status), "%s %s%d x %.4g y %.4g",
-             graph_poi_label(type), work_graph_series_prefix(job), pois[best].fn + 1, display_x, display_y);
-    return true;
-}
-
-static bool work_graph_calc_value(const ui_work_job_t *job, ui_work_result_t *result)
-{
-    bool trace = job->graph.trace;
-    double trace_x = job->graph.trace_x;
-    int trace_fn = job->graph.trace_fn;
-    if (!work_graph_ensure_trace(job, &trace, &trace_x, &trace_fn)) {
-        return false;
-    }
-
-    double x = 0.0;
-    double y = 0.0;
-    double metric = 0.0;
-    if (!work_graph_eval_series_at(job, trace_fn, trace_x, &x, &y, &metric)) {
-        return false;
-    }
-    result->graph.trace = trace;
-    result->graph.trace_x = trace_x;
-    result->graph.trace_fn = trace_fn;
-    if (job->graph.graphing_mode == 1) {
-        snprintf(result->graph.status, sizeof(result->graph.status), "value P%d t %.4g x %.4g y %.4g",
-                 trace_fn + 1, trace_x, x, y);
-    } else if (job->graph.graphing_mode == 2) {
-        snprintf(result->graph.status, sizeof(result->graph.status), "value r%d t %.4g r %.4g",
-                 trace_fn + 1, trace_x, metric);
-    } else if (job->graph.graphing_mode == 3) {
-        snprintf(result->graph.status, sizeof(result->graph.status), "value u%d n %.0f = %.6g",
-                 trace_fn + 1, trace_x, y);
-    } else {
-        snprintf(result->graph.status, sizeof(result->graph.status), "value Y%d x %.4g y %.6g",
-                 trace_fn + 1, trace_x, y);
-    }
-    return true;
-}
-
-static bool work_graph_calc_derivative(const ui_work_job_t *job, ui_work_result_t *result)
-{
-    bool trace = job->graph.trace;
-    double trace_x = job->graph.trace_x;
-    int trace_fn = job->graph.trace_fn;
-    if (!work_graph_ensure_trace(job, &trace, &trace_x, &trace_fn)) {
-        return false;
-    }
-
-    double min_input = 0.0;
-    double max_input = 0.0;
-    work_graph_input_range(job, &min_input, &max_input);
-    double span = max_input - min_input;
-    double h = span > 0.0 ? span / 2000.0 : 0.001;
-    if (h < 1e-6) h = 1e-6;
-
-    double x0 = 0.0, y0 = 0.0, m0 = 0.0;
-    double x1 = 0.0, y1 = 0.0, m1 = 0.0;
-    if (!work_graph_eval_series_at(job, trace_fn, trace_x - h, &x0, &y0, &m0) ||
-        !work_graph_eval_series_at(job, trace_fn, trace_x + h, &x1, &y1, &m1)) {
-        return false;
-    }
-
-    result->graph.trace = trace;
-    result->graph.trace_x = trace_x;
-    result->graph.trace_fn = trace_fn;
-    if (job->graph.graphing_mode == 1 || job->graph.graphing_mode == 2) {
-        double dx = x1 - x0;
-        if (fabs(dx) <= 1e-12) {
-            return false;
-        }
-        snprintf(result->graph.status, sizeof(result->graph.status), "dy/dx %s%d t %.4g = %.6g",
-                 work_graph_series_prefix(job), trace_fn + 1, trace_x, (y1 - y0) / dx);
-    } else if (job->graph.graphing_mode == 3) {
-        double xm = 0.0, ym = 0.0, mm = 0.0;
-        double xp = 0.0, yp = 0.0, mp = 0.0;
-        double n = floor(trace_x + 0.5);
-        if (!work_graph_eval_series_at(job, trace_fn, n, &xm, &ym, &mm) ||
-            !work_graph_eval_series_at(job, trace_fn, n + 1.0, &xp, &yp, &mp)) {
-            return false;
-        }
-        snprintf(result->graph.status, sizeof(result->graph.status), "delta u%d n %.0f = %.6g",
-                 trace_fn + 1, n, yp - ym);
-    } else {
-        snprintf(result->graph.status, sizeof(result->graph.status), "dy/dx Y%d x %.4g = %.6g",
-                 trace_fn + 1, trace_x, (y1 - y0) / (2.0 * h));
-    }
-    return true;
-}
-
-static bool work_graph_calc_integral(const ui_work_job_t *job, ui_work_result_t *result)
-{
-    bool trace = job->graph.trace;
-    double trace_x = job->graph.trace_x;
-    int trace_fn = job->graph.trace_fn;
-    if (!work_graph_ensure_trace(job, &trace, &trace_x, &trace_fn)) {
-        return false;
-    }
-
-    double a = 0.0;
-    double b = trace_x;
-    double sign = 1.0;
-    if (b < a) {
-        double tmp = a;
-        a = b;
-        b = tmp;
-        sign = -1.0;
-    }
-
-    if (job->graph.graphing_mode == 3) {
-        int first = (int)ceil(a);
-        int last = (int)floor(b);
-        double sum = 0.0;
-        for (int n = first; n <= last; n++) {
-            double x = 0.0, y = 0.0, metric = 0.0;
-            if (!work_graph_eval_series_at(job, trace_fn, (double)n, &x, &y, &metric)) {
-                return false;
-            }
-            sum += y;
-        }
-        result->graph.trace = trace;
-        result->graph.trace_x = trace_x;
-        result->graph.trace_fn = trace_fn;
-        snprintf(result->graph.status, sizeof(result->graph.status), "sum u%d %d..%d = %.6g",
-                 trace_fn + 1, first, last, sum * sign);
-        return true;
-    }
-
-    const int steps = 96;
-    double dx = (b - a) / (double)steps;
-    double sum = 0.0;
-    double previous_x = 0.0;
-    double previous_y = 0.0;
-    double previous_metric = 0.0;
-    bool have_previous = false;
-    for (int i = 0; i <= steps; i++) {
-        double y = 0.0;
-        double x = a + dx * (double)i;
-        double px = 0.0;
-        double metric = 0.0;
-        if (!work_graph_eval_series_at(job, trace_fn, x, &px, &y, &metric)) {
-            return false;
-        }
-        if (job->graph.graphing_mode == 1) {
-            if (have_previous) sum += (previous_y + y) * 0.5 * (px - previous_x);
-        } else if (job->graph.graphing_mode == 2) {
-            double radians_per_input = job->degrees ? 3.14159265358979323846 / 180.0 : 1.0;
-            if (have_previous) {
-                sum += 0.25 * (previous_metric * previous_metric + metric * metric) *
-                    dx * radians_per_input;
-            }
-        } else {
-            sum += metric * (i == 0 || i == steps ? 0.5 : 1.0) * dx;
-        }
-        previous_x = px;
-        previous_y = y;
-        previous_metric = metric;
-        have_previous = true;
-    }
-
-    result->graph.trace = trace;
-    result->graph.trace_x = trace_x;
-    result->graph.trace_fn = trace_fn;
-    const char *operation = job->graph.graphing_mode == 2 ? "area" : "int";
-    snprintf(result->graph.status, sizeof(result->graph.status), "%s %s%d 0..%.4g = %.6g",
-             operation, work_graph_series_prefix(job), trace_fn + 1, trace_x, sum * sign);
-    return true;
-}
-
-static bool work_graph_calc_run(const ui_work_job_t *job, ui_work_result_t *result)
-{
-    result->graph.trace = job->graph.trace;
-    result->graph.trace_x = job->graph.trace_x;
-    result->graph.trace_fn = job->graph.trace_fn;
-    result->graph.status[0] = '\0';
-
-    switch (job->graph.selection) {
-    case 0: return work_graph_calc_value(job, result);
-    case 1: return work_graph_jump_to_poi(job, GRAPH_POI_ZERO, result);
-    case 2: return work_graph_jump_to_poi(job, GRAPH_POI_MIN, result);
-    case 3: return work_graph_jump_to_poi(job, GRAPH_POI_LOCAL_MAX, result);
-    case 4: return work_graph_jump_to_poi(job, GRAPH_POI_INTERSECTION, result);
-    case 5: return work_graph_jump_to_poi(job, GRAPH_POI_Y_INTERCEPT, result);
-    case 6: return work_graph_calc_derivative(job, result);
-    case 7: return work_graph_calc_integral(job, result);
-    default: return false;
-    }
 }
 
 static void inequality_clear_all(void)
@@ -3640,193 +3108,38 @@ static void draw_inequality_layer(const graph_view_t *view)
     }
 }
 
-static bool graph_refine_zero(int fn, double lo, double hi, double *x, double *y)
+static void graph_capture_analysis_request(opencalc_graph_analysis_request_t *request)
 {
-    double f_lo = 0.0;
-    double f_hi = 0.0;
-    if (!graph_eval_fn_at(fn, lo, &f_lo) || !graph_eval_fn_at(fn, hi, &f_hi)) {
-        return false;
-    }
-
-    if (fabs(f_lo) <= 1e-12) {
-        *x = fabs(lo) <= 1e-9 ? 0.0 : lo;
-        *y = 0.0;
-        return true;
-    }
-    if (fabs(f_hi) <= 1e-12) {
-        *x = fabs(hi) <= 1e-9 ? 0.0 : hi;
-        *y = 0.0;
-        return true;
-    }
-
-    for (int i = 0; i < 28; i++) {
-        double mid = (lo + hi) * 0.5;
-        double f_mid = 0.0;
-        if (!graph_eval_fn_at(fn, mid, &f_mid)) {
-            return false;
-        }
-        if (fabs(f_mid) <= 1e-12) {
-            *x = fabs(mid) <= 1e-9 ? 0.0 : mid;
-            *y = 0.0;
-            return true;
-        }
-        if ((f_lo <= 0.0 && f_mid >= 0.0) || (f_lo >= 0.0 && f_mid <= 0.0)) {
-            hi = mid;
-            f_hi = f_mid;
-        } else {
-            lo = mid;
-            f_lo = f_mid;
-        }
-        (void)f_hi;
-    }
-
-    *x = (lo + hi) * 0.5;
-    if (!graph_eval_fn_at(fn, *x, y)) {
-        return false;
-    }
-    if (fabs(*x) <= 1e-9) {
-        *x = 0.0;
-    }
-    if (fabs(*y) <= 1e-9) {
-        *y = 0.0;
-    }
-    return true;
-}
-
-static bool graph_refine_intersection(int fn_a, int fn_b, double lo, double hi, double *x, double *y)
-{
-    double a = 0.0;
-    double b = 0.0;
-    double c = 0.0;
-    double d = 0.0;
-    if (!graph_eval_fn_at(fn_a, lo, &a) || !graph_eval_fn_at(fn_b, lo, &b) ||
-        !graph_eval_fn_at(fn_a, hi, &c) || !graph_eval_fn_at(fn_b, hi, &d)) {
-        return false;
-    }
-
-    double f_lo = a - b;
-    for (int i = 0; i < 28; i++) {
-        double mid = (lo + hi) * 0.5;
-        double y_a = 0.0;
-        double y_b = 0.0;
-        if (!graph_eval_fn_at(fn_a, mid, &y_a) || !graph_eval_fn_at(fn_b, mid, &y_b)) {
-            return false;
-        }
-        double f_mid = y_a - y_b;
-        if ((f_lo <= 0.0 && f_mid >= 0.0) || (f_lo >= 0.0 && f_mid <= 0.0)) {
-            hi = mid;
-        } else {
-            lo = mid;
-            f_lo = f_mid;
-        }
-    }
-
-    *x = (lo + hi) * 0.5;
-    return graph_eval_fn_at(fn_a, *x, y);
-}
-
-static void graph_add_poi(graph_poi_t *pois, int *count, graph_poi_type_t type, int fn, int other_fn, double x, double y)
-{
-    if (*count >= GRAPH_POI_LIMIT || !isfinite(x) || !isfinite(y)) {
-        return;
-    }
-    for (int i = 0; i < *count; i++) {
-        if (pois[i].type == type && pois[i].fn == fn && pois[i].other_fn == other_fn &&
-            fabs(pois[i].x - x) < 0.05 && fabs(pois[i].y - y) < 0.05) {
-            return;
-        }
-    }
-    pois[*count] = (graph_poi_t){.x = x, .y = y, .fn = fn, .other_fn = other_fn, .type = type};
-    (*count)++;
+    memset(request, 0, sizeof(*request));
+    request->graphing_mode = s_graphing_mode;
+    memcpy(request->exprs, s_graph_exprs, sizeof(request->exprs));
+    memcpy(request->enabled, s_graph_enabled, sizeof(request->enabled));
+    memcpy(request->param_x, s_graph_param_x, sizeof(request->param_x));
+    memcpy(request->param_y, s_graph_param_y, sizeof(request->param_y));
+    memcpy(request->param_enabled, s_graph_param_enabled, sizeof(request->param_enabled));
+    memcpy(request->polar_exprs, s_graph_polar_exprs, sizeof(request->polar_exprs));
+    memcpy(request->polar_enabled, s_graph_polar_enabled, sizeof(request->polar_enabled));
+    memcpy(request->seq_exprs, s_graph_seq_exprs, sizeof(request->seq_exprs));
+    memcpy(request->seq_enabled, s_graph_seq_enabled, sizeof(request->seq_enabled));
+    request->xmin = s_graph_xmin;
+    request->xmax = s_graph_xmax;
+    request->ymin = s_graph_ymin;
+    request->ymax = s_graph_ymax;
+    request->tmin = s_graph_tmin;
+    request->tmax = s_graph_tmax;
+    request->nmin = s_graph_nmin;
+    request->nmax = s_graph_nmax;
+    request->trace = s_graph_trace;
+    request->trace_x = s_graph_trace_x;
+    request->trace_fn = s_graph_trace_fn;
 }
 
 static int graph_collect_pois(graph_poi_t *pois, int max_count)
 {
-    int count = 0;
-    int enabled[10];
-    int enabled_count = 0;
-    double step = (s_graph_xmax - s_graph_xmin) / 96.0;
-    if (step <= 0.0) {
-        return 0;
-    }
-
-    for (int fn = 0; fn < 10; fn++) {
-        if (!s_graph_enabled[fn] || s_graph_exprs[fn][0] == '\0') {
-            continue;
-        }
-        enabled[enabled_count++] = fn;
-
-        double y0 = 0.0;
-        if (s_graph_xmin <= 0.0 && s_graph_xmax >= 0.0 && graph_eval_fn_at(fn, 0.0, &y0)) {
-            graph_add_poi(pois, &count, GRAPH_POI_Y_INTERCEPT, fn, -1, 0.0, y0);
-        }
-
-        double x_prev2 = s_graph_xmin;
-        double y_prev2 = 0.0;
-        double x_prev = s_graph_xmin + step;
-        double y_prev = 0.0;
-        bool have_prev2 = graph_eval_fn_at(fn, x_prev2, &y_prev2);
-        bool have_prev = graph_eval_fn_at(fn, x_prev, &y_prev);
-        for (int i = 2; i <= 96 && count < max_count; i++) {
-            double x = s_graph_xmin + step * (double)i;
-            double y = 0.0;
-            bool have = graph_eval_fn_at(fn, x, &y);
-
-            if (have_prev && have &&
-                ((y_prev <= 0.0 && y >= 0.0) || (y_prev >= 0.0 && y <= 0.0))) {
-                double zx = 0.0;
-                double zy = 0.0;
-                if (graph_refine_zero(fn, x_prev, x, &zx, &zy)) {
-                    graph_add_poi(pois, &count, GRAPH_POI_ZERO, fn, -1, zx, zy);
-                }
-            }
-
-            if (have_prev2 && have_prev && have) {
-                if (y_prev < y_prev2 && y_prev < y) {
-                    graph_add_poi(pois, &count, GRAPH_POI_MIN, fn, -1, x_prev, y_prev);
-                } else if (y_prev > y_prev2 && y_prev > y) {
-                    graph_add_poi(pois, &count, GRAPH_POI_LOCAL_MAX, fn, -1, x_prev, y_prev);
-                }
-            }
-
-            x_prev2 = x_prev;
-            y_prev2 = y_prev;
-            have_prev2 = have_prev;
-            x_prev = x;
-            y_prev = y;
-            have_prev = have;
-        }
-    }
-
-    for (int a = 0; a < enabled_count; a++) {
-        for (int b = a + 1; b < enabled_count; b++) {
-            int fn_a = enabled[a];
-            int fn_b = enabled[b];
-            double prev_x = s_graph_xmin;
-            double ya = 0.0;
-            double yb = 0.0;
-            bool have_prev = graph_eval_fn_at(fn_a, prev_x, &ya) && graph_eval_fn_at(fn_b, prev_x, &yb);
-            double prev_diff = ya - yb;
-            for (int i = 1; i <= 96 && count < max_count; i++) {
-                double x = s_graph_xmin + step * (double)i;
-                bool have = graph_eval_fn_at(fn_a, x, &ya) && graph_eval_fn_at(fn_b, x, &yb);
-                double diff = ya - yb;
-                if (have_prev && have &&
-                    ((prev_diff <= 0.0 && diff >= 0.0) || (prev_diff >= 0.0 && diff <= 0.0))) {
-                    double ix = 0.0;
-                    double iy = 0.0;
-                    if (graph_refine_intersection(fn_a, fn_b, prev_x, x, &ix, &iy)) {
-                        graph_add_poi(pois, &count, GRAPH_POI_INTERSECTION, fn_a, fn_b, ix, iy);
-                    }
-                }
-                prev_x = x;
-                prev_diff = diff;
-                have_prev = have;
-            }
-        }
-    }
-
-    return count;
+    opencalc_graph_analysis_request_t request;
+    graph_capture_analysis_request(&request);
+    return opencalc_graph_analysis_collect_pois(
+        &request, s_angle_mode == 0, pois, max_count);
 }
 
 static int inequality_collect_intersections(graph_poi_t *points, int max_count)
@@ -4332,7 +3645,9 @@ static void ui_draw_matrix_grid(int top, int visible_rows, int visible_cols, boo
         int matrix_col = s_matrix_scroll_col + col;
         if (matrix_col >= s_matrix_cols) break;
         char label[8];
-        snprintf(label, sizeof(label), "C%d", matrix_col + 1);
+        unsigned column_number = matrix_col >= 0 && matrix_col < MATRIX_MAX_N
+            ? (unsigned)matrix_col + 1u : 0u;
+        snprintf(label, sizeof(label), "C%u", column_number);
         ui_text_centered_in_box(left + col * cell_w, top - 13, cell_w - 2,
                                 label, THEME_MUTED, 1);
     }
@@ -4341,7 +3656,9 @@ static void ui_draw_matrix_grid(int top, int visible_rows, int visible_cols, boo
         int matrix_row = s_matrix_scroll_row + row;
         if (matrix_row >= s_matrix_rows) break;
         char row_label[8];
-        snprintf(row_label, sizeof(row_label), "%d", matrix_row + 1);
+        unsigned row_number = matrix_row >= 0 && matrix_row < MATRIX_MAX_N
+            ? (unsigned)matrix_row + 1u : 0u;
+        snprintf(row_label, sizeof(row_label), "%u", row_number);
         ui_text_centered_in_box(1, top + row * cell_h + 6, 24, row_label, THEME_MUTED, 1);
         for (int col = 0; col < visible_cols; col++) {
             int matrix_col = s_matrix_scroll_col + col;
@@ -4775,7 +4092,7 @@ static void ui_draw_solver_workflow(void)
         ui_text(161, y + 5, actions[i].detail, THEME_MUTED, 1);
     }
     if (count > visible_count) {
-        char position[12];
+        char position[16];
         snprintf(position, sizeof(position), "%d/%d", s_solver_workflow_selection + 1, count);
         ui_text(275, 34, position, THEME_MUTED, 1);
     }
@@ -4819,6 +4136,33 @@ static int solver_symbolic_wrap(int *offsets, int max_lines)
 
 static void ui_draw_solver_symbolic_result(void)
 {
+    if (s_solver_structured_result.item_count > 1) {
+        ui_clear(THEME_BG);
+        ui_header(&APPS[APP_SOLVER]);
+        ui_text(14, 34, s_solver_symbolic_title, THEME_TEXT, 1);
+        char status[48];
+        snprintf(status, sizeof(status), "%d symbolic branches  %s",
+                 s_solver_structured_result.item_count,
+                 opencalc_cas_domain_name(s_cas_options.domain));
+        ui_text(14, 49, status, THEME_ACCENT, 1);
+        int first = s_solver_symbolic_selected >= 8 ? s_solver_symbolic_selected - 7 : 0;
+        for (int row = 0; row < 8 && first + row < s_solver_structured_result.item_count; row++) {
+            int index = first + row;
+            char item[43];
+            opencalc_cas_result_item_text(s_solver_symbolic_result,
+                                          &s_solver_structured_result,
+                                          index, item, sizeof(item));
+            uint32_t bg = index == s_solver_symbolic_selected ? THEME_ACCENT_2 : THEME_SURFACE;
+            ui_rect(14, 65 + row * 17, 292, 15, bg);
+            char line[48];
+            snprintf(line, sizeof(line), "%d  %.35s", index + 1, item);
+            ui_text(21, 69 + row * 17, line, THEME_TEXT, 1);
+        }
+        ui_scrollbar(311, 65, 134, s_solver_structured_result.item_count, 8, first);
+        ui_text(12, 220, "Up/Down branch  Enter copy  Back workflow", THEME_MUTED, 1);
+        ui_present();
+        return;
+    }
     int offsets[64];
     int line_count = solver_symbolic_wrap(offsets, 64);
     if (s_solver_symbolic_scroll < 0) s_solver_symbolic_scroll = 0;
@@ -5359,7 +4703,7 @@ static void ui_draw_inequality_result(void)
         notation_label = "Standard";
         inequality_format_standard(notation, sizeof(notation));
     } else {
-        snprintf(notation, sizeof(notation), "%s", s_ineq_interval_text);
+        copy_bounded(notation, sizeof(notation), s_ineq_interval_text);
     }
     snprintf(shown_notation, sizeof(shown_notation), "%.38s", notation);
     ui_text(20, 57, problem, THEME_TEXT, 1);
@@ -5491,7 +4835,8 @@ static void ui_draw_app_page(app_id_t app_id)
 
 static void stats_result_begin(const char *title)
 {
-    snprintf(s_stats_result_title, sizeof(s_stats_result_title), "%s", title != NULL ? title : "Stats");
+    copy_bounded(s_stats_result_title, sizeof(s_stats_result_title),
+                 title != NULL ? title : "Stats");
     memset(s_stats_result_lines, 0, sizeof(s_stats_result_lines));
     s_stats_result_line_count = 0;
 }
@@ -6275,6 +5620,7 @@ static void script_editor_open_selected(void)
     }
 
     size_t read = fread(s_script_editor, 1, sizeof(s_script_editor) - 1, file);
+    bool truncated = !feof(file) && fgetc(file) != EOF;
     fclose(file);
     s_script_editor[read] = '\0';
     s_script_editor_len = read;
@@ -6283,7 +5629,8 @@ static void script_editor_open_selected(void)
     s_script_editor_scroll_col = 0;
     memset(s_script_breakpoints, 0, sizeof(s_script_breakpoints));
     snprintf(s_script_edit_name, sizeof(s_script_edit_name), "%s", s_scripts[s_script_selection]);
-    snprintf(s_script_status, sizeof(s_script_status), "editing %.31s", s_script_edit_name);
+    snprintf(s_script_status, sizeof(s_script_status), truncated ? "file exceeds 32 KB" : "editing %.31s",
+             s_script_edit_name);
     s_page = PAGE_SCRIPT_EDITOR;
     s_current_app = APP_PYTHON;
     ui_draw_current();
@@ -7056,7 +6403,7 @@ static int script_native_callback(py_t *py, const char *module,
             }
             command.kind = SCRIPT_GFX_TEXT;
             command.color = (uint32_t)color;
-            snprintf(command.text, sizeof(command.text), "%s", args[2].string_value);
+            copy_bounded(command.text, sizeof(command.text), args[2].string_value);
         } else {
             for (size_t i = 0; i < numeric_count && i < 5; i++) {
                 if (!script_arg_int(&args[i], &values[i])) {
@@ -7302,26 +6649,116 @@ static bool script_input_handle_key(int row, int col, bool *submitted, bool *can
 
 static void variables_save_all(void)
 {
-    size_t used = 0;
-    s_variable_persist_buffer[0] = '\0';
-    opencalc_variable_t variable;
-    for (size_t i = 0; opencalc_math_variable_at(i, &variable); i++) {
-        int written = snprintf(s_variable_persist_buffer + used,
-                               sizeof(s_variable_persist_buffer) - used,
-                               "%s|%.17g|%.17g\n", variable.name, variable.real, variable.imag);
-        if (written < 0 || (size_t)written >= sizeof(s_variable_persist_buffer) - used) break;
-        used += (size_t)written;
+    typedef struct {
+        uint32_t magic;
+        uint16_t version;
+        uint16_t count;
+    } symbol_file_header_t;
+    typedef struct {
+        uint8_t type;
+        uint8_t numeric_valid;
+        uint16_t text_length;
+        char name[OPENCALC_SYMBOL_NAME_MAX];
+        double real;
+        double imag;
+    } symbol_file_record_t;
+
+    symbol_file_header_t header = {.magic = 0x53434c4f, .version = 2, .count = 0};
+    size_t used = sizeof(header);
+    opencalc_symbol_t symbol;
+    for (size_t i = 0; opencalc_symbol_at(i, OPENCALC_SYMBOL_USER, &symbol); i++) {
+        char serialized[OPENCALC_SYMBOL_TEXT_MAX];
+        if (!opencalc_symbol_format_value(symbol.name, serialized, sizeof(serialized))) {
+            ESP_LOGW("symbols", "Variable %s is too large for persistent storage", symbol.name);
+            return;
+        }
+        size_t text_length = strlen(serialized);
+        size_t needed = sizeof(symbol_file_record_t) + text_length;
+        if (text_length > UINT16_MAX || used + needed > sizeof(s_variable_persist_buffer)) {
+            ESP_LOGW("symbols", "Variable catalog exceeds persistent storage buffer");
+            return;
+        }
+        symbol_file_record_t record = {
+            .type = (uint8_t)symbol.type,
+            .numeric_valid = symbol.numeric_valid ? 1 : 0,
+            .text_length = (uint16_t)text_length,
+            .real = symbol.real,
+            .imag = symbol.imag,
+        };
+        snprintf(record.name, sizeof(record.name), "%s", symbol.name);
+        memcpy(s_variable_persist_buffer + used, &record, sizeof(record));
+        used += sizeof(record);
+        memcpy(s_variable_persist_buffer + used, serialized, text_length);
+        used += text_length;
+        header.count++;
     }
-    opencalc_persist_set_string("vars_v1", s_variable_persist_buffer);
+    memcpy(s_variable_persist_buffer, &header, sizeof(header));
+    if (opencalc_persist_set_blob("symbols_v2", s_variable_persist_buffer, used)) {
+        (void)opencalc_persist_erase("vars_v1");
+    }
 }
 
 static void variables_load_all(void)
 {
+    typedef struct {
+        uint32_t magic;
+        uint16_t version;
+        uint16_t count;
+    } symbol_file_header_t;
+    typedef struct {
+        uint8_t type;
+        uint8_t numeric_valid;
+        uint16_t text_length;
+        char name[OPENCALC_SYMBOL_NAME_MAX];
+        double real;
+        double imag;
+    } symbol_file_record_t;
+
     opencalc_math_variables_reset();
-    if (!opencalc_persist_get_string("vars_v1", s_variable_persist_buffer,
+    size_t stored_size = sizeof(s_variable_persist_buffer);
+    if (opencalc_persist_get_blob("symbols_v2", s_variable_persist_buffer, &stored_size) &&
+        stored_size >= sizeof(symbol_file_header_t)) {
+        symbol_file_header_t header;
+        memcpy(&header, s_variable_persist_buffer, sizeof(header));
+        size_t offset = sizeof(header);
+        if (header.magic == 0x53434c4f && header.version == 2) {
+            for (uint16_t i = 0; i < header.count; i++) {
+                if (offset + sizeof(symbol_file_record_t) > stored_size) break;
+                symbol_file_record_t record;
+                memcpy(&record, s_variable_persist_buffer + offset, sizeof(record));
+                offset += sizeof(record);
+                if (record.type > OPENCALC_SYMBOL_SYSTEM ||
+                    record.text_length >= OPENCALC_SYMBOL_TEXT_MAX ||
+                    offset + record.text_length > stored_size) break;
+                opencalc_symbol_t symbol = {
+                    .type = (opencalc_symbol_type_t)record.type,
+                    .flags = OPENCALC_SYMBOL_USER | OPENCALC_SYMBOL_GIAC_SYNC,
+                    .numeric_valid = record.numeric_valid != 0,
+                    .real = record.real,
+                    .imag = record.imag,
+                };
+                record.name[sizeof(record.name) - 1] = '\0';
+                snprintf(symbol.name, sizeof(symbol.name), "%s", record.name);
+                memcpy(symbol.text, s_variable_persist_buffer + offset, record.text_length);
+                symbol.text[record.text_length] = '\0';
+                offset += record.text_length;
+                if (symbol.type == OPENCALC_SYMBOL_LIST ||
+                    symbol.type == OPENCALC_SYMBOL_MATRIX) {
+                    (void)opencalc_symbol_set_text(symbol.name, symbol.type,
+                                                   symbol.flags, symbol.text);
+                } else {
+                    (void)opencalc_symbol_set(&symbol);
+                }
+            }
+            return;
+        }
+    }
+
+    char *legacy = (char *)s_variable_persist_buffer;
+    if (!opencalc_persist_get_string("vars_v1", legacy,
                                      sizeof(s_variable_persist_buffer))) return;
     char *save = NULL;
-    for (char *line = strtok_r(s_variable_persist_buffer, "\n", &save);
+    for (char *line = strtok_r(legacy, "\n", &save);
          line != NULL; line = strtok_r(NULL, "\n", &save)) {
         char name[OPENCALC_VARIABLE_NAME_MAX];
         double real = 0.0, imag = 0.0;
@@ -7329,27 +6766,32 @@ static void variables_load_all(void)
             opencalc_math_variable_set(name, real, imag);
         }
     }
+    variables_save_all();
 }
 
 static bool variable_store_into(const char *name)
 {
-    char expanded[CALC_EXPR_MAX + CALC_RESULT_MAX];
-    calc_expand_ans_value(s_variable_store_expression, s_calc_ans, expanded, sizeof(expanded));
-    double real = 0.0, imag = 0.0;
-    if (!opencalc_math_eval_complex_expression(expanded, &real, &imag)) {
-        snprintf(s_variable_status, sizeof(s_variable_status), "expression is not a storable value");
+    if (!opencalc_math_variable_name_valid(name)) {
+        snprintf(s_variable_status, sizeof(s_variable_status), "invalid or reserved variable name");
         return false;
     }
-    if (!opencalc_math_variable_set(name, real, imag)) {
-        snprintf(s_variable_status, sizeof(s_variable_status), "invalid name or variable storage full");
+    if (!s_variable_store_expression_valid) {
+        snprintf(s_variable_status, sizeof(s_variable_status), "value is too large to store");
         return false;
     }
-    variables_save_all();
-    char value[40];
-    variable_format_value(real, imag, value, sizeof(value));
-    snprintf(s_calc_output, sizeof(s_calc_output), "%s -> %s", value, name);
-    snprintf(s_calc_ans, sizeof(s_calc_ans), "%s", value);
-    printf("stored variable %s=%s\n", name, value);
+    int written = snprintf(s_calc_input, sizeof(s_calc_input), "%s=(%s)", name,
+                           s_variable_store_expression[0] ? s_variable_store_expression : "0");
+    if (written <= 0 || (size_t)written >= sizeof(s_calc_input)) {
+        snprintf(s_variable_status, sizeof(s_variable_status), "expression is too long to store");
+        return false;
+    }
+    s_calc_cursor = strlen(s_calc_input);
+    s_page = PAGE_CALCULATOR;
+    s_current_app = APP_CALCULATOR;
+    if (!submit_calc_eval_job()) {
+        snprintf(s_variable_status, sizeof(s_variable_status), "math worker unavailable");
+        return false;
+    }
     return true;
 }
 
@@ -7361,6 +6803,31 @@ static void variables_return_with_text(const char *text)
     if (text != NULL && text[0] != '\0') expression_append(text);
     s_variable_status[0] = '\0';
     ui_draw_current();
+}
+
+static bool variable_copy_exact(char *destination, size_t destination_size,
+                                const char *source)
+{
+    if (destination == NULL || destination_size == 0 || source == NULL) return false;
+    size_t length = strlen(source);
+    if (length >= destination_size) {
+        destination[0] = '\0';
+        return false;
+    }
+    memcpy(destination, source, length + 1);
+    return true;
+}
+
+static bool variable_copy_symbol_value(char *destination, size_t destination_size,
+                                       const opencalc_symbol_t *symbol,
+                                       const char *reference)
+{
+    if (destination == NULL || destination_size == 0 || symbol == NULL) return false;
+    if (symbol->structured) {
+        if (opencalc_symbol_format_value(symbol->name, destination, destination_size)) return true;
+        return variable_copy_exact(destination, destination_size, reference);
+    }
+    return variable_copy_exact(destination, destination_size, symbol->text);
 }
 
 static void variables_open_name_editor(const char *rename_from)
@@ -7390,7 +6857,7 @@ static void variables_activate_selected(void)
         } else if (item.name[0] == '+') {
             variables_open_name_editor(NULL);
         } else if (variable_store_into(item.name)) {
-            variables_return_with_text(NULL);
+            return;
         } else {
             ui_draw_current();
         }
@@ -7405,7 +6872,12 @@ static void variables_activate_selected(void)
     char wrapped[CALC_EXPR_MAX];
     if (s_variable_action == VARIABLE_ACTION_GET &&
         (strchr(insert, '+') != NULL || (insert[0] == '-' && strchr(insert + 1, '-') != NULL))) {
-        snprintf(wrapped, sizeof(wrapped), "(%s)", insert);
+        int written = snprintf(wrapped, sizeof(wrapped), "(%s)", insert);
+        if (written <= 0 || (size_t)written >= sizeof(wrapped)) {
+            snprintf(s_variable_status, sizeof(s_variable_status), "value is too large to insert");
+            ui_draw_current();
+            return;
+        }
         insert = wrapped;
     }
     variables_return_with_text(insert);
@@ -7413,6 +6885,7 @@ static void variables_activate_selected(void)
 
 static void variables_open(variable_action_t action)
 {
+    symbols_refresh_catalog();
     s_variable_return_page = expression_entry_active() ? s_page : PAGE_CALCULATOR;
     s_variable_action = action;
     s_variable_category = VARIABLE_CATEGORY_USER;
@@ -7421,9 +6894,15 @@ static void variables_open(variable_action_t action)
     s_variable_status[0] = '\0';
     s_variable_rename_from[0] = '\0';
     if (action == VARIABLE_ACTION_STORE) {
-        snprintf(s_variable_store_expression, sizeof(s_variable_store_expression), "%s",
-                 s_calc_input[0] ? s_calc_input : s_calc_ans);
-        if (s_variable_store_expression[0] == '\0') snprintf(s_variable_store_expression, sizeof(s_variable_store_expression), "0");
+        const char *source = s_calc_input[0] ? s_calc_input : s_calc_ans;
+        s_variable_store_expression_valid = variable_copy_exact(
+            s_variable_store_expression, sizeof(s_variable_store_expression), source);
+        if (!s_variable_store_expression_valid) {
+            snprintf(s_variable_status, sizeof(s_variable_status), "value is too large to store");
+        }
+        if (s_variable_store_expression_valid && s_variable_store_expression[0] == '\0') {
+            snprintf(s_variable_store_expression, sizeof(s_variable_store_expression), "0");
+        }
     }
     s_page = PAGE_VARIABLES;
     s_current_app = APP_CALCULATOR;
@@ -7466,7 +6945,6 @@ static bool variable_page_handle_key(int row, int col)
                     s_variable_status[0] = '\0';
                 } else snprintf(s_variable_status, sizeof(s_variable_status), "name exists or rename failed");
             } else if (variable_store_into(s_variable_name)) {
-                variables_return_with_text(NULL);
                 return true;
             }
             ui_draw_current();
@@ -7516,7 +6994,7 @@ static bool variable_page_handle_key(int row, int col)
             variable_browser_item_t item;
             if (variable_browser_item(s_variable_category, s_variable_selection, &item) &&
                 item.user_variable && item.name[0] != '+' &&
-                opencalc_math_variable_get(item.name, NULL, NULL)) {
+                opencalc_symbol_get(item.name, &(opencalc_symbol_t){0})) {
                 variables_open_name_editor(item.name);
                 return true;
             }
@@ -8139,8 +7617,9 @@ static bool worksheet_persist_save_path(const char *path)
     }
     header.payload_size = payload_size;
     header.payload_crc32 = crc ^ UINT32_MAX;
-    if (ok) ok = fflush(file) == 0 && fseek(file, 0, SEEK_SET) == 0 &&
-        fwrite(&header, 1, sizeof(header), file) == sizeof(header) && fflush(file) == 0;
+    if (ok) ok = fseek(file, 0, SEEK_SET) == 0 &&
+        fwrite(&header, 1, sizeof(header), file) == sizeof(header) &&
+        worksheet_flush_sync(file);
     if (fclose(file) != 0) ok = false;
     heap_caps_free(fixed);
     return ok;
@@ -8319,11 +7798,10 @@ static bool worksheet_journal_append_section(uint16_t section)
     if (ok) {
         ok = end_offset >= 0 && fseek(file, header_offset, SEEK_SET) == 0 &&
             fwrite(&header, 1, sizeof(header), file) == sizeof(header) &&
-            fflush(file) == 0 && fseek(file, end_offset, SEEK_SET) == 0;
+            fseek(file, end_offset, SEEK_SET) == 0 && worksheet_flush_sync(file);
     }
     if (!ok && header_offset >= 0) {
-        (void)fflush(file);
-        (void)ftruncate(fileno(file), header_offset);
+        (void)worksheet_truncate_sync(file, header_offset);
     }
     if (fclose(file) != 0) ok = false;
     return ok;
@@ -8407,10 +7885,11 @@ static bool worksheet_journal_apply_record(FILE *file,
 static bool worksheet_journal_load(bool *discarded_tail)
 {
     if (discarded_tail != NULL) *discarded_tail = false;
-    FILE *file = fopen(WORKSHEET_JOURNAL_PATH, "rb");
+    FILE *file = fopen(WORKSHEET_JOURNAL_PATH, "rb+");
     if (file == NULL) return false;
     bool applied = false;
     bool invalid_tail = false;
+    long valid_end = 0;
 
     while (true) {
         worksheet_journal_header_t header = {0};
@@ -8443,12 +7922,19 @@ static bool worksheet_journal_load(bool *discarded_tail)
             break;
         }
         applied = true;
+        valid_end = ftell(file);
+        if (valid_end < 0) {
+            invalid_tail = true;
+            break;
+        }
     }
-    fclose(file);
     if (invalid_tail) {
-        remove(WORKSHEET_JOURNAL_PATH);
+        if (!worksheet_truncate_sync(file, valid_end)) {
+            ESP_LOGW("persistence", "Failed to discard torn worksheet journal tail");
+        }
         if (discarded_tail != NULL) *discarded_tail = true;
     }
+    fclose(file);
     return applied;
 }
 
@@ -8504,13 +7990,13 @@ static bool worksheet_persist_flush(void)
         journal_stat.st_size >= WORKSHEET_CHECKPOINT_BYTES) {
         remove(WORKSHEET_TEMP_PATH);
         if (worksheet_persist_save_path(WORKSHEET_TEMP_PATH)) {
-            remove(WORKSHEET_BACKUP_PATH);
-            bool had_current = rename(WORKSHEET_PATH, WORKSHEET_BACKUP_PATH) == 0;
-            if (rename(WORKSHEET_TEMP_PATH, WORKSHEET_PATH) == 0) {
-                remove(WORKSHEET_JOURNAL_PATH);
+            if (opencalc_workspace_replace_checkpoint(
+                    WORKSHEET_TEMP_PATH, WORKSHEET_PATH, WORKSHEET_BACKUP_PATH)) {
+                if (!opencalc_workspace_clear_path(WORKSHEET_JOURNAL_PATH)) {
+                    ESP_LOGW("persistence", "Checkpoint saved but journal could not be cleared");
+                }
                 ESP_LOGI("persistence", "Worksheet journal compacted into checkpoint");
             } else {
-                if (had_current) rename(WORKSHEET_BACKUP_PATH, WORKSHEET_PATH);
                 remove(WORKSHEET_TEMP_PATH);
             }
         } else {
@@ -8577,6 +8063,13 @@ static void factory_reset_runtime_state(void)
     s_app_selection = 0;
     s_math_tab = 0;
     s_math_selection = 0;
+    opencalc_cas_options_default(&s_cas_options);
+    memset(&s_calc_structured_result, 0, sizeof(s_calc_structured_result));
+    s_calc_result_selected = 0;
+    s_calc_result_trace = false;
+    s_cas_catalog_selection = 0;
+    s_cas_catalog_scroll = 0;
+    s_cas_options_selection = 0;
     s_calc_input[0] = '\0';
     s_calc_cursor = 0;
     snprintf(s_calc_output, sizeof(s_calc_output), "0");
@@ -8813,29 +8306,176 @@ static void ui_draw_calculator(void)
 
 static void ui_draw_calc_result(void)
 {
-    enum { CHARS_PER_LINE = 46, VISIBLE_LINES = 11 };
+    enum { CHARS_PER_LINE = 46, VISIBLE_LINES = 9 };
     ui_clear(THEME_BG);
     ui_header(&APPS[APP_CALCULATOR]);
-    ui_text(12, 34, "Full result", THEME_ACCENT, 1);
+    const char *title = "Exact result";
+    if (s_calc_structured_result.kind == OPENCALC_CAS_RESULT_SOLUTIONS) title = "Solutions";
+    else if (s_calc_structured_result.kind == OPENCALC_CAS_RESULT_MATRIX) title = "Matrix result";
+    else if (s_calc_structured_result.kind == OPENCALC_CAS_RESULT_LIST) title = "Result list";
+    ui_text(12, 34, title, THEME_ACCENT, 1);
+    char badge[48];
+    snprintf(badge, sizeof(badge), "%s  %s",
+             opencalc_cas_domain_name(s_cas_options.domain),
+             s_calc_structured_result.exact ? "exact" : "approx");
+    ui_text(210, 34, badge, THEME_MUTED, 1);
 
-    size_t length = strlen(s_calc_output);
-    int line_count = length == 0 ? 1 : (int)((length + CHARS_PER_LINE - 1) / CHARS_PER_LINE);
-    int max_scroll = line_count > VISIBLE_LINES ? line_count - VISIBLE_LINES : 0;
-    if (s_calc_result_scroll > max_scroll) s_calc_result_scroll = max_scroll;
-    if (s_calc_result_scroll < 0) s_calc_result_scroll = 0;
-    for (int row = 0; row < VISIBLE_LINES; row++) {
-        size_t offset = (size_t)(s_calc_result_scroll + row) * CHARS_PER_LINE;
-        if (offset >= length) break;
-        char line[CHARS_PER_LINE + 1];
-        size_t count = length - offset;
-        if (count > CHARS_PER_LINE) count = CHARS_PER_LINE;
-        memcpy(line, s_calc_output + offset, count);
-        line[count] = '\0';
-        ui_text(12, 52 + row * 14, line, THEME_TEXT, 1);
+    if (s_calc_result_trace) {
+        ui_text(12, 52, "1  INPUT", THEME_MUTED, 1);
+        char input[47];
+        snprintf(input, sizeof(input), "%.46s", s_calc_result_expression);
+        ui_text(18, 66, input, THEME_TEXT, 1);
+        ui_text(12, 88, "2  DOMAIN / ASSUMPTIONS", THEME_MUTED, 1);
+        snprintf(input, sizeof(input), "%s%s%.32s", opencalc_cas_domain_name(s_cas_options.domain),
+                 s_cas_options.assumptions[0] ? "  " : "",
+                 s_cas_options.assumptions);
+        ui_text(18, 102, input, THEME_TEXT, 1);
+        ui_text(12, 124, "3  EXACT ENGINE RESULT", THEME_MUTED, 1);
+        snprintf(input, sizeof(input), "%.46s", s_calc_output);
+        ui_text(18, 138, input, THEME_TEXT, 1);
+        if (s_calc_structured_result.item_count > 1) {
+            ui_text(12, 160, "4  SELECTED BRANCH", THEME_MUTED, 1);
+            opencalc_cas_result_item_text(s_calc_output, &s_calc_structured_result,
+                                          s_calc_result_selected, input, sizeof(input));
+            ui_text(18, 174, input, THEME_TEXT, 1);
+        }
+        ui_rect(0, 211, UI_W, 1, THEME_BORDER);
+        ui_text(12, 219, "Trace: result  Back: close", THEME_MUTED, 1);
+        ui_present();
+        return;
     }
-    ui_scrollbar(312, 50, 154, line_count, VISIBLE_LINES, s_calc_result_scroll);
+
+    if (s_calc_structured_result.item_count > 1) {
+        int count = s_calc_structured_result.item_count;
+        int first = s_calc_result_selected >= 7 ? s_calc_result_selected - 6 : 0;
+        for (int row = 0; row < 7 && first + row < count; row++) {
+            int index = first + row;
+            char item[43];
+            opencalc_cas_result_item_text(s_calc_output, &s_calc_structured_result,
+                                          index, item, sizeof(item));
+            uint32_t bg = index == s_calc_result_selected ? THEME_ACCENT_2 : THEME_SURFACE;
+            ui_rect(12, 52 + row * 20, 292, 17, bg);
+            char line[48];
+            snprintf(line, sizeof(line), "%d  %.35s", index + 1, item);
+            ui_text(18, 57 + row * 20, line, THEME_TEXT, 1);
+        }
+        ui_scrollbar(310, 52, 137, count, 7, first);
+    } else {
+        char expression[CALC_RESULT_MAX];
+        if (!opencalc_cas_result_item_text(s_calc_output, &s_calc_structured_result,
+                                           0, expression, sizeof(expression))) {
+            snprintf(expression, sizeof(expression), "%s", s_calc_output);
+        }
+        int width = ui_math_text(14, 62, expression, THEME_TEXT, false);
+        if (width <= UI_W - 28) {
+            (void)ui_math_text(14, 62, expression, THEME_TEXT, true);
+        } else {
+            size_t length = strlen(expression);
+            int line_count = length == 0 ? 1 : (int)((length + CHARS_PER_LINE - 1) / CHARS_PER_LINE);
+            int max_scroll = line_count > VISIBLE_LINES ? line_count - VISIBLE_LINES : 0;
+            if (s_calc_result_scroll > max_scroll) s_calc_result_scroll = max_scroll;
+            if (s_calc_result_scroll < 0) s_calc_result_scroll = 0;
+            for (int row = 0; row < VISIBLE_LINES; row++) {
+                size_t offset = (size_t)(s_calc_result_scroll + row) * CHARS_PER_LINE;
+                if (offset >= length) break;
+                char line[CHARS_PER_LINE + 1];
+                size_t copy = length - offset;
+                if (copy > CHARS_PER_LINE) copy = CHARS_PER_LINE;
+                memcpy(line, expression + offset, copy);
+                line[copy] = '\0';
+                ui_text(12, 52 + row * 16, line, THEME_TEXT, 1);
+            }
+            ui_scrollbar(312, 50, 145, line_count, VISIBLE_LINES, s_calc_result_scroll);
+        }
+    }
+
     ui_rect(0, 211, UI_W, 1, THEME_BORDER);
-    ui_text(12, 219, "Up/Down scroll  Enter copy  Back close", THEME_MUTED, 1);
+    ui_text(8, 219, "Enter copy  Zoom decimal  Trace steps", THEME_MUTED, 1);
+    ui_present();
+}
+
+static void cas_catalog_prefix(char *out, size_t out_size)
+{
+    if (out_size == 0) return;
+    out[0] = '\0';
+    if (s_math_return_page != PAGE_CALCULATOR) return;
+    size_t end = s_calc_cursor <= strlen(s_calc_input) ? s_calc_cursor : strlen(s_calc_input);
+    size_t start = end;
+    while (start > 0 && (isalnum((unsigned char)s_calc_input[start - 1]) ||
+                         s_calc_input[start - 1] == '_')) start--;
+    size_t length = end - start;
+    if (length >= out_size) length = out_size - 1;
+    memcpy(out, s_calc_input + start, length);
+    out[length] = '\0';
+}
+
+static int cas_catalog_visible_index(int visible_index)
+{
+    char prefix[24];
+    cas_catalog_prefix(prefix, sizeof(prefix));
+    int found = -1;
+    for (size_t i = 0; i < opencalc_cas_catalog_count(); i++) {
+        const opencalc_cas_catalog_entry_t *entry = opencalc_cas_catalog_at(i);
+        if (prefix[0] != '\0' && strncasecmp(entry->name, prefix, strlen(prefix)) != 0) continue;
+        if (++found == visible_index) return (int)i;
+    }
+    return -1;
+}
+
+static int cas_catalog_visible_count(void)
+{
+    int count = 0;
+    while (cas_catalog_visible_index(count) >= 0) count++;
+    return count;
+}
+
+static void ui_draw_cas_catalog(void)
+{
+    ui_clear(THEME_BG);
+    ui_header(&APPS[APP_CALCULATOR]);
+    char prefix[24];
+    cas_catalog_prefix(prefix, sizeof(prefix));
+    ui_text(12, 34, "CAS COMMAND CATALOG", THEME_ACCENT, 1);
+    char filter[48];
+    snprintf(filter, sizeof(filter), "Filter: %s", prefix[0] ? prefix : "all commands");
+    ui_text(12, 48, filter, THEME_MUTED, 1);
+    int count = cas_catalog_visible_count();
+    if (s_cas_catalog_selection >= count) s_cas_catalog_selection = count > 0 ? count - 1 : 0;
+    if (s_cas_catalog_selection < s_cas_catalog_scroll) s_cas_catalog_scroll = s_cas_catalog_selection;
+    if (s_cas_catalog_selection >= s_cas_catalog_scroll + 8) s_cas_catalog_scroll = s_cas_catalog_selection - 7;
+    for (int row = 0; row < 8 && s_cas_catalog_scroll + row < count; row++) {
+        int visible = s_cas_catalog_scroll + row;
+        int actual = cas_catalog_visible_index(visible);
+        const opencalc_cas_catalog_entry_t *entry = opencalc_cas_catalog_at((size_t)actual);
+        uint32_t bg = visible == s_cas_catalog_selection ? THEME_ACCENT_2 : THEME_SURFACE;
+        ui_rect(12, 64 + row * 18, 292, 16, bg);
+        char line[48];
+        snprintf(line, sizeof(line), "%-12s  %s", entry->name, entry->summary);
+        ui_text(17, 68 + row * 18, line, THEME_TEXT, 1);
+    }
+    ui_scrollbar(310, 64, 142, count, 8, s_cas_catalog_scroll);
+    ui_text(8, 219, "Enter insert  Trace options  Back close", THEME_MUTED, 1);
+    ui_present();
+}
+
+static void ui_draw_cas_options(void)
+{
+    ui_clear(THEME_BG);
+    ui_header(&APPS[APP_CALCULATOR]);
+    ui_text(12, 34, "CAS DOMAIN & ASSUMPTIONS", THEME_ACCENT, 1);
+    char rows[4][64];
+    snprintf(rows[0], sizeof(rows[0]), "Domain       %s", opencalc_cas_domain_name(s_cas_options.domain));
+    snprintf(rows[1], sizeof(rows[1]), "Assumptions  %.49s", s_cas_options.assumptions[0] ? s_cas_options.assumptions : "none");
+    snprintf(rows[2], sizeof(rows[2]), "Interval     %.6g .. %.6g", s_cas_options.interval_min, s_cas_options.interval_max);
+    snprintf(rows[3], sizeof(rows[3]), "Reset CAS context");
+    for (int i = 0; i < 4; i++) {
+        ui_rect(14, 62 + i * 31, 292, 25,
+                i == s_cas_options_selection ? THEME_ACCENT_2 : THEME_SURFACE);
+        ui_text(22, 71 + i * 31, rows[i], THEME_TEXT, 1);
+    }
+    ui_text(12, 190, "Assumptions: type x>0 in Calc", THEME_MUTED, 1);
+    ui_text(12, 204, "Interval: type lower,upper in Calc", THEME_MUTED, 1);
+    ui_text(8, 219, "Left/Right change  Enter apply", THEME_MUTED, 1);
     ui_present();
 }
 
@@ -8901,6 +8541,7 @@ static void ui_draw_graph_calc_menu(void)
 
 static void ui_draw_graph_format(void)
 {
+    static const char *const background_modes[] = {"stretch", "fit", "fill"};
     char series[8];
     char rows[GRAPH_FORMAT_COUNT][48];
     graph_series_label(s_graph_style_series, series, sizeof(series));
@@ -8908,17 +8549,20 @@ static void ui_draw_graph_format(void)
     snprintf(rows[1], sizeof(rows[1]), "series     %s", series);
     snprintf(rows[2], sizeof(rows[2]), "style      %s",
              graph_style_name((graph_style_t)s_graph_styles[s_graph_style_series]));
-    snprintf(rows[3], sizeof(rows[3]), "background %s", s_graph_background_enabled ? "graph.bmp" : "off");
-    snprintf(rows[4], sizeof(rows[4]), "reload      graph.bmp");
-    snprintf(rows[5], sizeof(rows[5]), "grid       %s", s_graph_grid ? "on" : "off");
+    snprintf(rows[3], sizeof(rows[3]), "color      %s",
+             graph_color_name(s_graph_color_indexes[s_graph_style_series]));
+    snprintf(rows[4], sizeof(rows[4]), "background %s", s_graph_background_enabled ? "on" : "off");
+    snprintf(rows[5], sizeof(rows[5]), "image mode %s", background_modes[s_graph_background_mode % 3]);
+    snprintf(rows[6], sizeof(rows[6]), "reload     graph.bmp");
+    snprintf(rows[7], sizeof(rows[7]), "grid       %s", s_graph_grid ? "on" : "off");
 
     ui_clear(THEME_BG);
     ui_header(&APPS[APP_GRAPH]);
     ui_text(18, 34, "Format", THEME_TEXT, 2);
     for (int i = 0; i < GRAPH_FORMAT_COUNT; i++) {
-        int y = 58 + i * 24;
-        ui_rect(18, y, 284, 18, i == s_graph_format_selection ? THEME_ACCENT_2 : THEME_SURFACE);
-        ui_text(28, y + 6, rows[i], THEME_TEXT, 1);
+        int y = 53 + i * 20;
+        ui_rect(18, y, 284, 17, i == s_graph_format_selection ? THEME_ACCENT_2 : THEME_SURFACE);
+        ui_text(28, y + 5, rows[i], THEME_TEXT, 1);
     }
     ui_text(16, 220, "arrows - select/change  enter - apply", THEME_MUTED, 1);
     ui_present();
@@ -8976,8 +8620,8 @@ static void ui_draw_graph_symbolic(void)
     ui_header(&APPS[APP_GRAPH]);
     ui_text(14, 34, "Linked Symbolic Analysis", THEME_TEXT, 1);
     ui_rect(14, 48, 292, 23, THEME_SURFACE);
-    ui_rect(14, 48, 4, 23, s_graph_colors[s_graph_trace_fn % GRAPH_COLOR_COUNT]);
-    ui_text(23, 53, label, s_graph_colors[s_graph_trace_fn % GRAPH_COLOR_COUNT], 1);
+    ui_rect(14, 48, 4, 23, graph_series_color(s_graph_trace_fn));
+    ui_text(23, 53, label, graph_series_color(s_graph_trace_fn), 1);
     ui_graph_symbolic_value(48, 53, expression, THEME_TEXT);
 
     const char *labels[] = {derivative_label, integral_label, roots_label, asymptotes_label};
@@ -9042,7 +8686,7 @@ static void draw_graph_integral_shade(const graph_view_t *view, int top, int bot
     double low = fmin(0.0, s_graph_overlay_x);
     double high = fmax(0.0, s_graph_overlay_x);
     int axis_y = graph_screen_y(view, 0.0);
-    uint32_t color = graph_dim_color(s_graph_colors[s_graph_overlay_fn % GRAPH_COLOR_COUNT]);
+    uint32_t color = graph_dim_color(graph_series_color(s_graph_overlay_fn));
     for (int px = 0; px < UI_W; px += 2) {
         double x = graph_world_x(view, px);
         double y = 0.0;
@@ -9094,6 +8738,8 @@ static void draw_function_graphs(const graph_view_t *view, int top, int bottom)
         bool have_prev = false;
         int prev_x = 0;
         int prev_y = 0;
+        double previous_world_x = 0.0;
+        double previous_world_y = 0.0;
         for (int px = 0; px < UI_W; px++) {
             double x = graph_world_x(view, px);
             double y = 0.0;
@@ -9101,9 +8747,21 @@ static void draw_function_graphs(const graph_view_t *view, int top, int bottom)
                 have_prev = false;
                 continue;
             }
+            if (have_prev) {
+                double midpoint_x = (previous_world_x + x) * 0.5;
+                double midpoint_y = 0.0;
+                if (!graph_eval_expression(s_graph_exprs[fn], midpoint_x, &midpoint_y) ||
+                    !opencalc_graph_segment_is_continuous(
+                        previous_world_x, previous_world_y, midpoint_x, midpoint_y, x, y,
+                        s_graph_xmax - s_graph_xmin, s_graph_ymax - s_graph_ymin)) {
+                    have_prev = false;
+                }
+            }
             graph_draw_segment_if_visible(&have_prev, &prev_x, &prev_y, px,
-                                          graph_screen_y(view, y), top, bottom, s_graph_colors[fn],
+                                          graph_screen_y(view, y), top, bottom, graph_series_color(fn),
                                           (graph_style_t)s_graph_styles[fn], px);
+            previous_world_x = x;
+            previous_world_y = y;
         }
     }
 }
@@ -9119,6 +8777,9 @@ static void draw_parametric_graphs(const graph_view_t *view, int top, int bottom
         bool have_prev = false;
         int prev_x = 0;
         int prev_y = 0;
+        double previous_t = 0.0;
+        double previous_world_x = 0.0;
+        double previous_world_y = 0.0;
         for (int i = 0; i <= steps; i++) {
             double t = s_graph_tmin + (s_graph_tmax - s_graph_tmin) * (double)i / (double)steps;
             double x = 0.0;
@@ -9128,10 +8789,24 @@ static void draw_parametric_graphs(const graph_view_t *view, int top, int bottom
                 have_prev = false;
                 continue;
             }
+            if (have_prev) {
+                double midpoint_t = (previous_t + t) * 0.5;
+                double midpoint_x = 0.0, midpoint_y = 0.0;
+                if (!graph_eval_expression_var(s_graph_param_x[fn], 't', midpoint_t, &midpoint_x) ||
+                    !graph_eval_expression_var(s_graph_param_y[fn], 't', midpoint_t, &midpoint_y) ||
+                    !opencalc_graph_segment_is_continuous(
+                        previous_world_x, previous_world_y, midpoint_x, midpoint_y, x, y,
+                        s_graph_xmax - s_graph_xmin, s_graph_ymax - s_graph_ymin)) {
+                    have_prev = false;
+                }
+            }
             graph_draw_segment_if_visible(&have_prev, &prev_x, &prev_y,
                                           graph_screen_x(view, x), graph_screen_y(view, y),
-                                          top, bottom, s_graph_colors[fn],
+                                          top, bottom, graph_series_color(fn),
                                           (graph_style_t)s_graph_styles[fn], i);
+            previous_t = t;
+            previous_world_x = x;
+            previous_world_y = y;
         }
     }
 }
@@ -9147,6 +8822,9 @@ static void draw_polar_graphs(const graph_view_t *view, int top, int bottom)
         bool have_prev = false;
         int prev_x = 0;
         int prev_y = 0;
+        double previous_theta = 0.0;
+        double previous_world_x = 0.0;
+        double previous_world_y = 0.0;
         for (int i = 0; i <= steps; i++) {
             double theta = s_graph_tmin + (s_graph_tmax - s_graph_tmin) * (double)i / (double)steps;
             double r = 0.0;
@@ -9157,10 +8835,29 @@ static void draw_polar_graphs(const graph_view_t *view, int top, int bottom)
             double rad = graph_angle_to_radians_for_plot(theta);
             double x = r * cos(rad);
             double y = r * sin(rad);
+            if (have_prev) {
+                double midpoint_theta = (previous_theta + theta) * 0.5;
+                double midpoint_r = 0.0;
+                if (!graph_eval_expression_var(s_graph_polar_exprs[fn], 't', midpoint_theta, &midpoint_r)) {
+                    have_prev = false;
+                } else {
+                    double midpoint_rad = graph_angle_to_radians_for_plot(midpoint_theta);
+                    double midpoint_x = midpoint_r * cos(midpoint_rad);
+                    double midpoint_y = midpoint_r * sin(midpoint_rad);
+                    if (!opencalc_graph_segment_is_continuous(
+                            previous_world_x, previous_world_y, midpoint_x, midpoint_y, x, y,
+                            s_graph_xmax - s_graph_xmin, s_graph_ymax - s_graph_ymin)) {
+                        have_prev = false;
+                    }
+                }
+            }
             graph_draw_segment_if_visible(&have_prev, &prev_x, &prev_y,
                                           graph_screen_x(view, x), graph_screen_y(view, y),
-                                          top, bottom, s_graph_colors[fn],
+                                          top, bottom, graph_series_color(fn),
                                           (graph_style_t)s_graph_styles[fn], i);
+            previous_theta = theta;
+            previous_world_x = x;
+            previous_world_y = y;
         }
     }
 }
@@ -9183,7 +8880,7 @@ static void draw_sequence_graphs(const graph_view_t *view, int top, int bottom)
         int prev_y = 0;
         for (int n = n0; n <= n1; n++) {
             double y = 0.0;
-            if (!graph_eval_expression_var(s_graph_seq_exprs[fn], 'n', (double)n, &y)) {
+            if (!graph_eval_sequence_text(s_graph_seq_exprs[fn], (double)n, &y)) {
                 have_prev = false;
                 continue;
             }
@@ -9191,10 +8888,10 @@ static void draw_sequence_graphs(const graph_view_t *view, int top, int bottom)
             int py = graph_screen_y(view, y);
             graph_style_t style = (graph_style_t)s_graph_styles[fn];
             if (style != GRAPH_STYLE_POINTS) {
-                ui_rect(px - 1, py - 1, 3, 3, s_graph_colors[fn]);
+                ui_rect(px - 1, py - 1, 3, 3, graph_series_color(fn));
             }
             graph_draw_segment_if_visible(&have_prev, &prev_x, &prev_y, px, py, top, bottom,
-                                          s_graph_colors[fn], style,
+                                          graph_series_color(fn), style,
                                           style == GRAPH_STYLE_POINTS ? (n - n0) * 5 : n - n0);
         }
     }
@@ -9232,7 +8929,7 @@ static bool graph_eval_live_series_at(int fn, double input, double *x, double *y
     case 3:
         if (fn < 0 || fn >= GRAPH_SEQ_COUNT || !s_graph_seq_enabled[fn] ||
             s_graph_seq_exprs[fn][0] == '\0' ||
-            !graph_eval_expression_var(s_graph_seq_exprs[fn], 'n', input, y)) {
+            !graph_eval_sequence_text(s_graph_seq_exprs[fn], input, y)) {
             return false;
         }
         *x = input;
@@ -9246,6 +8943,33 @@ static bool graph_eval_live_series_at(int fn, double input, double *x, double *y
         *metric = *y;
         return true;
     }
+}
+
+static bool graph_live_rate_at(int fn, double input, double *rate)
+{
+    if (rate == NULL) return false;
+    double step = s_graphing_mode == 3 ? 1.0 :
+        (s_graphing_mode == 0 ? s_graph_xmax - s_graph_xmin : s_graph_tmax - s_graph_tmin) / 1000.0;
+    if (step <= 0.0) return false;
+    double x0 = 0.0, y0 = 0.0, metric0 = 0.0;
+    double x1 = 0.0, y1 = 0.0, metric1 = 0.0;
+    if (s_graphing_mode == 3) {
+        if (!graph_eval_live_series_at(fn, input, &x0, &y0, &metric0) ||
+            !graph_eval_live_series_at(fn, input + 1.0, &x1, &y1, &metric1)) return false;
+        *rate = y1 - y0;
+    } else {
+        if (!graph_eval_live_series_at(fn, input - step, &x0, &y0, &metric0) ||
+            !graph_eval_live_series_at(fn, input + step, &x1, &y1, &metric1) ||
+            fabs(x1 - x0) < 1e-12) return false;
+        *rate = (y1 - y0) / (x1 - x0);
+    }
+    return isfinite(*rate);
+}
+
+static int graph_collect_mode_pois(graph_poi_t *pois, int max_count)
+{
+    if (s_graphing_mode == 0) return 0;
+    return graph_collect_pois(pois, max_count);
 }
 
 static int graph_table_series_count(void)
@@ -9274,12 +8998,12 @@ static void ui_draw_graph_split_table(int top)
     }
 
     char label[8];
-    char text[48];
+    char text[64];
     graph_series_label(fn, label, sizeof(label));
     ui_rect(0, top, UI_W, UI_H - top, THEME_SURFACE);
     ui_rect(0, top, UI_W, 1, THEME_BORDER);
     snprintf(text, sizeof(text), "Table %s", label);
-    ui_text(8, top + 6, text, s_graph_colors[fn], 1);
+    ui_text(8, top + 6, text, graph_series_color(fn), 1);
 
     for (int row = 0; row < 3; row++) {
         double input = s_table_x_start + row;
@@ -9356,7 +9080,8 @@ static void ui_draw_graph(void)
 
     if (s_graph_trace) {
         graph_poi_t pois[GRAPH_POI_LIMIT];
-        int poi_count = s_graphing_mode == 0 ? graph_collect_pois(pois, GRAPH_POI_LIMIT) : 0;
+        int poi_count = s_graphing_mode == 0 ? graph_collect_pois(pois, GRAPH_POI_LIMIT) :
+            graph_collect_mode_pois(pois, GRAPH_POI_LIMIT);
         int nearest_poi = -1;
         double nearest_dist = 0.0;
         for (int i = 0; i < poi_count; i++) {
@@ -9368,7 +9093,7 @@ static void ui_draw_graph(void)
             uint32_t color = pois[i].type == GRAPH_POI_INTERSECTION ? THEME_BATTERY_YELLOW : THEME_TEXT;
             ui_line(px - 3, py, px + 3, py, color);
             ui_line(px, py - 3, px, py + 3, color);
-            double dist = fabs(pois[i].x - s_graph_trace_x);
+            double dist = fabs(pois[i].input - s_graph_trace_x);
             if (nearest_poi < 0 || dist < nearest_dist) {
                 nearest_poi = i;
                 nearest_dist = dist;
@@ -9394,19 +9119,27 @@ static void ui_draw_graph(void)
                     ui_rect(tx - 2, ty - 2, 5, 5, THEME_TEXT);
                 }
                 char buf[64];
-                if (nearest_poi >= 0 && fabs(pois[nearest_poi].x - s_graph_trace_x) < (s_graph_xmax - s_graph_xmin) / 40.0) {
+                double rate = 0.0;
+                bool have_rate = graph_live_rate_at(fn, s_graph_trace_x, &rate);
+                double trace_span = s_graphing_mode == 0 ? s_graph_xmax - s_graph_xmin :
+                    (s_graphing_mode == 3 ? s_graph_nmax - s_graph_nmin : s_graph_tmax - s_graph_tmin);
+                if (nearest_poi >= 0 && fabs(pois[nearest_poi].input - s_graph_trace_x) < trace_span / 40.0) {
                     snprintf(buf, sizeof(buf), "%s x %.2f y %.2f",
                              graph_poi_label(pois[nearest_poi].type),
                              pois[nearest_poi].x,
                              pois[nearest_poi].y);
                 } else if (s_graphing_mode == 1) {
-                    snprintf(buf, sizeof(buf), "P%d t %.2f x %.2f y %.2f", fn + 1, s_graph_trace_x, x, y);
+                    snprintf(buf, sizeof(buf), "P%d t %.2f (%.2f,%.2f)%s%.2f", fn + 1,
+                             s_graph_trace_x, x, y, have_rate ? " m " : " ", have_rate ? rate : 0.0);
                 } else if (s_graphing_mode == 2) {
-                    snprintf(buf, sizeof(buf), "r%d t %.2f r %.2f", fn + 1, s_graph_trace_x, metric);
+                    snprintf(buf, sizeof(buf), "r%d t %.2f r %.2f%s%.2f", fn + 1,
+                             s_graph_trace_x, metric, have_rate ? " m " : " ", have_rate ? rate : 0.0);
                 } else if (s_graphing_mode == 3) {
-                    snprintf(buf, sizeof(buf), "u%d n %.0f y %.2f", fn + 1, s_graph_trace_x, y);
+                    snprintf(buf, sizeof(buf), "u%d n %.0f = %.3g%s%.3g", fn + 1,
+                             s_graph_trace_x, y, have_rate ? "  du " : " ", have_rate ? rate : 0.0);
                 } else {
-                    snprintf(buf, sizeof(buf), "Y%d x %.2f y %.2f", fn + 1, s_graph_trace_x, y);
+                    snprintf(buf, sizeof(buf), "Y%d x %.2f y %.2f%s%.2f", fn + 1,
+                             s_graph_trace_x, y, have_rate ? " m " : " ", have_rate ? rate : 0.0);
                 }
                 ui_text(6, 6, buf, THEME_TEXT, 1);
                 break;
@@ -9479,7 +9212,9 @@ static void ui_draw_y_equals(void)
                  expr != NULL && expr[0] ? expr : "-");
         ui_text(36, y, line, THEME_TEXT, 1);
     }
-    ui_text(16, 220, "enter - toggle  graph - draw", THEME_MUTED, 1);
+    ui_text(16, 220, s_graphing_mode == 3
+        ? "rec(expr,u0,u1)  enter toggle  graph draw"
+        : "enter - toggle  graph - draw", THEME_MUTED, 1);
     ui_present();
 }
 
@@ -9521,7 +9256,7 @@ static void ui_draw_table(void)
             int fn = s_table_func_start + col;
             if (fn < GRAPH_PARAM_COUNT) {
                 snprintf(buf, sizeof(buf), "P%d x/y", fn + 1);
-                ui_text(78 + col * 112, 31, buf, s_graph_colors[fn], 1);
+                ui_text(78 + col * 112, 31, buf, graph_series_color(fn), 1);
             }
         }
         for (int i = 0; i < s_table_rows; i++) {
@@ -9549,7 +9284,7 @@ static void ui_draw_table(void)
             int fn = s_table_func_start + col;
             if (fn < GRAPH_POLAR_COUNT) {
                 snprintf(buf, sizeof(buf), "r%d", fn + 1);
-                ui_text(86 + col * 70, 31, buf, s_graph_colors[fn], 1);
+                ui_text(86 + col * 70, 31, buf, graph_series_color(fn), 1);
             }
         }
         for (int i = 0; i < s_table_rows; i++) {
@@ -9574,7 +9309,7 @@ static void ui_draw_table(void)
             int fn = s_table_func_start + col;
             if (fn < GRAPH_SEQ_COUNT) {
                 snprintf(buf, sizeof(buf), "u%d", fn + 1);
-                ui_text(86 + col * 70, 31, buf, s_graph_colors[fn], 1);
+                ui_text(86 + col * 70, 31, buf, graph_series_color(fn), 1);
             }
         }
         for (int i = 0; i < s_table_rows; i++) {
@@ -9586,7 +9321,7 @@ static void ui_draw_table(void)
                 int fn = s_table_func_start + col;
                 double value = 0.0;
                 if (fn < GRAPH_SEQ_COUNT && s_graph_seq_enabled[fn] &&
-                    graph_eval_expression_var(s_graph_seq_exprs[fn], 'n', n, &value)) {
+                    graph_eval_sequence_text(s_graph_seq_exprs[fn], n, &value)) {
                     snprintf(buf, sizeof(buf), "%.*f", s_table_precision, value);
                     ui_text(86 + col * 70, y, buf, THEME_TEXT, 1);
                 }
@@ -9790,29 +9525,43 @@ static const char *const VARIABLE_CATEGORY_NAMES[VARIABLE_CATEGORY_COUNT] = {
     "Statistics", "Graph Variables", "System Variables"
 };
 
-static void variable_format_value(double real, double imag, char *out, size_t out_size)
-{
-    if (fabs(imag) <= 1e-12) snprintf(out, out_size, "%.10g", real);
-    else if (fabs(real) <= 1e-12) snprintf(out, out_size, "%.10gi", imag);
-    else snprintf(out, out_size, "%.10g%+.10gi", real, imag);
-}
-
 static int variable_custom_count(void)
 {
     int count = 0;
-    opencalc_variable_t variable;
-    for (size_t i = 0; opencalc_math_variable_at(i, &variable); i++) {
-        if (strlen(variable.name) > 1) count++;
+    opencalc_symbol_t symbol;
+    for (size_t i = 0; opencalc_symbol_at(i, OPENCALC_SYMBOL_USER, &symbol); i++) {
+        if (strlen(symbol.name) > 1) count++;
     }
     return count;
 }
 
-static bool variable_custom_at(int wanted, opencalc_variable_t *out)
+static bool variable_custom_at(int wanted, opencalc_symbol_t *out)
 {
-    opencalc_variable_t variable;
-    for (size_t i = 0; opencalc_math_variable_at(i, &variable); i++) {
-        if (strlen(variable.name) <= 1) continue;
-        if (wanted-- == 0) { *out = variable; return true; }
+    opencalc_symbol_t symbol;
+    for (size_t i = 0; opencalc_symbol_at(i, OPENCALC_SYMBOL_USER, &symbol); i++) {
+        if (strlen(symbol.name) <= 1) continue;
+        if (wanted-- == 0) { *out = symbol; return true; }
+    }
+    return false;
+}
+
+static int variable_typed_user_count(opencalc_symbol_type_t type)
+{
+    int count = 0;
+    opencalc_symbol_t symbol;
+    for (size_t i = 0; opencalc_symbol_at(i, OPENCALC_SYMBOL_USER, &symbol); i++) {
+        if (symbol.type == type) count++;
+    }
+    return count;
+}
+
+static bool variable_typed_user_at(opencalc_symbol_type_t type, int wanted,
+                                   opencalc_symbol_t *out)
+{
+    opencalc_symbol_t symbol;
+    for (size_t i = 0; opencalc_symbol_at(i, OPENCALC_SYMBOL_USER, &symbol); i++) {
+        if (symbol.type != type) continue;
+        if (wanted-- == 0) { *out = symbol; return true; }
     }
     return false;
 }
@@ -9822,10 +9571,13 @@ static int variable_category_count(variable_category_t category)
     switch (category) {
     case VARIABLE_CATEGORY_USER:
         return 26 + variable_custom_count() + (s_variable_action == VARIABLE_ACTION_STORE ? 1 : 0);
-    case VARIABLE_CATEGORY_LISTS: return LIST_COUNT;
-    case VARIABLE_CATEGORY_MATRICES: return MATRIX_COUNT;
-    case VARIABLE_CATEGORY_FUNCTIONS: return GRAPH_FUNC_COUNT;
-    case VARIABLE_CATEGORY_STRINGS: return 1;
+    case VARIABLE_CATEGORY_LISTS: return LIST_COUNT + variable_typed_user_count(OPENCALC_SYMBOL_LIST);
+    case VARIABLE_CATEGORY_MATRICES: return MATRIX_COUNT + variable_typed_user_count(OPENCALC_SYMBOL_MATRIX);
+    case VARIABLE_CATEGORY_FUNCTIONS: return GRAPH_FUNC_COUNT + variable_typed_user_count(OPENCALC_SYMBOL_FUNCTION);
+    case VARIABLE_CATEGORY_STRINGS: {
+        int count = variable_typed_user_count(OPENCALC_SYMBOL_STRING);
+        return count > 0 ? count : 1;
+    }
     case VARIABLE_CATEGORY_STATISTICS: return s_stats_result_line_count > 0 ? s_stats_result_line_count : 1;
     case VARIABLE_CATEGORY_GRAPH: return 10;
     case VARIABLE_CATEGORY_SYSTEM: return 4;
@@ -9833,19 +9585,26 @@ static int variable_category_count(variable_category_t category)
     }
 }
 
-static void variable_list_literal(int list, char *out, size_t out_size)
+static bool variable_list_literal(int list, char *out, size_t out_size)
 {
     size_t used = 0;
-    if (out_size < 3) return;
+    if (out == NULL || out_size < 3) return false;
     out[used++] = '{';
     for (int i = 0; i < s_list_counts[list]; i++) {
         int written = snprintf(out + used, out_size - used, "%s%.10g", i ? "," : "", s_lists[list][i]);
-        if (written < 0 || (size_t)written >= out_size - used) break;
+        if (written < 0 || (size_t)written >= out_size - used) {
+            out[0] = '\0';
+            return false;
+        }
         used += (size_t)written;
     }
-    if (used + 2 > out_size) used = out_size - 2;
+    if (used + 2 > out_size) {
+        out[0] = '\0';
+        return false;
+    }
     out[used++] = '}';
     out[used] = '\0';
+    return true;
 }
 
 static bool variable_browser_item(variable_category_t category, int index, variable_browser_item_t *item)
@@ -9858,24 +9617,28 @@ static bool variable_browser_item(variable_category_t category, int index, varia
         if (index < 26) {
             item->name[0] = (char)('A' + index);
             item->name[1] = '\0';
-            double real = 0.0, imag = 0.0;
-            bool set = opencalc_math_variable_get(item->name, &real, &imag);
-            snprintf(item->type, sizeof(item->type), "%s", set ? (fabs(imag) > 1e-12 ? "Complex" : "Number") : "Unset");
-            if (set) variable_format_value(real, imag, item->preview, sizeof(item->preview));
+            opencalc_symbol_t symbol;
+            bool set = opencalc_symbol_get(item->name, &symbol) &&
+                (symbol.flags & OPENCALC_SYMBOL_USER);
+            snprintf(item->type, sizeof(item->type), "%s",
+                     set ? opencalc_symbol_type_name(symbol.type) : "Unset");
+            if (set) snprintf(item->preview, sizeof(item->preview), "%.47s", symbol.text);
             else snprintf(item->preview, sizeof(item->preview), "not assigned");
             snprintf(item->reference, sizeof(item->reference), "%s", item->name);
-            if (set) variable_format_value(real, imag, item->value, sizeof(item->value));
+            if (set && !variable_copy_symbol_value(item->value, sizeof(item->value),
+                                                   &symbol, item->reference)) item->selectable = false;
             item->user_variable = true;
             return true;
         }
         int custom = index - 26;
-        opencalc_variable_t variable;
-        if (variable_custom_at(custom, &variable)) {
-            snprintf(item->name, sizeof(item->name), "%s", variable.name);
-            snprintf(item->type, sizeof(item->type), "%s", fabs(variable.imag) > 1e-12 ? "Complex" : "Number");
-            variable_format_value(variable.real, variable.imag, item->preview, sizeof(item->preview));
-            snprintf(item->reference, sizeof(item->reference), "%s", variable.name);
-            variable_format_value(variable.real, variable.imag, item->value, sizeof(item->value));
+        opencalc_symbol_t symbol;
+        if (variable_custom_at(custom, &symbol)) {
+            snprintf(item->name, sizeof(item->name), "%s", symbol.name);
+            snprintf(item->type, sizeof(item->type), "%s", opencalc_symbol_type_name(symbol.type));
+            snprintf(item->preview, sizeof(item->preview), "%.47s", symbol.text);
+            snprintf(item->reference, sizeof(item->reference), "%s", symbol.name);
+            if (!variable_copy_symbol_value(item->value, sizeof(item->value),
+                                            &symbol, item->reference)) item->selectable = false;
             item->user_variable = true;
             return true;
         }
@@ -9886,13 +9649,39 @@ static bool variable_browser_item(variable_category_t category, int index, varia
         return true;
     }
     case VARIABLE_CATEGORY_LISTS:
+        if (index >= LIST_COUNT) {
+            opencalc_symbol_t symbol;
+            if (!variable_typed_user_at(OPENCALC_SYMBOL_LIST, index - LIST_COUNT, &symbol)) return false;
+            snprintf(item->name, sizeof(item->name), "%s", symbol.name);
+            snprintf(item->type, sizeof(item->type), "List");
+            snprintf(item->preview, sizeof(item->preview), "%.47s", symbol.text);
+            snprintf(item->reference, sizeof(item->reference), "%s", symbol.name);
+            if (!variable_copy_symbol_value(item->value, sizeof(item->value),
+                                            &symbol, item->reference)) item->selectable = false;
+            item->user_variable = true;
+            return true;
+        }
         snprintf(item->name, sizeof(item->name), "L%d", index + 1);
         snprintf(item->type, sizeof(item->type), "List");
         snprintf(item->preview, sizeof(item->preview), "%d values%s", s_list_counts[index], s_list_counts[index] ? "" : " (empty)");
         snprintf(item->reference, sizeof(item->reference), "L%d", index + 1);
-        variable_list_literal(index, item->value, sizeof(item->value));
+        if (!variable_list_literal(index, item->value, sizeof(item->value))) {
+            snprintf(item->value, sizeof(item->value), "%s", item->reference);
+        }
         return true;
     case VARIABLE_CATEGORY_MATRICES:
+        if (index >= MATRIX_COUNT) {
+            opencalc_symbol_t symbol;
+            if (!variable_typed_user_at(OPENCALC_SYMBOL_MATRIX, index - MATRIX_COUNT, &symbol)) return false;
+            snprintf(item->name, sizeof(item->name), "%s", symbol.name);
+            snprintf(item->type, sizeof(item->type), "Matrix");
+            snprintf(item->preview, sizeof(item->preview), "%.47s", symbol.text);
+            snprintf(item->reference, sizeof(item->reference), "%s", symbol.name);
+            if (!variable_copy_symbol_value(item->value, sizeof(item->value),
+                                            &symbol, item->reference)) item->selectable = false;
+            item->user_variable = true;
+            return true;
+        }
         snprintf(item->name, sizeof(item->name), "Matrix %c", 'A' + index);
         snprintf(item->type, sizeof(item->type), "Matrix");
         snprintf(item->preview, sizeof(item->preview), "%d x %d", s_matrix_rows_by_index[index], s_matrix_cols_by_index[index]);
@@ -9902,6 +9691,17 @@ static bool variable_browser_item(variable_category_t category, int index, varia
         }
         return true;
     case VARIABLE_CATEGORY_FUNCTIONS:
+        if (index >= GRAPH_FUNC_COUNT) {
+            opencalc_symbol_t symbol;
+            if (!variable_typed_user_at(OPENCALC_SYMBOL_FUNCTION, index - GRAPH_FUNC_COUNT, &symbol)) return false;
+            snprintf(item->name, sizeof(item->name), "%s", symbol.name);
+            snprintf(item->type, sizeof(item->type), "Function");
+            snprintf(item->preview, sizeof(item->preview), "%.47s", symbol.text);
+            snprintf(item->reference, sizeof(item->reference), "%s", symbol.name);
+            if (!variable_copy_exact(item->value, sizeof(item->value), symbol.text)) item->selectable = false;
+            item->user_variable = true;
+            return true;
+        }
         snprintf(item->name, sizeof(item->name), "Y%d", index + 1);
         snprintf(item->type, sizeof(item->type), "Function");
         snprintf(item->preview, sizeof(item->preview), "%s", s_graph_exprs[index][0] ? s_graph_exprs[index] : "not defined");
@@ -9909,10 +9709,21 @@ static bool variable_browser_item(variable_category_t category, int index, varia
         snprintf(item->value, sizeof(item->value), "%s", s_graph_exprs[index]);
         return true;
     case VARIABLE_CATEGORY_STRINGS:
-        snprintf(item->name, sizeof(item->name), "No strings");
-        snprintf(item->type, sizeof(item->type), "String");
-        snprintf(item->preview, sizeof(item->preview), "no string variables stored");
-        item->selectable = false;
+        if (variable_typed_user_count(OPENCALC_SYMBOL_STRING) == 0) {
+            snprintf(item->name, sizeof(item->name), "No strings");
+            snprintf(item->type, sizeof(item->type), "String");
+            snprintf(item->preview, sizeof(item->preview), "no string variables stored");
+            item->selectable = false;
+        } else {
+            opencalc_symbol_t symbol;
+            if (!variable_typed_user_at(OPENCALC_SYMBOL_STRING, index, &symbol)) return false;
+            snprintf(item->name, sizeof(item->name), "%s", symbol.name);
+            snprintf(item->type, sizeof(item->type), "String");
+            snprintf(item->preview, sizeof(item->preview), "%.47s", symbol.text);
+            snprintf(item->reference, sizeof(item->reference), "%s", symbol.name);
+            if (!variable_copy_exact(item->value, sizeof(item->value), symbol.text)) item->selectable = false;
+            item->user_variable = true;
+        }
         return true;
     case VARIABLE_CATEGORY_STATISTICS:
         if (s_stats_result_line_count <= 0) {
@@ -9943,8 +9754,8 @@ static bool variable_browser_item(variable_category_t category, int index, varia
     case VARIABLE_CATEGORY_SYSTEM:
         if (index == 0) {
             snprintf(item->name, sizeof(item->name), "Ans"); snprintf(item->type, sizeof(item->type), "System");
-            snprintf(item->preview, sizeof(item->preview), "%s", s_calc_ans); snprintf(item->reference, sizeof(item->reference), "ANS");
-            snprintf(item->value, sizeof(item->value), "%s", s_calc_ans);
+            snprintf(item->preview, sizeof(item->preview), "%.68s", s_calc_ans); snprintf(item->reference, sizeof(item->reference), "ANS");
+            if (!variable_copy_exact(item->value, sizeof(item->value), s_calc_ans)) item->selectable = false;
         } else if (index == 1) {
             snprintf(item->name, sizeof(item->name), "Angle"); snprintf(item->type, sizeof(item->type), "Mode");
             snprintf(item->preview, sizeof(item->preview), "%s", s_angle_mode == 0 ? "Degrees" : "Radians"); item->selectable = false;
@@ -10022,6 +9833,8 @@ static void ui_draw_current(void)
     case PAGE_CALCULATOR: ui_draw_calculator(); break;
     case PAGE_CALC_RESULT: ui_draw_calc_result(); break;
     case PAGE_MATH_MENU: ui_draw_math_menu(); break;
+    case PAGE_CAS_CATALOG: ui_draw_cas_catalog(); break;
+    case PAGE_CAS_OPTIONS: ui_draw_cas_options(); break;
     case PAGE_GRAPH: ui_draw_graph(); break;
     case PAGE_Y_EQUALS: ui_draw_y_equals(); break;
     case PAGE_TABLE: ui_draw_table(); break;
@@ -10205,6 +10018,7 @@ static void close_active_game_to_menu(void)
 {
     if (s_active_game == GAME_DOOM) {
         save_doom_high_score();
+        opencalc_doom_stop();
     }
     if (s_active_game == GAME_TETRIS) opencalc_tetris_press_button_number(46);
     if (s_active_game == GAME_SNAKE) opencalc_snake_press_button_number(46);
@@ -10438,6 +10252,7 @@ static void open_graph_format_menu(void)
 static void adjust_graph_format_value(int delta)
 {
     int count = graph_series_count();
+    bool appearance_changed = false;
     switch (s_graph_format_selection) {
     case 0:
         s_graph_split = !s_graph_split;
@@ -10448,24 +10263,36 @@ static void adjust_graph_format_value(int delta)
     case 2:
         s_graph_styles[s_graph_style_series] =
             (uint8_t)((s_graph_styles[s_graph_style_series] + delta + GRAPH_STYLE_COUNT) % GRAPH_STYLE_COUNT);
+        appearance_changed = true;
         break;
     case 3:
+        s_graph_color_indexes[s_graph_style_series] = (uint8_t)(
+            (s_graph_color_indexes[s_graph_style_series] + delta + GRAPH_COLOR_COUNT) % GRAPH_COLOR_COUNT);
+        appearance_changed = true;
+        break;
+    case 4:
         s_graph_background_enabled = !s_graph_background_enabled;
         if (s_graph_background_enabled && !s_graph_background_loaded) {
             s_graph_background_loaded = graph_background_load();
             if (!s_graph_background_loaded) s_graph_background_enabled = false;
         }
         break;
-    case 4:
+    case 5:
+        s_graph_background_mode = (uint8_t)((s_graph_background_mode + delta + 3) % 3);
+        if (s_graph_background_enabled) s_graph_background_loaded = graph_background_load();
+        appearance_changed = true;
+        break;
+    case 6:
         s_graph_background_loaded = graph_background_load();
         if (s_graph_background_loaded) s_graph_background_enabled = true;
         break;
-    case 5:
+    case 7:
         s_graph_grid = !s_graph_grid;
         break;
     default:
         break;
     }
+    if (appearance_changed) graph_appearance_save();
 }
 
 static void apply_symmetric_graph_window(double xmax, double ymax)
@@ -11727,7 +11554,7 @@ static bool solver_set_side_from_calculator(char *side, size_t side_size, const 
         app_output("enter expression in Calculator first");
         return false;
     }
-    snprintf(side, side_size, "%s", s_calc_input);
+    copy_bounded(side, side_size, s_calc_input);
     s_solver_has_result = false;
     char status[64];
     snprintf(status, sizeof(status), "%s set to %.40s", name, side);
@@ -11864,7 +11691,7 @@ static void solver_run_workflow_action(void)
             else {
                 s_solver_poly_root_count = roots;
                 s_solver_poly_root_selected = 0;
-                snprintf(s_solver_poly_source, sizeof(s_solver_poly_source), "%s", s_calc_input);
+                copy_bounded(s_solver_poly_source, sizeof(s_solver_poly_source), s_calc_input);
                 s_solver_roots_are_polynomial = true;
                 s_page = PAGE_SOLVER_ROOTS;
                 s_current_app = APP_SOLVER;
@@ -12569,7 +12396,11 @@ static void stats_calculate_one_var(void)
     stats_result_line("Q3 %s  max %s", q3_text, max_text);
     char frequency_text[8];
     if (frequency < 0) snprintf(frequency_text, sizeof(frequency_text), "None");
-    else snprintf(frequency_text, sizeof(frequency_text), "L%d", frequency + 1);
+    else {
+        unsigned list_number = frequency >= 0 && frequency < LIST_COUNT
+            ? (unsigned)frequency + 1u : 0u;
+        snprintf(frequency_text, sizeof(frequency_text), "L%u", list_number);
+    }
     stats_result_line("frequency %s", frequency_text);
     stats_result_line("%s quartiles, %s format",
                       s_stats_one_var_quartile_method == 0 ? "median" : "inclusive",
@@ -14650,7 +14481,7 @@ static void run_home_app_tool(void)
             if (s_calc_input[0] == '\0') {
                 app_output("type E1 in Calc first");
             } else {
-                snprintf(s_solver_e1, sizeof(s_solver_e1), "%s", s_calc_input);
+                copy_bounded(s_solver_e1, sizeof(s_solver_e1), s_calc_input);
                 s_solver_has_result = false;
                 s_solver_result_imag = 0.0;
                 s_solver_has_complex_result = false;
@@ -14661,7 +14492,7 @@ static void run_home_app_tool(void)
             if (s_calc_input[0] == '\0') {
                 app_output("type E2 in Calc first");
             } else {
-                snprintf(s_solver_e2, sizeof(s_solver_e2), "%s", s_calc_input);
+                copy_bounded(s_solver_e2, sizeof(s_solver_e2), s_calc_input);
                 s_solver_has_result = false;
                 s_solver_result_imag = 0.0;
                 s_solver_has_complex_result = false;
@@ -14699,7 +14530,7 @@ static void run_home_app_tool(void)
             } else {
                 s_solver_poly_root_count = root_count;
                 s_solver_poly_root_selected = 0;
-                snprintf(s_solver_poly_source, sizeof(s_solver_poly_source), "%s", s_calc_input);
+                copy_bounded(s_solver_poly_source, sizeof(s_solver_poly_source), s_calc_input);
                 snprintf(s_calc_output, sizeof(s_calc_output), "%d roots", root_count);
                 s_page = PAGE_SOLVER_ROOTS;
                 s_current_app = APP_SOLVER;
@@ -14907,8 +14738,7 @@ static bool calc_catalog_value(const char *name, char *out, size_t out_size)
     size_t name_len = strlen(name);
     if (name_len == 2 && (name[0] == 'L' || name[0] == 'l') &&
         name[1] >= '1' && name[1] <= '6') {
-        variable_list_literal(name[1] - '1', out, out_size);
-        return true;
+        return variable_list_literal(name[1] - '1', out, out_size);
     }
     if (name_len == 4 && strncasecmp(name, "mat", 3) == 0) {
         int matrix = toupper((unsigned char)name[3]) - 'A';
@@ -14948,6 +14778,93 @@ static bool calc_catalog_value(const char *name, char *out, size_t out_size)
         return true;
     }
     return false;
+}
+
+static void symbol_set_external_text(const char *name, opencalc_symbol_type_t type,
+                                     opencalc_symbol_source_t source, int source_index,
+                                     const char *text, bool sync_with_giac)
+{
+    if (text == NULL || text[0] == '\0') {
+        (void)opencalc_symbol_remove(name, true);
+        return;
+    }
+    opencalc_symbol_t existing;
+    if (opencalc_symbol_get(name, &existing) && (existing.flags & OPENCALC_SYMBOL_USER)) {
+        return;
+    }
+    uint8_t flags = OPENCALC_SYMBOL_READ_ONLY |
+        (sync_with_giac ? OPENCALC_SYMBOL_GIAC_SYNC : 0);
+    (void)opencalc_symbol_set_owned_text(name, type, flags, source, source_index, text);
+}
+
+static void symbols_refresh_catalog(void)
+{
+    char name[OPENCALC_SYMBOL_NAME_MAX];
+    char value[OPENCALC_SYMBOL_TEXT_MAX];
+
+    if (opencalc_worksheet_model_lock(pdMS_TO_TICKS(100))) {
+        for (int i = 0; i < LIST_COUNT; i++) {
+            snprintf(name, sizeof(name), "L%d", i + 1);
+            bool stored = s_list_counts[i] > 0 &&
+                opencalc_symbol_set_real_list(
+                    name, OPENCALC_SYMBOL_READ_ONLY | OPENCALC_SYMBOL_GIAC_SYNC,
+                    OPENCALC_SYMBOL_SOURCE_WORKSHEET_LIST, i,
+                    s_lists[i], (size_t)s_list_counts[i]);
+            if (!stored) (void)opencalc_symbol_remove(name, true);
+        }
+        for (int i = 0; i < MATRIX_COUNT; i++) {
+            snprintf(name, sizeof(name), "mat%c", 'A' + i);
+            bool stored = s_matrix_rows_by_index[i] > 0 && s_matrix_cols_by_index[i] > 0 &&
+                opencalc_symbol_set_real_matrix(
+                    name, OPENCALC_SYMBOL_READ_ONLY | OPENCALC_SYMBOL_GIAC_SYNC,
+                    OPENCALC_SYMBOL_SOURCE_WORKSHEET_MATRIX, i,
+                    &s_matrices[i][0][0], (size_t)s_matrix_rows_by_index[i],
+                    (size_t)s_matrix_cols_by_index[i], MATRIX_MAX_N);
+            if (!stored) (void)opencalc_symbol_remove(name, true);
+        }
+        opencalc_worksheet_model_unlock();
+    }
+
+    for (int i = 0; i < GRAPH_FUNC_COUNT; i++) {
+        snprintf(name, sizeof(name), "Y%d", i + 1);
+        if (s_graph_exprs[i][0] != '\0') {
+            symbol_set_external_text(name, OPENCALC_SYMBOL_FUNCTION,
+                                     OPENCALC_SYMBOL_SOURCE_GRAPH, i,
+                                     s_graph_exprs[i], true);
+        } else {
+            (void)opencalc_symbol_remove(name, true);
+        }
+    }
+
+    static const char *const graph_names[] = {
+        "Xmin", "Xmax", "Ymin", "Ymax", "Xscl", "Yscl", "Tmin", "Tmax", "nMin", "nMax"
+    };
+    double graph_values[] = {
+        s_graph_xmin, s_graph_xmax, s_graph_ymin, s_graph_ymax, s_graph_xtick,
+        s_graph_ytick, s_graph_tmin, s_graph_tmax, s_graph_nmin, s_graph_nmax
+    };
+    for (size_t i = 0; i < sizeof(graph_values) / sizeof(graph_values[0]); i++) {
+        snprintf(value, sizeof(value), "%.17g", graph_values[i]);
+        symbol_set_external_text(graph_names[i], OPENCALC_SYMBOL_GRAPH,
+                                 OPENCALC_SYMBOL_SOURCE_GRAPH, (int)i, value, true);
+    }
+
+    for (int i = 0; i < 8; i++) {
+        snprintf(name, sizeof(name), "Stat%d", i + 1);
+        if (i < s_stats_result_line_count) {
+            const char *equals = strchr(s_stats_result_lines[i], '=');
+            symbol_set_external_text(name, OPENCALC_SYMBOL_STATISTIC,
+                                     OPENCALC_SYMBOL_SOURCE_STATISTICS, i,
+                                     equals != NULL ? equals + 1 : s_stats_result_lines[i], true);
+        } else {
+            (void)opencalc_symbol_remove(name, true);
+        }
+    }
+    symbol_set_external_text("Ans", OPENCALC_SYMBOL_SYSTEM,
+                             OPENCALC_SYMBOL_SOURCE_SYSTEM, 0, s_calc_ans, true);
+    snprintf(value, sizeof(value), "%d", board_get_backlight_brightness());
+    symbol_set_external_text("Brightness", OPENCALC_SYMBOL_SYSTEM,
+                             OPENCALC_SYMBOL_SOURCE_SYSTEM, 1, value, false);
 }
 
 static bool calc_expand_catalog_variables(const char *input, char *out, size_t out_size)
@@ -15408,6 +15325,7 @@ static void work_calc_eval(const ui_work_job_t *job, ui_work_result_t *result)
         .complex_mode = job->calc.complex_mode,
         .display_format = job->calc.display_format,
         .print_mode = job->calc.print_mode,
+        .cas_options = &job->calc.cas_options,
         .degrees = job->degrees,
         .timeout_ms = OPENCALC_CAS_TIMEOUT_MS,
         .should_cancel = work_calc_should_cancel,
@@ -15419,102 +15337,15 @@ static void work_calc_eval(const ui_work_job_t *job, ui_work_result_t *result)
     opencalc_calc_evaluate(&request, &evaluated);
     result->ok = evaluated.ok;
     result->calc.update_ans = evaluated.update_ans;
+    result->calc.symbol_changed = evaluated.symbol_changed;
     snprintf(result->calc.output, sizeof(result->calc.output), "%s", evaluated.output);
-}
-
-static void work_graph_symbolic_eval(const char *expression, bool degrees,
-                                     char *out, size_t out_size)
-{
-    if (!opencalc_giac_eval(expression, degrees, out, out_size) &&
-        !opencalc_cas_eval(expression, out, out_size)) {
-        snprintf(out, out_size, "not available");
-    }
 }
 
 static void work_graph_symbolic(const ui_work_job_t *job, ui_work_result_t *result)
 {
-    const char *primary = job->graph_symbolic.primary;
-    const char *secondary = job->graph_symbolic.secondary;
-    char command[384];
-    char first[72];
-    char second[72];
-    char third[72];
-
-    result->ok = true;
-    result->graph_symbolic.graphing_mode = job->graph_symbolic.graphing_mode;
-    result->graph_symbolic.series = job->graph_symbolic.series;
-    result->graph_symbolic.fingerprint = job->graph_symbolic.fingerprint;
-
-    switch (job->graph_symbolic.graphing_mode) {
-    case 1:
-        snprintf(command, sizeof(command), "normal(diff((%s),t)/diff((%s),t))", secondary, primary);
-        work_graph_symbolic_eval(command, job->degrees, result->graph_symbolic.derivative,
-                                 sizeof(result->graph_symbolic.derivative));
-        snprintf(command, sizeof(command), "integrate((%s)*diff((%s),t),t)", secondary, primary);
-        work_graph_symbolic_eval(command, job->degrees, result->graph_symbolic.integral,
-                                 sizeof(result->graph_symbolic.integral));
-        snprintf(command, sizeof(command), "solve((%s)=0,t)", secondary);
-        work_graph_symbolic_eval(command, job->degrees, result->graph_symbolic.roots,
-                                 sizeof(result->graph_symbolic.roots));
-        snprintf(command, sizeof(command), "limit([(%s),(%s)],t,infinity)", primary, secondary);
-        work_graph_symbolic_eval(command, job->degrees, result->graph_symbolic.asymptotes,
-                                 sizeof(result->graph_symbolic.asymptotes));
-        break;
-    case 2:
-        snprintf(command, sizeof(command),
-                 "normal(((diff((%s),t)*sin(t)+(%s)*cos(t)))/(diff((%s),t)*cos(t)-(%s)*sin(t)))",
-                 primary, primary, primary, primary);
-        work_graph_symbolic_eval(command, job->degrees, result->graph_symbolic.derivative,
-                                 sizeof(result->graph_symbolic.derivative));
-        snprintf(command, sizeof(command), "integrate((%s)^2/2,t)", primary);
-        work_graph_symbolic_eval(command, job->degrees, result->graph_symbolic.integral,
-                                 sizeof(result->graph_symbolic.integral));
-        snprintf(command, sizeof(command), "solve((%s)=0,t)", primary);
-        work_graph_symbolic_eval(command, job->degrees, result->graph_symbolic.roots,
-                                 sizeof(result->graph_symbolic.roots));
-        snprintf(command, sizeof(command), "limit((%s),t,infinity)", primary);
-        work_graph_symbolic_eval(command, job->degrees, result->graph_symbolic.asymptotes,
-                                 sizeof(result->graph_symbolic.asymptotes));
-        break;
-    case 3:
-        snprintf(command, sizeof(command), "simplify(subst((%s),n,n+1)-(%s))", primary, primary);
-        work_graph_symbolic_eval(command, job->degrees, result->graph_symbolic.derivative,
-                                 sizeof(result->graph_symbolic.derivative));
-        snprintf(command, sizeof(command), "sum((%s),n)", primary);
-        work_graph_symbolic_eval(command, job->degrees, result->graph_symbolic.integral,
-                                 sizeof(result->graph_symbolic.integral));
-        snprintf(command, sizeof(command), "solve((%s)=0,n)", primary);
-        work_graph_symbolic_eval(command, job->degrees, result->graph_symbolic.roots,
-                                 sizeof(result->graph_symbolic.roots));
-        snprintf(command, sizeof(command), "limit((%s),n,infinity)", primary);
-        work_graph_symbolic_eval(command, job->degrees, result->graph_symbolic.asymptotes,
-                                 sizeof(result->graph_symbolic.asymptotes));
-        break;
-    default:
-        snprintf(command, sizeof(command), "diff((%s),x)", primary);
-        work_graph_symbolic_eval(command, job->degrees, result->graph_symbolic.derivative,
-                                 sizeof(result->graph_symbolic.derivative));
-        snprintf(command, sizeof(command), "integrate((%s),x)", primary);
-        work_graph_symbolic_eval(command, job->degrees, result->graph_symbolic.integral,
-                                 sizeof(result->graph_symbolic.integral));
-        snprintf(command, sizeof(command), "solve((%s)=0,x)", primary);
-        work_graph_symbolic_eval(command, job->degrees, result->graph_symbolic.roots,
-                                 sizeof(result->graph_symbolic.roots));
-        snprintf(command, sizeof(command), "solve(denom(normal((%s)))=0,x)", primary);
-        work_graph_symbolic_eval(command, job->degrees, first, sizeof(first));
-        snprintf(command, sizeof(command),
-                 "[limit((%s)/x,x,infinity),limit((%s)-limit((%s)/x,x,infinity)*x,x,infinity)]",
-                 primary, primary, primary);
-        work_graph_symbolic_eval(command, job->degrees, second, sizeof(second));
-        snprintf(command, sizeof(command),
-                 "[limit((%s)/x,x,-infinity),limit((%s)-limit((%s)/x,x,-infinity)*x,x,-infinity)]",
-                 primary, primary, primary);
-        work_graph_symbolic_eval(command, job->degrees, third, sizeof(third));
-        snprintf(result->graph_symbolic.asymptotes,
-                 sizeof(result->graph_symbolic.asymptotes),
-                 "vertical %s; [slope,offset] +%s -%s", first, second, third);
-        break;
-    }
+    result->ok = opencalc_graph_symbolic_analyze(
+        &job->graph_symbolic, job->degrees, graph_eval_expression_var,
+        &result->graph_symbolic);
 }
 
 static void ui_work_execute(const void *job_data, void *result_data)
@@ -15550,8 +15381,22 @@ static void ui_work_execute(const void *job_data, void *result_data)
         break;
     case UI_WORK_SOLVER_SYMBOLIC:
         snprintf(result->symbolic.title, sizeof(result->symbolic.title), "%s", job->symbolic.title);
-        result->ok = opencalc_giac_eval(job->symbolic.expression, job->degrees,
-                                        result->symbolic.output, sizeof(result->symbolic.output));
+        {
+            char prepared[512];
+            opencalc_giac_options_t giac_options = {
+                .degrees = job->degrees,
+                .domain = job->symbolic.cas_options.domain,
+            };
+            snprintf(giac_options.assumptions, sizeof(giac_options.assumptions), "%s",
+                     job->symbolic.cas_options.assumptions);
+            result->ok = opencalc_cas_prepare_expression(
+                job->symbolic.expression, &job->symbolic.cas_options,
+                prepared, sizeof(prepared)) &&
+                opencalc_giac_eval_timed_options(
+                    prepared, &giac_options, result->symbolic.output,
+                    sizeof(result->symbolic.output), OPENCALC_CAS_TIMEOUT_MS,
+                    NULL, NULL) == OPENCALC_GIAC_OK;
+        }
         if (!result->ok) {
             result->ok = opencalc_cas_eval(job->symbolic.expression,
                                            result->symbolic.output,
@@ -15563,7 +15408,8 @@ static void ui_work_execute(const void *job_data, void *result_data)
         }
         break;
     case UI_WORK_GRAPH_CALC:
-        result->ok = work_graph_calc_run(job, result);
+        result->ok = opencalc_graph_analysis_run(&job->graph, job->degrees,
+                                                  &result->graph);
         if (!result->ok) {
             snprintf(result->graph.status, sizeof(result->graph.status), "graph calc: no result");
         }
@@ -15589,6 +15435,7 @@ static bool submit_calc_eval_job(void)
         s_calc_eval_pending = false;
     }
 
+    symbols_refresh_catalog();
     ui_work_job_t job;
     memset(&job, 0, sizeof(job));
     job.type = UI_WORK_CALC_EVAL;
@@ -15599,6 +15446,7 @@ static bool submit_calc_eval_job(void)
     job.calc.complex_mode = s_complex_mode;
     job.calc.display_format = s_display_format;
     job.calc.print_mode = s_print_mode;
+    job.calc.cas_options = s_cas_options;
 
     if (!ui_work_submit(&job)) {
         snprintf(s_calc_output, sizeof(s_calc_output), "math worker unavailable");
@@ -15684,10 +15532,12 @@ static bool submit_solver_symbolic_job(const char *expression, const char *title
         return false;
     }
 
+    symbols_refresh_catalog();
     ui_work_job_t job;
     memset(&job, 0, sizeof(job));
     job.type = UI_WORK_SOLVER_SYMBOLIC;
     job.degrees = s_angle_mode == 0;
+    job.symbolic.cas_options = s_cas_options;
     snprintf(job.symbolic.expression, sizeof(job.symbolic.expression), "%s", expression);
     snprintf(job.symbolic.title, sizeof(job.symbolic.title), "%s", title != NULL ? title : "Symbolic Result");
     if (!ui_work_submit(&job)) {
@@ -15711,28 +15561,8 @@ static bool submit_graph_calc_job(void)
     memset(&job, 0, sizeof(job));
     job.type = UI_WORK_GRAPH_CALC;
     job.degrees = s_angle_mode == 0;
+    graph_capture_analysis_request(&job.graph);
     job.graph.selection = s_graph_calc_selection;
-    job.graph.graphing_mode = s_graphing_mode;
-    memcpy(job.graph.exprs, s_graph_exprs, sizeof(job.graph.exprs));
-    memcpy(job.graph.enabled, s_graph_enabled, sizeof(job.graph.enabled));
-    memcpy(job.graph.param_x, s_graph_param_x, sizeof(job.graph.param_x));
-    memcpy(job.graph.param_y, s_graph_param_y, sizeof(job.graph.param_y));
-    memcpy(job.graph.param_enabled, s_graph_param_enabled, sizeof(job.graph.param_enabled));
-    memcpy(job.graph.polar_exprs, s_graph_polar_exprs, sizeof(job.graph.polar_exprs));
-    memcpy(job.graph.polar_enabled, s_graph_polar_enabled, sizeof(job.graph.polar_enabled));
-    memcpy(job.graph.seq_exprs, s_graph_seq_exprs, sizeof(job.graph.seq_exprs));
-    memcpy(job.graph.seq_enabled, s_graph_seq_enabled, sizeof(job.graph.seq_enabled));
-    job.graph.xmin = s_graph_xmin;
-    job.graph.xmax = s_graph_xmax;
-    job.graph.ymin = s_graph_ymin;
-    job.graph.ymax = s_graph_ymax;
-    job.graph.tmin = s_graph_tmin;
-    job.graph.tmax = s_graph_tmax;
-    job.graph.nmin = s_graph_nmin;
-    job.graph.nmax = s_graph_nmax;
-    job.graph.trace = s_graph_trace;
-    job.graph.trace_x = s_graph_trace_x;
-    job.graph.trace_fn = s_graph_trace_fn;
 
     if (!ui_work_submit(&job)) {
         snprintf(s_graph_status, sizeof(s_graph_status), "graph calc: worker unavailable");
@@ -15755,6 +15585,7 @@ static bool submit_graph_symbolic_job(void)
         return false;
     }
 
+    symbols_refresh_catalog();
     ui_work_job_t job;
     memset(&job, 0, sizeof(job));
     job.type = UI_WORK_GRAPH_SYMBOLIC;
@@ -15762,6 +15593,8 @@ static bool submit_graph_symbolic_job(void)
     job.graph_symbolic.graphing_mode = s_graphing_mode;
     job.graph_symbolic.series = s_graph_trace_fn;
     job.graph_symbolic.fingerprint = graph_symbolic_fingerprint(s_graph_trace_fn);
+    job.graph_symbolic.range_first = (int)ceil(s_graph_nmin);
+    job.graph_symbolic.range_last = (int)floor(s_graph_nmax);
 
     switch (s_graphing_mode) {
     case 1:
@@ -15828,21 +15661,22 @@ static void ui_work_apply_result(const ui_work_result_t *result)
         }
         s_calc_eval_pending = false;
         snprintf(s_calc_output, sizeof(s_calc_output), "%s", result->calc.output);
+        snprintf(s_calc_result_expression, sizeof(s_calc_result_expression), "%s", result->calc.expr);
+        opencalc_cas_analyze_result(s_calc_output, &s_calc_structured_result);
+        s_calc_result_selected = 0;
+        s_calc_result_trace = false;
         if (result->calc.update_ans) {
             strncpy(s_calc_ans, result->calc.output, sizeof(s_calc_ans) - 1);
             s_calc_ans[sizeof(s_calc_ans) - 1] = '\0';
         }
         opencalc_calc_history_push(result->calc.expr, s_calc_output);
         worksheet_mark_dirty();
-        char assignment_name[OPENCALC_VARIABLE_NAME_MAX];
-        if (result->calc.update_ans &&
-            opencalc_math_assignment_name(result->calc.expr, assignment_name, sizeof(assignment_name))) {
-            variables_save_all();
-        }
+        if (result->calc.symbol_changed) variables_save_all();
         printf("calc %s => %s\n", result->calc.expr, s_calc_output);
         s_calc_input[0] = '\0';
         s_calc_cursor = 0;
-        if (s_page == PAGE_CALCULATOR && strlen(s_calc_output) > 80) {
+        if (s_page == PAGE_CALCULATOR &&
+            (strlen(s_calc_output) > 80 || s_calc_structured_result.item_count > 1)) {
             s_calc_result_scroll = 0;
             s_page = PAGE_CALC_RESULT;
             s_current_app = APP_CALCULATOR;
@@ -15909,6 +15743,8 @@ static void ui_work_apply_result(const ui_work_result_t *result)
         }
         snprintf(s_solver_symbolic_title, sizeof(s_solver_symbolic_title), "%s", result->symbolic.title);
         snprintf(s_solver_symbolic_result, sizeof(s_solver_symbolic_result), "%s", result->symbolic.output);
+        opencalc_cas_analyze_result(s_solver_symbolic_result, &s_solver_structured_result);
+        s_solver_symbolic_selected = 0;
         s_solver_symbolic_scroll = 0;
         s_page = PAGE_SOLVER_SYMBOLIC_RESULT;
         s_current_app = APP_SOLVER;
@@ -15955,6 +15791,36 @@ static void ui_work_poll_results(void)
     ui_work_result_t *result = NULL;
     while ((result = opencalc_ui_work_take_result()) != NULL) {
         ui_work_apply_result(result);
+        heap_caps_free(result);
+    }
+}
+
+static void ui_work_discard_game_results(void)
+{
+    ui_work_result_t *result = NULL;
+    while ((result = opencalc_ui_work_take_result()) != NULL) {
+        switch (result->type) {
+        case UI_WORK_CALC_EVAL:
+            if (result->request_id == atomic_load(&s_calc_eval_generation)) {
+                s_calc_eval_pending = false;
+            }
+            break;
+        case UI_WORK_SOLVER_SOLVE:
+            s_solver_solve_pending = false;
+            break;
+        case UI_WORK_SOLVER_SYMBOLIC:
+            s_solver_symbolic_pending = false;
+            s_ineq_symbolic_pending = false;
+            break;
+        case UI_WORK_GRAPH_CALC:
+            s_graph_calc_pending = false;
+            break;
+        case UI_WORK_GRAPH_SYMBOLIC:
+            s_graph_symbolic_pending = false;
+            break;
+        default:
+            break;
+        }
         heap_caps_free(result);
     }
 }
@@ -16102,8 +15968,8 @@ static void script_worker_poll_result(void)
     s_script_profile = result->profile;
     s_script_elapsed_ms = result->elapsed_ms;
     if (s_script_output_mutex != NULL) xSemaphoreTake(s_script_output_mutex, portMAX_DELAY);
-    snprintf(s_script_traceback, sizeof(s_script_traceback), "%s", result->traceback);
-    snprintf(s_script_variables, sizeof(s_script_variables), "%s", result->variables);
+    copy_bounded(s_script_traceback, sizeof(s_script_traceback), result->traceback);
+    copy_bounded(s_script_variables, sizeof(s_script_variables), result->variables);
     if (s_script_output_mutex != NULL) xSemaphoreGive(s_script_output_mutex);
 
     if (!result->ok && result->error[0] != '\0') {
@@ -16131,6 +15997,13 @@ static void math_menu_insert_selected(void)
     }
 
     const char *insert = MATH_MENU[s_math_tab][s_math_selection].insert;
+    if (insert == NULL) {
+        s_page = PAGE_CAS_CATALOG;
+        s_cas_catalog_selection = 0;
+        s_cas_catalog_scroll = 0;
+        ui_draw_current();
+        return;
+    }
     if (strcmp(insert, "nroot(") == 0) {
         expression_insert_nroot_box();
     } else {
@@ -16138,6 +16011,48 @@ static void math_menu_insert_selected(void)
     }
     s_page = s_math_return_page == PAGE_Y_EQUALS ? PAGE_Y_EQUALS : PAGE_CALCULATOR;
     s_current_app = s_page == PAGE_Y_EQUALS ? APP_GRAPH : APP_CALCULATOR;
+    ui_draw_current();
+}
+
+static void cas_catalog_insert_selected(void)
+{
+    int actual = cas_catalog_visible_index(s_cas_catalog_selection);
+    const opencalc_cas_catalog_entry_t *entry = actual >= 0
+        ? opencalc_cas_catalog_at((size_t)actual) : NULL;
+    if (entry == NULL) return;
+    if (s_math_return_page == PAGE_CALCULATOR) {
+        size_t start = s_calc_cursor;
+        while (start > 0 && (isalnum((unsigned char)s_calc_input[start - 1]) ||
+                             s_calc_input[start - 1] == '_')) start--;
+        if (start < s_calc_cursor) {
+            memmove(s_calc_input + start, s_calc_input + s_calc_cursor,
+                    strlen(s_calc_input + s_calc_cursor) + 1);
+            s_calc_cursor = start;
+        }
+    }
+    expression_append(entry->insert);
+    s_page = s_math_return_page == PAGE_Y_EQUALS ? PAGE_Y_EQUALS : PAGE_CALCULATOR;
+    s_current_app = s_page == PAGE_Y_EQUALS ? APP_GRAPH : APP_CALCULATOR;
+    ui_draw_current();
+}
+
+static void cas_options_apply_selected(void)
+{
+    if (s_cas_options_selection == 0) {
+        s_cas_options.domain = (opencalc_cas_domain_t)
+            ((s_cas_options.domain + 1) % OPENCALC_CAS_DOMAIN_COUNT);
+    } else if (s_cas_options_selection == 1) {
+        snprintf(s_cas_options.assumptions, sizeof(s_cas_options.assumptions), "%.95s", s_calc_input);
+    } else if (s_cas_options_selection == 2) {
+        double lower = 0.0, upper = 0.0;
+        if (sscanf(s_calc_input, " %lf , %lf", &lower, &upper) == 2 && lower < upper) {
+            s_cas_options.interval_min = lower;
+            s_cas_options.interval_max = upper;
+            s_cas_options.domain = OPENCALC_CAS_DOMAIN_INTERVAL;
+        }
+    } else {
+        opencalc_giac_reset();
+    }
     ui_draw_current();
 }
 
@@ -16426,6 +16341,12 @@ static void key_back(void)
     } else if (s_page == PAGE_MATH_MENU) {
         s_page = s_math_return_page;
         s_current_app = s_page == PAGE_Y_EQUALS ? APP_GRAPH : APP_CALCULATOR;
+    } else if (s_page == PAGE_CAS_CATALOG) {
+        s_page = PAGE_MATH_MENU;
+        s_current_app = APP_CALCULATOR;
+    } else if (s_page == PAGE_CAS_OPTIONS) {
+        s_page = PAGE_CAS_CATALOG;
+        s_current_app = APP_CALCULATOR;
     } else if (s_page == PAGE_GRAPH_WINDOW || s_page == PAGE_GRAPH_CALC ||
                s_page == PAGE_GRAPH_SYMBOLIC ||
                s_page == PAGE_GRAPH_FORMAT || s_page == PAGE_Y_EQUALS) {
@@ -16969,10 +16890,20 @@ static bool solver_page_handle_key(int row, int col)
     if (s_page == PAGE_SOLVER_SYMBOLIC_RESULT) {
         int offsets[64];
         int lines = solver_symbolic_wrap(offsets, 64);
-        if (up && s_solver_symbolic_scroll > 0) s_solver_symbolic_scroll--;
+        if (up && s_solver_structured_result.item_count > 1 && s_solver_symbolic_selected > 0) {
+            s_solver_symbolic_selected--;
+        } else if (down && s_solver_structured_result.item_count > 1 &&
+                   s_solver_symbolic_selected + 1 < s_solver_structured_result.item_count) {
+            s_solver_symbolic_selected++;
+        } else if (up && s_solver_symbolic_scroll > 0) s_solver_symbolic_scroll--;
         else if (down && s_solver_symbolic_scroll + 1 < lines) s_solver_symbolic_scroll++;
         else if (enter) {
-            snprintf(s_calc_input, sizeof(s_calc_input), "%s", s_solver_symbolic_result);
+            if (!opencalc_cas_result_item_text(s_solver_symbolic_result,
+                                               &s_solver_structured_result,
+                                               s_solver_symbolic_selected,
+                                               s_calc_input, sizeof(s_calc_input))) {
+                snprintf(s_calc_input, sizeof(s_calc_input), "%s", s_solver_symbolic_result);
+            }
             s_calc_cursor = strlen(s_calc_input);
             s_current_app = APP_CALCULATOR;
             s_page = PAGE_CALCULATOR;
@@ -18231,15 +18162,87 @@ static void dispatch_key(int row, int col)
     if (script_io_handle_key(row, col)) return;
 
     if (s_page == PAGE_CALC_RESULT) {
-        if (row == 1 && col == 4 && s_calc_result_scroll > 0) {
-            s_calc_result_scroll--;
+        if (row == 1 && col == 4) {
+            if (s_calc_structured_result.item_count > 1 && s_calc_result_selected > 0) {
+                s_calc_result_selected--;
+            } else if (s_calc_result_scroll > 0) {
+                s_calc_result_scroll--;
+            }
         } else if (row == 2 && col == 3) {
-            int lines = ((int)strlen(s_calc_output) + 45) / 46;
-            if (s_calc_result_scroll + 11 < lines) s_calc_result_scroll++;
+            if (s_calc_structured_result.item_count > 1 &&
+                s_calc_result_selected + 1 < s_calc_structured_result.item_count) {
+                s_calc_result_selected++;
+            } else {
+                int lines = ((int)strlen(s_calc_output) + 45) / 46;
+                if (s_calc_result_scroll + 9 < lines) s_calc_result_scroll++;
+            }
         } else if (row == 9 && col == 4) {
+            char selected[CALC_RESULT_MAX];
+            if (!opencalc_cas_result_item_text(s_calc_output, &s_calc_structured_result,
+                                               s_calc_result_selected,
+                                               selected, sizeof(selected))) {
+                snprintf(selected, sizeof(selected), "%s", s_calc_output);
+            }
             s_page = PAGE_CALCULATOR;
             s_current_app = APP_CALCULATOR;
-            expression_append(s_calc_output);
+            expression_append(selected);
+        } else if (row == 0 && col == 2) {
+            char selected[CALC_RESULT_MAX];
+            if (opencalc_cas_result_item_text(s_calc_output, &s_calc_structured_result,
+                                              s_calc_result_selected,
+                                              selected, sizeof(selected))) {
+                snprintf(s_calc_input, sizeof(s_calc_input), "evalf(%.*s)",
+                         (int)sizeof(s_calc_input) - 8, selected);
+                s_calc_cursor = strlen(s_calc_input);
+                s_page = PAGE_CALCULATOR;
+                s_current_app = APP_CALCULATOR;
+                calc_eval();
+            }
+        } else if (row == 0 && col == 3) {
+            s_calc_result_trace = !s_calc_result_trace;
+        } else if (row == 2 && col == 2) {
+            key_back();
+        }
+        ui_draw_current();
+        return;
+    }
+
+    if (s_page == PAGE_CAS_CATALOG) {
+        int count = cas_catalog_visible_count();
+        if (row == 1 && col == 4 && s_cas_catalog_selection > 0) {
+            s_cas_catalog_selection--;
+        } else if (row == 2 && col == 3 && s_cas_catalog_selection + 1 < count) {
+            s_cas_catalog_selection++;
+        } else if (row == 9 && col == 4) {
+            cas_catalog_insert_selected();
+            return;
+        } else if (row == 0 && col == 3) {
+            s_page = PAGE_CAS_OPTIONS;
+        } else if (row == 2 && col == 2) {
+            key_back();
+        }
+        ui_draw_current();
+        return;
+    }
+
+    if (s_page == PAGE_CAS_OPTIONS) {
+        if (row == 1 && col == 4 && s_cas_options_selection > 0) {
+            s_cas_options_selection--;
+        } else if (row == 2 && col == 3 && s_cas_options_selection < 3) {
+            s_cas_options_selection++;
+        } else if ((row == 1 && col == 3) || (row == 2 && col == 4)) {
+            if (s_cas_options_selection == 0) {
+                int delta = row == 1 ? OPENCALC_CAS_DOMAIN_COUNT - 1 : 1;
+                s_cas_options.domain = (opencalc_cas_domain_t)
+                    ((s_cas_options.domain + delta) % OPENCALC_CAS_DOMAIN_COUNT);
+            } else if (s_cas_options_selection == 2) {
+                double delta = row == 1 ? -1.0 : 1.0;
+                s_cas_options.interval_min += delta;
+                s_cas_options.interval_max += delta;
+            }
+        } else if (row == 9 && col == 4) {
+            cas_options_apply_selected();
+            return;
         } else if (row == 2 && col == 2) {
             key_back();
         }
@@ -18872,6 +18875,7 @@ void opencalc_ui_start_worker(void)
 
 void opencalc_ui_init(void)
 {
+    opencalc_symbols_init();
     if (s_serial_button_queue == NULL) {
         s_serial_button_queue = xQueueCreate(8, sizeof(int));
     }
@@ -18891,6 +18895,7 @@ void opencalc_ui_init(void)
     variables_load_all();
     opencalc_graph_model_reset();
     worksheet_persist_load();
+    graph_appearance_load();
     opencalc_tetris_init();
     opencalc_snake_init();
     opencalc_breakout_init();
@@ -18920,12 +18925,27 @@ static void ui_memory_health_tick(void)
 #endif
 }
 
+static void cas_hard_recovery_tick(void)
+{
+#if OPENCALC_CAS_REBOOT_ON_STUCK
+    if (!opencalc_giac_recovery_required()) return;
+
+    ESP_LOGE("giac", "Stuck CAS worker: saving worksheet and restarting OpenCalc");
+    if (!worksheet_persist_flush()) {
+        ESP_LOGW("giac", "Worksheet flush was unavailable before CAS recovery restart");
+    }
+    vTaskDelay(pdMS_TO_TICKS(100));
+    esp_restart();
+#endif
+}
+
 void opencalc_ui_tick(void)
 {
     ui_memory_health_tick();
     ui_work_poll_results();
     script_worker_poll_result();
     worksheet_persist_poll();
+    cas_hard_recovery_tick();
 
     if (s_script_screen_dirty && s_page == PAGE_SCRIPT_IO) {
         s_script_screen_dirty = false;
@@ -18958,6 +18978,9 @@ bool opencalc_ui_doom_active(void)
 void opencalc_ui_tick_doom(void)
 {
     ui_memory_health_tick();
+    /* Games own the display, so release completed background work without
+     * applying results that could navigate or redraw the normal UI. */
+    ui_work_discard_game_results();
     switch (s_active_game) {
     case GAME_TETRIS:
         opencalc_tetris_tick();

@@ -1,6 +1,7 @@
 #include "opencalc_giac.h"
 
 #include "opencalc_config.h"
+#include "opencalc_symbols.h"
 
 #if OPENCALC_ENABLE_GIAC_CAS
 
@@ -17,6 +18,7 @@
 #include <exception>
 #include <new>
 #include <string>
+#include <strings.h>
 
 #include "esp_heap_caps.h"
 #include "esp_log.h"
@@ -31,10 +33,11 @@
 #include "input_lexer.h"
 #include "prog.h"
 #include "subst.h"
+#include "usual.h"
 
 namespace {
 
-constexpr size_t kInputMax = 768;
+constexpr size_t kInputMax = OPENCALC_SYMBOL_TEXT_MAX + 64;
 constexpr size_t kResultMax = 1024;
 constexpr char kTag[] = "giac";
 
@@ -48,6 +51,8 @@ struct GiacRequest {
     bool abandoned{false};
     RequestType type;
     bool degrees;
+    opencalc_cas_domain_t domain;
+    char assumptions[OPENCALC_CAS_ASSUMPTIONS_MAX];
     char expression[kInputMax];
     char result[kResultMax];
     bool ok;
@@ -59,8 +64,12 @@ QueueHandle_t s_queue;
 TaskHandle_t s_task;
 SemaphoreHandle_t s_start_lock;
 giac::context *s_context;
+uint32_t s_synced_symbol_generation;
+char s_synced_symbol_names[OPENCALC_SYMBOL_MAX][OPENCALC_SYMBOL_NAME_MAX];
+size_t s_synced_symbol_count;
 portMUX_TYPE s_request_lock = portMUX_INITIALIZER_UNLOCKED;
 bool s_quarantined;
+bool s_recovery_required;
 
 GiacRequest *allocate_request()
 {
@@ -147,6 +156,13 @@ void set_quarantined(bool value)
     taskEXIT_CRITICAL(&s_request_lock);
 }
 
+void set_recovery_required(bool value)
+{
+    taskENTER_CRITICAL(&s_request_lock);
+    s_recovery_required = value;
+    taskEXIT_CRITICAL(&s_request_lock);
+}
+
 void configure_context(giac::context *context)
 {
     /* Keep setup context-local. Lexer localization mutates shared parser tables
@@ -179,6 +195,116 @@ bool ensure_context()
         s_context = nullptr;
         return false;
     }
+}
+
+bool evaluate_sync_command(const char *command)
+{
+    giac::gen parsed(command, s_context);
+    if (giac::is_undef(parsed)) return false;
+    giac::gen result = giac::eval(parsed, giac::eval_level(s_context), s_context);
+    return !giac::is_undef(result);
+}
+
+bool sync_real_payload(const opencalc_symbol_t *symbol, const double *values,
+                       size_t count, void *)
+{
+    if (symbol == nullptr || values == nullptr || count != symbol->element_count) return false;
+    try {
+        giac::gen value;
+        if (symbol->type == OPENCALC_SYMBOL_MATRIX) {
+            giac::vecteur rows;
+            rows.reserve(symbol->rows);
+            for (size_t row = 0; row < symbol->rows; row++) {
+                giac::vecteur columns;
+                columns.reserve(symbol->cols);
+                for (size_t col = 0; col < symbol->cols; col++) {
+                    columns.push_back(giac::gen(values[row * symbol->cols + col]));
+                }
+                rows.push_back(giac::gen(columns));
+            }
+            value = giac::gen(rows, giac::_MATRIX__VECT);
+        } else {
+            giac::vecteur list;
+            list.reserve(count);
+            for (size_t i = 0; i < count; i++) list.push_back(giac::gen(values[i]));
+            value = giac::gen(list);
+        }
+        giac::gen destination{giac::identificateur(symbol->name)};
+        return !giac::is_undef(giac::sto(value, destination, s_context));
+    } catch (...) {
+        return false;
+    }
+}
+
+void sync_symbol_table()
+{
+    uint32_t generation = opencalc_symbols_generation();
+    if (generation == 0 || generation == s_synced_symbol_generation) return;
+
+    char command[kInputMax];
+    for (size_t i = 0; i < s_synced_symbol_count; i++) {
+        opencalc_symbol_t current;
+        if (opencalc_symbol_get(s_synced_symbol_names[i], &current) &&
+            (current.flags & OPENCALC_SYMBOL_GIAC_SYNC) &&
+            std::strcmp(current.name, s_synced_symbol_names[i]) == 0) continue;
+        int written = std::snprintf(command, sizeof(command), "purge(%s)",
+                                    s_synced_symbol_names[i]);
+        if (written > 0 && static_cast<size_t>(written) < sizeof(command)) {
+            (void)evaluate_sync_command(command);
+        }
+    }
+
+    size_t synced_count = 0;
+    opencalc_symbol_t symbol;
+    for (size_t i = 0;
+         i < OPENCALC_SYMBOL_MAX &&
+         opencalc_symbol_at(i, OPENCALC_SYMBOL_GIAC_SYNC, &symbol);
+         i++) {
+        if (symbol.structured) {
+            if (!opencalc_symbol_visit_real_values(symbol.name, sync_real_payload, nullptr)) {
+                ESP_LOGW(kTag, "Could not synchronize structured symbol %s", symbol.name);
+                continue;
+            }
+            std::snprintf(s_synced_symbol_names[synced_count],
+                          sizeof(s_synced_symbol_names[synced_count]), "%s", symbol.name);
+            synced_count++;
+            continue;
+        }
+        if (symbol.text[0] == '\0') continue;
+        int written = symbol.type == OPENCALC_SYMBOL_FUNCTION
+            ? std::snprintf(command, sizeof(command), "%s:=unapply((%s),x)",
+                            symbol.name, symbol.text)
+            : std::snprintf(command, sizeof(command), "%s:=(%s)",
+                            symbol.name, symbol.text);
+        if (written <= 0 || static_cast<size_t>(written) >= sizeof(command)) {
+            ESP_LOGW(kTag, "Symbol %s is too large for the CAS context", symbol.name);
+            continue;
+        }
+        if (!evaluate_sync_command(command)) {
+            ESP_LOGW(kTag, "Could not synchronize %s with the CAS context", symbol.name);
+            continue;
+        }
+        std::snprintf(s_synced_symbol_names[synced_count],
+                      sizeof(s_synced_symbol_names[synced_count]), "%s", symbol.name);
+        synced_count++;
+    }
+    s_synced_symbol_count = synced_count;
+    s_synced_symbol_generation = generation;
+}
+
+bool expression_mutates_context(const char *expression)
+{
+    if (expression == nullptr) return false;
+    while (std::isspace(static_cast<unsigned char>(*expression))) expression++;
+    if (strncasecmp(expression, "sto(", 4) == 0 ||
+        strncasecmp(expression, "purge(", 6) == 0) return true;
+
+    const char *cursor = expression;
+    if (!(std::isalpha(static_cast<unsigned char>(*cursor)) || *cursor == '_')) return false;
+    while (std::isalnum(static_cast<unsigned char>(*cursor)) || *cursor == '_') cursor++;
+    while (std::isspace(static_cast<unsigned char>(*cursor))) cursor++;
+    return (cursor[0] == ':' && cursor[1] == '=') ||
+        (cursor[0] == '=' && cursor[1] != '=');
 }
 
 std::string normalize_expression(const char *expression)
@@ -225,6 +351,21 @@ bool evaluate_request(GiacRequest *request)
 
     try {
         giac::angle_radian(!request->degrees, s_context);
+        bool complex_domain = request->domain == OPENCALC_CAS_DOMAIN_AUTO ||
+                              request->domain == OPENCALC_CAS_DOMAIN_COMPLEX;
+        giac::complex_mode(complex_domain, s_context);
+        giac::complex_variables(complex_domain, s_context);
+        sync_symbol_table();
+        if (request->assumptions[0] != '\0') {
+            char assume_command[OPENCALC_CAS_ASSUMPTIONS_MAX + 16];
+            int written = std::snprintf(assume_command, sizeof(assume_command),
+                                        "assume(%s)", request->assumptions);
+            if (written <= 0 || static_cast<size_t>(written) >= sizeof(assume_command) ||
+                !evaluate_sync_command(assume_command)) {
+                std::snprintf(request->result, sizeof(request->result), "invalid assumptions");
+                return false;
+            }
+        }
         std::string input = normalize_expression(request->expression);
         ESP_LOGI(kTag, "Parsing: %.96s", input.c_str());
         giac::gen parsed(input, s_context);
@@ -265,6 +406,8 @@ void giac_task(void *)
         } else if (request->type == RequestType::Reset) {
             delete s_context;
             s_context = nullptr;
+            s_synced_symbol_generation = 0;
+            s_synced_symbol_count = 0;
             request->ok = true;
             request->result[0] = '\0';
         } else {
@@ -272,18 +415,42 @@ void giac_task(void *)
             recycle_context = request_abandoned(request);
         }
 
+        bool rebuild_context = !recycle_context &&
+            (request->assumptions[0] != '\0' ||
+             (request->type == RequestType::Evaluate &&
+              expression_mutates_context(request->expression)));
+        if (rebuild_context) {
+            /* Assumptions and assignments are request-local to Giac. The native
+               typed symbol table is the authority and will populate a fresh
+               context for the next request. */
+            delete s_context;
+            s_context = nullptr;
+            s_synced_symbol_generation = 0;
+            s_synced_symbol_count = 0;
+        }
+
+        bool restart_worker = recycle_context;
         if (recycle_context) {
             ESP_LOGW(kTag, "Discarding CAS context after interrupted request");
             delete s_context;
             s_context = nullptr;
+            s_synced_symbol_generation = 0;
+            s_synced_symbol_count = 0;
             clear_interrupt_request();
+            taskENTER_CRITICAL(&s_request_lock);
+            s_task = nullptr;
+            taskEXIT_CRITICAL(&s_request_lock);
             if (quarantined()) {
                 set_quarantined(false);
-                ESP_LOGI(kTag, "CAS worker recovered; accepting requests again");
             }
         }
         xSemaphoreGive(request->complete);
+        if (restart_worker) set_recovery_required(false);
         release_request(request);
+        if (restart_worker) {
+            ESP_LOGI(kTag, "CAS context cleared; retiring worker generation");
+            vTaskDelete(nullptr);
+        }
     }
 }
 
@@ -366,12 +533,19 @@ opencalc_giac_status_t submit_request(GiacRequest *request,
     TickType_t grace_ticks = pdMS_TO_TICKS(OPENCALC_CAS_RECOVERY_GRACE_MS);
     if (grace_ticks == 0) grace_ticks = 1;
     if (xSemaphoreTake(request->complete, grace_ticks) != pdTRUE) {
-        ESP_LOGE(kTag,
-                 "CAS did not acknowledge interruption within %u ms; backend quarantined",
-                 static_cast<unsigned>(OPENCALC_CAS_RECOVERY_GRACE_MS));
+        set_recovery_required(true);
+        if (xSemaphoreTake(request->complete, 0) == pdTRUE) {
+            set_recovery_required(false);
+            ESP_LOGI(kTag, "CAS interruption completed at recovery deadline");
+        } else {
+            ESP_LOGE(kTag,
+                     "CAS did not acknowledge interruption within %u ms; controlled recovery required",
+                     static_cast<unsigned>(OPENCALC_CAS_RECOVERY_GRACE_MS));
+        }
     } else {
         set_quarantined(false);
-        ESP_LOGI(kTag, "CAS interruption acknowledged; context recycled");
+        set_recovery_required(false);
+        ESP_LOGI(kTag, "CAS interruption acknowledged; worker will restart cleanly");
     }
     return interrupted_status;
 }
@@ -382,6 +556,30 @@ extern "C" opencalc_giac_status_t opencalc_giac_eval_timed(
     const char *expression, bool degrees, char *out, size_t out_size,
     unsigned timeout_ms, opencalc_giac_cancel_fn should_cancel, void *cancel_context)
 {
+    opencalc_giac_options_t options = {
+        .degrees = degrees,
+        .domain = OPENCALC_CAS_DOMAIN_AUTO,
+        .assumptions = {},
+    };
+    return opencalc_giac_eval_timed_options(expression, &options, out, out_size,
+                                            timeout_ms, should_cancel, cancel_context);
+}
+
+extern "C" opencalc_giac_status_t opencalc_giac_eval_timed_options(
+    const char *expression, const opencalc_giac_options_t *options,
+    char *out, size_t out_size, unsigned timeout_ms,
+    opencalc_giac_cancel_fn should_cancel, void *cancel_context)
+{
+    return opencalc_giac_eval_timed_structured(
+        expression, options, out, out_size, nullptr, timeout_ms,
+        should_cancel, cancel_context);
+}
+
+extern "C" opencalc_giac_status_t opencalc_giac_eval_timed_structured(
+    const char *expression, const opencalc_giac_options_t *options,
+    char *out, size_t out_size, opencalc_cas_result_t *structured,
+    unsigned timeout_ms, opencalc_giac_cancel_fn should_cancel, void *cancel_context)
+{
     if (expression == nullptr || expression[0] == '\0' || out == nullptr || out_size == 0) {
         return OPENCALC_GIAC_ERROR;
     }
@@ -390,7 +588,12 @@ extern "C" opencalc_giac_status_t opencalc_giac_eval_timed(
     if (request == nullptr) return OPENCALC_GIAC_UNAVAILABLE;
 
     request->type = RequestType::Evaluate;
-    request->degrees = degrees;
+    request->degrees = options != nullptr ? options->degrees : false;
+    request->domain = options != nullptr ? options->domain : OPENCALC_CAS_DOMAIN_AUTO;
+    if (options != nullptr) {
+        std::snprintf(request->assumptions, sizeof(request->assumptions), "%s",
+                      options->assumptions);
+    }
     if (std::strlen(expression) >= sizeof(request->expression)) {
         release_request(request);
         return OPENCALC_GIAC_ERROR;
@@ -419,6 +622,9 @@ extern "C" opencalc_giac_status_t opencalc_giac_eval_timed(
         std::snprintf(out, out_size, "CAS unavailable");
     }
     release_request(request);
+    if (status == OPENCALC_GIAC_OK && structured != nullptr) {
+        opencalc_cas_analyze_result(out, structured);
+    }
     return status;
 }
 
@@ -496,6 +702,14 @@ extern "C" void opencalc_giac_reset(void)
     release_request(request);
 }
 
+extern "C" bool opencalc_giac_recovery_required(void)
+{
+    taskENTER_CRITICAL(&s_request_lock);
+    bool required = s_recovery_required;
+    taskEXIT_CRITICAL(&s_request_lock);
+    return required;
+}
+
 #else
 
 extern "C" bool opencalc_giac_eval(const char *, bool, char *, size_t)
@@ -509,8 +723,27 @@ extern "C" opencalc_giac_status_t opencalc_giac_eval_timed(
     return OPENCALC_GIAC_UNAVAILABLE;
 }
 
+extern "C" opencalc_giac_status_t opencalc_giac_eval_timed_options(
+    const char *, const opencalc_giac_options_t *, char *, size_t, unsigned,
+    opencalc_giac_cancel_fn, void *)
+{
+    return OPENCALC_GIAC_UNAVAILABLE;
+}
+
+extern "C" opencalc_giac_status_t opencalc_giac_eval_timed_structured(
+    const char *, const opencalc_giac_options_t *, char *, size_t,
+    opencalc_cas_result_t *, unsigned, opencalc_giac_cancel_fn, void *)
+{
+    return OPENCALC_GIAC_UNAVAILABLE;
+}
+
 extern "C" void opencalc_giac_reset(void)
 {
+}
+
+extern "C" bool opencalc_giac_recovery_required(void)
+{
+    return false;
 }
 
 extern "C" int opencalc_giac_self_test(void)

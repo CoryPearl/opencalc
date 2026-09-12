@@ -3,7 +3,8 @@
 OpenCalc OS is the open-source ESP-IDF operating environment for the OpenCalc ESP32-S3 graphing calculator. It brings up the selected ILI9341 or ST7789 LCD, button matrix, USB mass storage and CDC serial, script storage, the 12-app calculator interface, numerical and symbolic math engines, power management, and the optional five-game launcher.
 
 Large worksheet state is stored in a versioned, CRC-checked FAT snapshot with
-atomic backup recovery. Calculator history and active input, graph equations
+an fsync-backed journal and atomic backup recovery. A torn journal is truncated
+to its last valid record. Calculator history and active input, graph equations
 and windows, lists, populated matrix cells, finance values, and conic worksheets
 survive reset and deep sleep without consuming the small NVS partition.
 
@@ -13,6 +14,14 @@ evaluation, exact arithmetic, simplification, solving, calculus, complex
 expressions, matrices, and persistent CAS variables. Eigenmath and OpenCalc's
 small native symbolic routines remain fallback paths while Giac completes its
 hardware validation pass.
+
+Calculator values now live in one typed symbol registry instead of separate
+native and CAS variable stores. `STO`, `GET`, `VARS`, calculator assignments,
+and Giac share exact expressions, real and complex numbers, unit values, lists,
+matrices, strings, and functions such as `f(x)=x^2+1`. User symbols persist in
+NVS, and a recreated Giac context is repopulated from the registry. Worksheet
+lists, matrices, graph functions, statistics results, and system values are
+published into the same registry as read-only symbols.
 
 Automated boot tests are disabled by default. For a one-boot engine check, set
 both `OPENCALC_ENABLE_AUTOMATED_TESTS` and `OPENCALC_GIAC_BOOT_SELF_TEST` to `1`.
@@ -43,6 +52,8 @@ SUM:                           862          30988          29366         249058
 
 Current target: ESP32-S3 with 16 MB flash, 8 MB PSRAM, 320x240 landscape LCD, 10x5 diode-isolated keypad matrix, one USB-C data/power connection, LiPo battery support, PWM backlight control, battery ADC, optional game audio, and optional ADS1115/MCP23017 scientific I/O. V5 uses the HS280S030RX/ST7789 panel; the existing prototype uses ILI9341.
 
+Giac calculations run behind a timeout boundary. A cancelled operation retires its context and worker task before the next request creates a clean generation. If Giac never reaches a safe cancellation point, OpenCalc saves dirty worksheet sections and restarts automatically instead of leaving CAS disabled or deleting a task inside C++ allocator code. Set `OPENCALC_CAS_REBOOT_ON_STUCK` to `0` only when debugging a quarantined worker.
+
 The firmware is now split across both ESP32-S3 cores:
 
 - UI, LCD drawing, keypad dispatch, and game drawing run on `OPENCALC_UI_CORE`.
@@ -60,16 +71,20 @@ OpenCalc OS app and game.
 The UI is being decomposed into bounded components: `opencalc_calc.c` owns
 calculator evaluation and history, `opencalc_ui_work.c` owns PSRAM-backed async
 job/result lifetimes, and `opencalc_ui_canvas.c` owns the framebuffer and shared
-raster primitives. Existing domain modules own statistics, conics,
-inequalities, references, math, persistence, and each game; `opencalc_ui.c`
-remains the coordinator for page layouts and keypad routing.
+raster primitives. `opencalc_graph_analysis.c` owns adaptive graph sampling,
+points of interest, trace calculations, derivatives, and integrals;
+`opencalc_graph_controller.c` owns linked symbolic graph analysis; and
+`opencalc_graph_background.c` owns BMP validation, scaling, and decoding.
+Existing domain modules own statistics, conics, inequalities, references, math,
+persistence, and each game; `opencalc_ui.c` remains the coordinator for page
+layouts and keypad routing.
 
-Recent local build status (September 9, 2026):
+Recent local build status (September 11, 2026):
 
 - The Giac-enabled ESP-IDF target build completes successfully.
-- App binary size: `0x4fc8f0` bytes (5,228,784 bytes).
+- App binary size: `0x5131e0` bytes (5,321,184 bytes).
 - Factory app partition: `0x600000` bytes (6 MB).
-- Free app partition space: `0x103710` bytes (1,062,672 bytes, 17%).
+- Free app partition space: `0xece20` bytes (970,272 bytes, 15%).
 - Storage partition: `0x800000` bytes, generated from `storage_image/`.
 
 ## Build and Flash
@@ -151,7 +166,7 @@ The board exposes the FAT storage partition over the USB port. With the default 
 storage_image/
   doom1.wad
   mario.nes
-  graph.bmp        optional 320x240 graph background
+  graph.bmp        optional scalable 24/32-bit RGB graph background
   scripts/
     fib.py
     logger.py
@@ -230,11 +245,26 @@ Working now:
 - Table view for Cartesian, parametric, polar, and sequence graph modes, with
   configurable start, step, visible-row count, decimal precision, and horizontal
   paging when a mode has more series than fit on screen.
-- Parametric, polar, and sequence graphing modes with mode-aware trace stepping and Graph Calc value/derivative/integral analysis. Cartesian intersections are refined; non-Cartesian intersections use sampled plotted-point matching.
+- Parametric, polar, and sequence graphing modes with mode-aware trace stepping,
+  visible points of interest, and Graph Calc value/derivative/integral analysis.
+  Sequence entries accept direct formulas or recurrences such as
+  `rec(u(n-1)+u(n-2),0,1)`.
 - Linked symbolic analysis uses the same active equation as Graph and Table. Press `Trace` to cycle enabled series, then `Alpha` + `Graph` to view exact CAS derivative, integral, roots, and asymptotic/end behavior. In that view, `Left`/`Right` changes series, `Up`/`Down` changes the analysis point, `Y=` toggles a Cartesian tangent, `Window` toggles integral shading from zero to the selected x-value, and `Enter` returns to the graph.
-- Graph Format (`2nd` + `Zoom`) provides full/split graph-table views, per-series line/thick/dotted/point styles, grid control, and optional `/data/graph.bmp` backgrounds (uncompressed RGB, `320x240`, 24-bit or 32-bit).
+- Graph Format (`2nd` + `Zoom`) provides full/split graph-table views,
+  independent color and line/thick/dotted/point style selection for every series
+  in every mode, grid control, and optional `/data/graph.bmp` backgrounds.
+  Uncompressed 24-bit and 32-bit RGB BMPs up to 4096 pixels per side can be
+  stretched, aspect-fit, or aspect-filled to the display.
+- Rendering and numeric point searches sample curve midpoints to avoid drawing
+  through poles and treating discontinuities as roots or intersections.
+- Parametric and polar intersections use sampled line-segment crossings instead
+  of loose point proximity; sequence intersections are restricted to integer indices.
 - Advanced Graph Calc semantics follow each mode: parametric and polar derivatives report `dy/dx`, parametric integration computes `integral y dx`, polar integration computes enclosed area, and sequence calculus uses forward differences and discrete sums.
-- Calculator math parser with trig, powers, roots, vertical fractions, compact exponent/root rendering, probability basics, derivatives, definite integrals, and a growing CAS layer.
+- Calculator math parser with trig, powers, roots, probability basics,
+  derivatives, definite integrals, and a growing CAS layer. MathPrint uses a
+  recursive two-dimensional renderer for nested fractions/radicals,
+  superscripts, matrices, piecewise forms, limits, and integrals; Classic keeps
+  one-line source text.
 - Calculator expressions accept up to 768 bytes and results up to 1024 bytes.
   Long answers open in a dedicated scrollable result view instead of being
   clipped to the history row.
@@ -245,12 +275,21 @@ Working now:
 - Functional `STO`, `VARS`, and `GET` workflows: store into `A`-`Z` or custom
   names, browse categorized calculator state with type/value previews, insert
   references or current values, and rename/delete user variables. User
-  variables are persisted in NVS and substituted safely into CAS expressions.
+  variables are persisted in NVS and synchronized directly into Giac's context.
 - Embedded Giac/KhiCAS-derived symbolic engine with exact arithmetic, general
   simplification, equation solving, symbolic calculus, complex expressions,
   matrices, and persistent variables. It runs serially on a dedicated 64 KB
   PSRAM-backed task. OpenCalc's native polynomial routines and PSRAM-aware
   Eigenmath port remain fallback paths.
+- Structured CAS result metadata distinguishes scalars, lists, matrices, and
+  solution sets. Calculator and Solver provide scrollable branch browsers;
+  `Enter` copies the selected branch, `Zoom` evaluates its decimal form, and
+  `Trace` shows the request/domain/exact-result transformation trace.
+- Math > CAS > CAS catalog opens a prefix-filtered symbolic command browser.
+  Press `Trace` there for Auto, Real, Complex, Integer, or bounded Interval
+  solving, request-local assumptions, interval bounds, and CAS context reset.
+  Type an assumption such as `x>0`, or bounds such as `-10,10`, in Calculator
+  before applying the corresponding option.
 - CAS dispatch recognizes symbolic and special-function calls inside composed
   expressions, not only at the outermost call. OpenCalc aliases `deriv` to
   `diff`, `int`/`defint` to `integrate`, the calculator's base-10 `log` to
@@ -291,7 +330,9 @@ Not complete yet, so not presented as finished:
 - Non-Cartesian intersections and points of interest use plotted-sample matching rather than analytic refinement, so very close or tangent points can be missed.
 - Full desktop Xcas parity and complete UI coverage of every Giac command. The
   embedded source omits desktop GUI, plotting, and some platform-dependent
-  facilities. Giac itself currently formats at most 1024 bytes per result.
+  facilities. Giac itself currently formats at most 1024 bytes per result. The
+  transformation trace reports real engine stages; it is not a generated
+  textbook proof for every algebraic operation.
 - Large 99x99 hardware stress validation for the heaviest matrix operations.
 - Chi-square contingency-table editing, paired-data inference, regression inference/diagnostics, and broader physical-device validation against AP Statistics edge cases.
 
@@ -331,6 +372,14 @@ process isolation from defects in a native C driver.
 `math`, `random`, `time`, and `statistics` support normal Python imports
 (including aliases) and remain preloaded for old scripts. Device modules are
 also preloaded:
+
+User functions now have isolated local variables, active-enclosing lexical
+lookup, working `global`, short-circuit `and`/`or`, default and keyword
+arguments, `*args`/`**kwargs`, and bounded captured-value closures. Runtime
+exceptions, filtered list comprehensions, sets, byte containers, and sibling
+`.py` imports are supported. The on-device editor and runtime both accept 32 KB
+source files. Each parser can consume up to 8,192 tokens, allocated on demand
+from PSRAM so small scripts do not pay the maximum memory cost.
 
 - `math` provides common trigonometry, logarithms, rounding helpers,
   `factorial`, `gcd`, `lcm`, `prod`, `isclose`, finite-value checks, and `pi`,
@@ -375,11 +424,12 @@ also preloaded:
 
 `board.D0-D11`, `board.A0-A3`, and the procedural `digitalio`, `analogio`, and
 `busio` modules provide familiar aliases for the same protected sensor service.
-They are not drop-in CircuitPython object APIs. Tiny Python still lacks
-exceptions, classes, generators, comprehensions, async, arbitrary-precision
-integers, filesystem package imports, and CircuitPython's external driver
-ecosystem. See [the capability audit](TINY_PYTHON_AUDIT.md) for the exact
-boundary.
+Method-based `digitalio.DigitalInOut`, `analogio.AnalogIn`, and `busio.I2C`
+wrappers support the common object-shaped workflow. They are not drop-in
+CircuitPython APIs: assignable hardware properties, user classes, generators,
+async, arbitrary-precision integers, package directories, and CircuitPython's
+external driver ecosystem remain outside the runtime. See
+[the capability audit](TINY_PYTHON_AUDIT.md) for the exact boundary.
 
 Example flashed script:
 
@@ -523,6 +573,8 @@ OpenCalc-authored firmware is licensed under GPL-3.0-or-later. Bundled third-par
 ## Games
 
 Press `Alpha` then `2nd` to open the game menu. The current menu includes Tetris, Doom, Snake, Breakout, and Mario. High scores are saved in on-chip NVS, so they survive power off and do not depend on USB storage. On the new audio PCB, Tetris, Snake, and Breakout use synthesized effects, Doom uses its game sound events, and Mario runs its NES APU channels. The amplifier is shut down outside games.
+
+Doom's 4 MiB PSRAM arena is allocated only while Doom is active. Leaving Doom closes its WAD handles and releases the arena so the CAS, scripts, matrices, and other games can reclaim that memory; launching Doom again performs a fresh engine initialization.
 
 Doom is optional and uses the shareware IWAD at:
 

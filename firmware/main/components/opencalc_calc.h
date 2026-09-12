@@ -20,6 +20,7 @@ typedef struct {
     int complex_mode;
     int display_format;
     int print_mode;
+    const opencalc_cas_options_t *cas_options;
     bool degrees;
     unsigned timeout_ms;
     opencalc_giac_cancel_fn should_cancel;
@@ -31,7 +32,9 @@ typedef struct {
 typedef struct {
     bool ok;
     bool update_ans;
+    bool symbol_changed;
     opencalc_giac_status_t giac_status;
+    opencalc_cas_result_t structured;
     char output[OPENCALC_CALC_RESULT_MAX];
 } opencalc_calc_eval_result_t;
 

@@ -290,8 +290,17 @@ to Radian.
 - `sqrt` inserts a square root; `2nd` + `sqrt` inserts an nth root.
 - `^2` inserts a square; `2nd` + `^2` inserts a general exponent.
 
-MathPrint renders powers, roots, and fractions in a textbook-style layout.
-Classic mode favors compact one-line text.
+MathPrint uses a bounded two-dimensional layout engine for ordinary and nested
+fractions, radicals and nth roots, superscripts, matrices, piecewise forms,
+limits, and definite or indefinite integrals. It keeps the edit cursor attached
+to the corresponding source position and automatically switches to compact
+glyphs when a live expression would exceed the input strip. Classic mode keeps
+the original one-line source text.
+
+Recognized display forms include `a/b`, `frac(a,b)`, `sqrt(x)`, `nroot(3,x)`,
+`[[1,2],[3,4]]`, `piecewise(value,condition,...)`, `limit(expr,x,point)`,
+`int(expr,x)`, and `defint(expr,x,lower,upper)`. These remain normal calculator
+expressions; MathPrint changes presentation, not evaluation semantics.
 
 ### History
 
@@ -376,12 +385,40 @@ Symbolic assignments can persist through the calculator variable workflow.
 Variable substitution is case-insensitive for OpenCalc user variables. Avoid
 using a variable name that conflicts with a built-in function.
 
+### Result browser
+
+Lists, matrices, and multi-solution answers open in a structured browser rather
+than one long text row. Use `Up` and `Down` to select a branch, `Enter` to copy
+only that branch to Calculator, and `Zoom` to evaluate the selected branch with
+`evalf(...)`. `Trace` switches to a transformation trace showing the original
+request, active domain and assumptions, exact engine result, and selected
+branch. This trace reports real evaluation stages; it does not invent
+step-by-step algebra that Giac did not provide.
+
+### Catalog, domains, and assumptions
+
+Open `Math`, choose the `CAS` tab, then select **CAS catalog**. If the current
+Calculator token is a command prefix, the catalog filters to matching commands;
+`Enter` completes the command. Press `Trace` in the catalog to open CAS options.
+
+- **Auto:** use normal calculator behavior and permit complex results.
+- **Real:** restrict symbolic variables and solutions to the real domain.
+- **Complex:** explicitly permit complex variables and solutions.
+- **Integer:** route `solve(...)` requests through integer solving.
+- **Interval:** restrict `solve(equation,variable)` to the configured bounds.
+
+To set an assumption, type a Giac condition such as `x>0` in Calculator, open
+CAS options, select **Assumptions**, and press `Enter`. For interval bounds, type
+`-10,10`, select **Interval**, and press `Enter`. Assumptions are request-local;
+**Reset CAS context** clears engine-side assignments and rebuilds them from the
+shared OpenCalc symbol table on the next request.
+
 ### Scope of the embedded CAS
 
 The firmware includes a real symbolic engine, but it is not the complete Xcas
 desktop application. The desktop GUI, desktop plotting, some platform-specific
-facilities, and a dedicated UI for every Giac command are not included. CAS
-heap stability and unusually large outputs still require hardware soak tests.
+facilities, every Xcas command, and universal textbook solution proofs are not
+included. Engine output is bounded to 1024 bytes.
 
 [Back to contents](#contents)
 
@@ -486,7 +523,10 @@ not implemented.
 ### Store a value
 
 Evaluate or enter a value, press `STO`, and choose `A` through `Z` or enter a
-custom identifier such as `radius`. Stored variables persist in NVS.
+custom identifier such as `radius`. Stored variables persist in NVS. The same
+registry stores exact expressions, real and complex numbers, units, lists,
+matrices, strings, and functions. For example, `f(x)=x^2+1` creates a callable
+function that appears in the Functions category.
 
 Conceptually:
 
@@ -519,7 +559,9 @@ the current value itself rather than its name.
 The browser shows name, type, and a value preview. User variables can be
 renamed or deleted. Custom names may contain letters, digits, and underscores
 and are treated case-insensitively. Lists and matrices remain managed by their
-own apps even though they appear in the browser.
+own apps even though they appear in the browser. Giac reads these values from
+the registry directly; when its context is restarted after cancellation or a
+timeout, OpenCalc restores the symbols automatically.
 
 [Back to contents](#contents)
 
@@ -541,6 +583,11 @@ Press `Y=` and select a slot. Enter its expression, then enable or disable that
 slot with `Enter`. The small label such as `[line]` identifies the selected
 rendering style; it is not part of the equation.
 
+Sequence entries may be direct expressions such as `n^2`, or recurrences in the
+form `rec(expression,u0,u1)`. For example,
+`rec(u(n-1)+u(n-2),0,1)` produces the Fibonacci sequence. Recurrences support
+`u(n-1)` and `u(n-2)` and are evaluated for nonnegative integer indices.
+
 ### Draw and navigate
 
 Press `Graph`. Without Trace active, arrows pan the window. Zoom mode changes
@@ -552,7 +599,8 @@ range.
 
 Press `Trace` to activate trace and cycle enabled series. `Left` and `Right`
 move along the active curve. The trace readout identifies the selected series
-without drawing a full-width selection bar. Sequence trace snaps to integer n.
+without drawing a full-width selection bar. It shows slope for continuous graph
+modes and forward difference for sequences. Sequence trace snaps to integer n.
 
 ### Graph Calc
 
@@ -580,16 +628,21 @@ Press `2nd` + `Zoom`. Available controls include:
 - Grid visibility.
 - Active series selection.
 - Line, thick, dotted, or point rendering style.
+- One of 15 colors, stored independently for each series and graph mode.
 - Optional background image.
+- Stretch, fit, or fill background scaling.
 
-The optional background file is `/data/graph.bmp`. It must be an uncompressed
-320x240, 24-bit or 32-bit BMP.
+The optional background file is `/data/graph.bmp`. It may be any uncompressed
+24-bit or 32-bit BMP up to 4096 pixels per side. **Fit** preserves the whole
+image with letterboxing, **fill** preserves aspect ratio and crops the edges,
+and **stretch** maps it directly to 320x240.
 
 ### Graph limitations
 
-Non-Cartesian points of interest and intersections use plotted-sample matching.
-Very close intersections and tangencies can be missed. Tighten the graph window
-or use CAS/Solver when an exact answer matters.
+Parametric and polar intersections use sampled line-segment crossings; sequence
+intersections are only reported at integer indices. Very close intersections,
+tangencies, and features narrower than the sample spacing can still be missed.
+Tighten the graph window or use CAS/Solver when an exact answer matters.
 
 [Back to contents](#contents)
 
@@ -1089,10 +1142,15 @@ When the script finishes, press `Enter` or Back to return to the script list.
 ### Supported language surface
 
 Tiny Python supports integers, floats, booleans, strings, lists, tuples,
-dictionaries, `None`, basic f-strings, assignment, augmented assignment,
-functions, recursion, `if`/`elif`/`else`, `while`, iterable `for`, `range`,
-`break`, `continue`, `pass`, and normal imports for `math`, `random`, `time`,
-`statistics`, and the OpenCalc device modules.
+dictionaries, sets, `bytes`, `bytearray`, `None`, basic f-strings, assignment,
+augmented assignment, filtered list comprehensions, runtime exceptions,
+functions with local variables and captured-value nested lookup, working
+`global`, recursion, default and keyword arguments, `*args`, `**kwargs`,
+short-circuit boolean operators, `if`/`elif`/`else`, `while`, iterable `for`,
+`range`, `break`, `continue`, `pass`, and imports for built-ins, OpenCalc
+modules, and sibling `.py` files. The editor and runtime share a 32 KB source
+limit and allow up to 8,192 parser tokens per active parser. Token storage grows
+in PSRAM as needed, so ordinary short scripts remain inexpensive.
 
 Common builtins include `len`, `int`, `float`, `str`, `bool`, `abs`, `min`,
 `max`, `pow`, `sum`, `round`, `range`, `enumerate`, `reversed`, `zip`,
@@ -1104,10 +1162,11 @@ repetition, `append`, `extend`, `insert`, `pop`, `remove`, `clear`, `reverse`,
 `copy`, `count`, and `index`. Dictionaries support key lookup/assignment,
 iteration, `get`, `keys`, `values`, and `items`.
 
-Tiny Python is not CPython or CircuitPython. It does not currently include
-exceptions, classes, comprehensions, generators, decorators, lambdas, `with`,
-async syntax, filesystem package imports, the full standard library,
-arbitrary-size integers, full Unicode, bytecode, or a garbage collector.
+Tiny Python is not CPython or CircuitPython. It does not include user classes,
+dict/set comprehensions, generators, decorators, lambdas, `with`, async syntax,
+package directories, the full standard library, arbitrary-size integers, full
+Unicode, bytecode, or a garbage collector. `try` catches runtime errors, but
+syntax errors happen before execution and are not catchable.
 
 [Back to contents](#contents)
 
@@ -1168,8 +1227,19 @@ print(analogio.read(board.A0))
 print(busio.present(0x76))
 ```
 
-These procedural names access OpenCalc's protected expansion service. They do
-not implement CircuitPython's class constructors or external driver ecosystem.
+For object-shaped code, use:
+
+```python
+led = digitalio.DigitalInOut(board.D0)
+led.switch_to_output(True)
+sensor = analogio.AnalogIn(board.A0)
+i2c = busio.I2C()
+print(led.value(), sensor.voltage(), i2c.present(0x76))
+```
+
+These names access OpenCalc's protected expansion service. Object wrappers use
+methods, not CircuitPython's assignable properties, and do not provide its
+external driver ecosystem.
 
 ### Graphics
 
@@ -1574,8 +1644,9 @@ The FAT storage partition stores larger files:
 - `/data/graph.bmp`
 
 Worksheet changes are saved after a short idle delay and immediately before
-software-off sleep or USB storage export. The snapshot has a CRC and an atomic
-backup so an interrupted write cannot silently load partial data. Factory Reset
+software-off sleep or USB storage export. Journal records and checkpoints are
+flushed through the filesystem before they are accepted. The snapshot has a CRC
+and an atomic backup; a torn journal is trimmed to its last valid record. Factory Reset
 clears both NVS and this worksheet snapshot. Flashing with `idf.py flash` may
 rewrite the storage image depending on `OPENCALC_FLASH_STORAGE_IMAGE`; back up
 scripts and worksheets first.
@@ -1876,7 +1947,8 @@ all roots. Touch support is not planned.
 `opencalc_calc.c` owns calculator evaluation and history,
 `opencalc_ui_work.c` owns PSRAM-backed job/result lifetimes, and
 `opencalc_ui_canvas.c` owns the shared framebuffer and raster primitives.
-Domain behavior remains separated into statistics, conics, inequalities,
+`opencalc_graph_analysis.c` owns adaptive points-of-interest analysis, and
+`opencalc_graph_controller.c` owns linked symbolic graph requests. Domain behavior remains separated into statistics, conics, inequalities,
 reference, math, persistence, and game modules; `opencalc_ui.c` coordinates
 page layouts and keypad routing.
 
@@ -1940,7 +2012,8 @@ exact key names over aspirational feature lists.
   function.
 - **DRAM:** internal data RAM; scarce compared with PSRAM.
 - **Giac/KhiCAS:** primary embedded symbolic math backend.
-- **MathPrint:** textbook-style fraction, root, and exponent layout.
+- **MathPrint:** bounded two-dimensional layout for nested fractions, radicals,
+  powers, matrices, piecewise forms, limits, and integrals.
 - **MSC:** USB Mass Storage Class.
 - **NVS:** ESP-IDF nonvolatile key/value storage.
 - **PSRAM:** external pseudo-static RAM used for large buffers and task stacks.

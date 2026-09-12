@@ -127,6 +127,31 @@ char		mapdir[1024];           // directory of development maps
 
 int             show_endoom = 1;
 
+void D_ResetMainState(void)
+{
+    if (savegamedir != NULL && savegamedir != configdir)
+    {
+        free(savegamedir);
+    }
+    if (configdir != NULL)
+    {
+        free(configdir);
+    }
+
+    savegamedir = NULL;
+    configdir = NULL;
+    iwadfile = NULL;
+    devparm = false;
+    nomonsters = false;
+    respawnparm = false;
+    fastparm = false;
+    autostart = false;
+    advancedemo = false;
+    storedemo = false;
+    bfgedition = false;
+    main_loop_started = false;
+}
+
 
 void D_ConnectNetGame(void);
 void D_CheckNetGame(void);

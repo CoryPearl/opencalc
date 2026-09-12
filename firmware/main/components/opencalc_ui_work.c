@@ -11,6 +11,8 @@
 #include <string.h>
 
 #define WORK_QUEUE_DEPTH 4
+#define RESULT_QUEUE_DEPTH (WORK_QUEUE_DEPTH + 1)
+#define RESULT_SEND_TIMEOUT_MS 100
 
 static QueueHandle_t s_jobs;
 static QueueHandle_t s_results;
@@ -53,7 +55,10 @@ static void work_task(void *context)
         s_execute(item.job, item.result);
         heap_caps_free(item.job);
         item.job = NULL;
-        if (xQueueSend(s_results, &item.result, portMAX_DELAY) != pdTRUE) {
+        /* The UI may temporarily run a game loop instead of its normal result
+         * poll. Never let a full result queue pin this worker indefinitely. */
+        if (xQueueSend(s_results, &item.result,
+                       pdMS_TO_TICKS(RESULT_SEND_TIMEOUT_MS)) != pdTRUE) {
             heap_caps_free(item.result);
         }
     }
@@ -70,7 +75,7 @@ bool opencalc_ui_work_start(size_t job_size,
     }
     if (job_size == 0 || result_size == 0 || execute == NULL) return false;
     if (s_jobs == NULL) s_jobs = xQueueCreate(WORK_QUEUE_DEPTH, sizeof(work_item_t));
-    if (s_results == NULL) s_results = xQueueCreate(WORK_QUEUE_DEPTH, sizeof(void *));
+    if (s_results == NULL) s_results = xQueueCreate(RESULT_QUEUE_DEPTH, sizeof(void *));
     if (s_jobs == NULL || s_results == NULL) return false;
 
     s_job_size = job_size;

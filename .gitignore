@@ -2,7 +2,7 @@
 .DS_Store
 .vscode/
 .idea/
-**/.claude/settings*.json
+**/.codex/settings*.json
 *.swp
 *.swo
 *~
