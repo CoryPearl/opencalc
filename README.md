@@ -3,6 +3,8 @@
   <img src="img/opencalc_logo_light.png#gh-dark-mode-only" width="100" alt="OpenCalc logo">
 </p>
 
+<p align="center"><strong>Prototype sponsored by <a href="https://www.pcbway.com/">PCBWay</a>.</strong></p>
+
 OpenCalc is an open-source graphing calculator inspired by the TI-84, built around an ESP32-S3, a color LCD, USB-C, Python-style scripting, games, and expandable firmware.
 
 OpenCalc-authored software is licensed under **GPL-3.0-or-later**. Bundled components retain their original licenses; see [Third-Party Notices](THIRD_PARTY_NOTICES.md).
